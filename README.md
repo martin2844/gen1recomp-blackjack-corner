@@ -13,6 +13,45 @@ The mod supports Pokemon Red, Blue, and Yellow. It contains no ROM or
 ROM-derived artwork; world and shiny graphics are generated locally from the
 player's imported game data.
 
+## Screenshots
+
+### Dedicated Blackjack Lounge
+
+![The player standing in the dedicated Blackjack Lounge in Celadon Game Corner](assets/screenshots/blackjack-lounge.png)
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="assets/screenshots/blackjack-bet-selection.png" alt="Blackjack bet selection with four pixel-art betting chips">
+      <br><sub>Choose a 10, 50, 100, or 500-coin bet.</sub>
+    </td>
+    <td width="50%">
+      <img src="assets/screenshots/blackjack-hand-actions.png" alt="A live blackjack hand with Hit, Stand, and Double actions">
+      <br><sub>Play a hand using Hit, Stand, or Double.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="assets/screenshots/blackjack-win-result.png" alt="Blackjack win screen after the dealer busts">
+      <br><sub>Distinct results explain each hand and payout.</sub>
+    </td>
+    <td width="50%">
+      <img src="assets/screenshots/shiny-upgrade-choice.png" alt="Pokemon Prize Corner offering normal and shiny redemption choices">
+      <br><sub>Upgrade any Pokemon prize to a persistent shiny.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="assets/screenshots/coin-clerk-bulk-purchases.png" alt="Game Corner coin clerk offering larger bulk coin purchases">
+      <br><sub>Buy larger coin bundles without repeating the original exchange.</sub>
+    </td>
+    <td width="50%">
+      <img src="assets/screenshots/pokemon-prize-list.png" alt="Expanded Pokemon prize list with aligned names and coin prices">
+      <br><sub>Browse expanded prizes with clean, level-free price rows.</sub>
+    </td>
+  </tr>
+</table>
+
 ## Install
 
 1. Download `blackjack_corner-0.1.0.zip` from the

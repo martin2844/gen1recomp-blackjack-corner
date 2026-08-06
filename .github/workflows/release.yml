@@ -27,7 +27,9 @@ on:
     branches: [main]
     paths-ignore:
       - '.github/**'
+      - '.modkitignore'
       - '**.md'
+      - 'assets/screenshots/**'
   workflow_dispatch:
     inputs:
       version:
@@ -140,7 +142,8 @@ jobs:
           git archive HEAD | tar -x -C "$staging"
 
           rm -rf "$staging/.github" "$staging/.gitattributes" \
-                 "$staging/.gitignore" "$staging/.luarc.json"
+                 "$staging/.gitignore" "$staging/.luarc.json" \
+                 "$staging/.modkitignore" "$staging/tests"
 
           python3 - "$staging/manifest.json" "$VERSION" <<'PY'
           import json, sys

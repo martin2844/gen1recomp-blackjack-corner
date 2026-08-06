@@ -1,0 +1,24 @@
+return {
+  summary = "Blackjack, version-aware Pokemon prizes, shinies, and a Master Ball in Celadon.",
+  author = "martin2844",
+  tags = { "minigame", "game-corner", "blackjack", "shiny", "prizes" },
+  differences = {
+    changed = {
+      "the Game Corner gambler runs a blackjack table",
+      "all three Prize Corner counters offer expanded catalogues",
+    },
+    added = {
+      "blackjack with hit, stand, double down, and 3:2 naturals",
+      "opposite-version exclusives, starters, fossils, and shiny upgrades",
+      "a one-time 9,999-coin Master Ball prize",
+    },
+    known = {
+      "the first release has no split or insurance actions",
+      "shiny art uses a shared casino-gold treatment rather than species-specific Gen-II colors",
+    },
+  },
+  credits = {
+    { who = "pret/pokered", for_ = "the Game Corner maps and prize catalogue behavior" },
+  },
+  compat = { engine = ">=0.0.0-0 <2.0.0", modApi = 2 },
+}

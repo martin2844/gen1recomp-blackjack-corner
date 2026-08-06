@@ -1,0 +1,20 @@
+{
+  "id": "blackjack_corner",
+  "name": "Blackjack Corner",
+  "version": "0.1.0",
+  "api": 2,
+  "entry": "main.lua",
+  "profile": "content",
+  "category": "MINIGAME",
+  "game_version": ">=0.0.0-0 <2.0.0",
+  "priority": 100,
+  "assets_transforms": "transforms.lua",
+  "permissions": [
+    "engine_internals"
+  ],
+  "dependencies": [],
+  "optional_dependencies": [],
+  "conflicts": [],
+  "description": "Adds blackjack, expanded version-aware prizes, shiny upgrades, and a one-time Master Ball to Celadon Game Corner.",
+  "github": "martin2844/gen1recomp-blackjack-corner"
+}

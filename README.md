@@ -28,6 +28,62 @@ player's imported game data.
 
 ## Screenshots
 
+### Expanded Casino Floor
+
+![The expanded Casino Lounge with blackjack, Texas Hold'em, and three arcade machines](assets/screenshots/expanded-casino-floor.png)
+
+### New Games and Services
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="assets/screenshots/pawn-broker-introduction.png" alt="The Pokemon pawn broker offering coins at the original Game Corner counter">
+      <br><sub>Meet the pawn broker behind the original Game Corner counter.</sub>
+    </td>
+    <td width="50%">
+      <img src="assets/screenshots/pawn-broker-appraisals.png" alt="Pawn Pokemon menu showing individual coin appraisals and five storage slots">
+      <br><sub>Compare individual appraisals and manage up to five recoverable Pokemon.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="assets/screenshots/holdem-straight-win.png" alt="Texas Hold'em result screen showing a winning straight">
+      <br><sub>Play progressive, house-banked Hold'em through the showdown.</sub>
+    </td>
+    <td width="50%">
+      <img src="assets/screenshots/tube-flyer-gameplay.png" alt="Tube Flyer in progress with the bird flying between green tubes">
+      <br><sub>Guide Tube Flyer through gaps and earn one coin per tube.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="assets/screenshots/crash-wager-selection.png" alt="Crash wager screen with 10, 50, 100, and 500 coin choices">
+      <br><sub>Choose a Crash wager before launching the multiplier.</sub>
+    </td>
+    <td width="50%">
+      <img src="assets/screenshots/crash-cash-out.png" alt="Crash result screen showing a successful cash-out at 1.20x">
+      <br><sub>Cash out before the hidden crash point to secure the payout.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="assets/screenshots/prize-case-entry.png" alt="Prize Case start screen advertising a 500 coin case">
+      <br><sub>Open a 500-coin case containing rare Pokemon and items.</sub>
+    </td>
+    <td width="50%">
+      <img src="assets/screenshots/prize-case-opening.png" alt="Prize Case rarity-colored reward reel while a case is opening">
+      <br><sub>Watch the rarity-colored reel slow onto its selected reward.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="assets/screenshots/prize-case-reward.png" alt="Prize Case reward screen awarding TM Substitute">
+      <br><sub>Collect premium Pokemon, rare TMs, supplies, or the Master Ball jackpot.</sub>
+    </td>
+    <td width="50%"></td>
+  </tr>
+</table>
+
 ### Dedicated Blackjack Lounge
 
 ![The player standing in the dedicated Blackjack Lounge in Celadon Game Corner](assets/screenshots/blackjack-lounge.png)

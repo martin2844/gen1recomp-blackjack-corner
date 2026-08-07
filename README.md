@@ -5,13 +5,26 @@
 
 Blackjack Corner turns Celadon Game Corner into a larger casino destination
 for the [Pokemon Gen 1 Recompilation Project](https://github.com/bryanthaboi/gen1recomp).
-It adds a dedicated blackjack lounge, a full pixel-art card game, larger coin
-exchanges, expanded version-aware Pokemon prizes, persistent shiny upgrades,
-rare items, and a one-time Master Ball.
+It adds a larger two-table casino lounge, full pixel-art blackjack and
+house-banked Texas Hold'em, larger coin exchanges, expanded version-aware
+Pokemon prizes, a shady Pokemon pawn broker, persistent shiny upgrades, rare
+items, a one-time Master Ball, and three original arcade machines.
 
 The mod supports Pokemon Red, Blue, and Yellow. It contains no ROM or
 ROM-derived artwork; world and shiny graphics are generated locally from the
 player's imported game data.
+
+## Version 0.2 highlights
+
+| Area | What the release adds |
+| --- | --- |
+| Casino | A dedicated 20x12 lounge with separate blackjack and Hold'em tables plus three center-floor arcade cabinets |
+| Table games | Blackjack with 3:2 naturals and a house-banked Hold'em game with optional 4x/3x, 2x, and 1x street bets |
+| Arcade | Crash, Tube Flyer, and a 500-coin weighted Prize Case with premium Pokemon and item jackpots |
+| Services | Bulk coin purchases and a pawn broker that stores up to five exact party Pokemon for later redemption |
+| Rewards | Version-exclusive Pokemon, starters, fossils, shiny upgrades, rare TMs, Surfing Pikachu, Dragonite, Mew, and Master Balls |
+| Economy | A 1,000,000-coin Coin Case used consistently by the new games, original slots, and hidden coin pickups |
+| Code quality | Small per-game modules under `games/`, supporting systems under `other/`, and 407 automated checks |
 
 ## Screenshots
 
@@ -54,27 +67,28 @@ player's imported game data.
 
 ## Install
 
-1. Download `blackjack_corner-0.1.0.zip` from the
+1. Download the named `blackjack_corner-<version>.zip` asset from the
    [latest release](https://github.com/martin2844/gen1recomp-blackjack-corner/releases/latest).
    Use the named mod ZIP, not GitHub's automatic source-code archives.
 2. Open Gen1Recomp and choose **MODS > Import mod .zip**.
 3. Select the downloaded ZIP, enable **Blackjack Corner**, and start the game.
 4. Bring the Coin Case to Celadon Game Corner. The new double-door at the
-   lower-left leads to the Blackjack Lounge.
+   lower-left leads to the Casino Lounge.
 
 Requires Gen1Recomp Mod API 2 and an engine version in the range
 `>=0.0.0-0 <2.0.0`.
 
 ## Features
 
-### A dedicated Blackjack Lounge
+### A larger two-table Casino Lounge
 
 - A new double-door in the original Game Corner opens into a separate casino
   room instead of crowding the slot-machine floor.
-- The lounge has an authored wide green table, centered dealer, spectators,
-  betting marks, chips, deck, open approach lane, and reciprocal exit.
-- The complete front rail is interactive, and the dealer can also open the
-  table.
+- The 20x12-cell lounge has separate blackjack and Texas Hold'em tables,
+  dedicated dealers, spectators, a central aisle, and a reciprocal exit.
+- Both tables are compact four-tile-wide assemblies with distinct green and
+  blue felt, betting marks, cards, chips, and fully interactive front rails.
+- Either table's dealer can explain the game and open its screen.
 - Table graphics are built locally from authored pixel primitives and ship no
   copied Pokemon ROM art.
 
@@ -88,8 +102,28 @@ Requires Gen1Recomp Mod API 2 and an engine version in the range
 - Blackjack pays 3:2, ordinary wins pay 1:1, and pushes return the stake.
 - Dealer naturals, player naturals, busts, pushes, and dealer busts have
   distinct outcomes.
-- Payouts safely respect the original 9,999-coin Coin Case limit.
+- Payouts safely respect the expanded 1,000,000-coin Coin Case limit.
 - Persistent internal counts for hands played, hands won, and blackjacks.
+
+### Texas Hold'em against the house
+
+The second table is a progressive, house-banked Texas Hold'em game. It is
+heads-up against the dealer rather than multiplayer poker.
+
+- A shuffled 52-card deck, two private cards each, and a shared five-card
+  board evaluated as the best five-card hand out of seven.
+- Every hand begins with one starting bet.
+- Before the flop, check or add a **3x** or **4x** Play wager.
+- After seeing the three-card flop, play continues: check or add **2x**.
+- After seeing the turn and river, check for a free showdown or add **1x**.
+- The best five-card hand wins, even if it is only a high card.
+- A win pays every committed wager 1:1. An exact tie returns every wager.
+
+Starting-bet choices are 10, 50, 100, or 500 coins. Choosing 10 costs 10 coins
+to deal. Every later bet is optional; unaffordable buttons are disabled while
+Check remains available. Betting the maximum on all three streets risks eight
+times the starting bet. Payouts respect the Coin Case's 1,000,000-coin capacity.
+The mod records Hold'em hands, wins, and royal flushes in its save data.
 
 ### Pixel-art card presentation
 
@@ -105,7 +139,67 @@ Requires Gen1Recomp Mod API 2 and an engine version in the range
 The original coin clerk now offers 50, 250, 500, and 1,000 coins at once, plus
 a capacity-aware **MAX** option. Every selection preserves the original
 exchange rate of ¥1,000 for 50 coins, checks the player's money and Coin Case,
-and never exceeds 9,999 coins.
+and never exceeds the mod's expanded 1,000,000-coin limit. Native recompilation
+saves preserve the full balance; exporting back to a cartridge-format `.sav`
+necessarily clamps it to that format's original 9,999-coin maximum.
+
+The original slot machines and hidden Game Corner coin pickups are patched to
+cross the old 9,999 boundary without dropping or truncating coins.
+
+### Pokemon pawn broker
+
+A shady Rocket behind the original Game Corner counter exchanges party
+Pokemon for coins and keeps them available for later redemption.
+
+- Appraisals combine the species' base stats, the Pokemon's current stats and
+  level, and rarity based on its catch rate.
+- Redeeming a Pokemon costs its original pawn value plus 30%.
+- The exact Pokemon is stored, including nickname, DVs, stats, moves, PP,
+  original trainer data, and other individual state.
+- Redeemed Pokemon return to the party when possible or the PC when the party
+  is full. No coins are charged if all storage is full.
+- One Pokemon must always remain in the party, and the Coin Case must have
+  enough free space to accept the complete appraisal.
+- Up to five pawned Pokemon remain recoverable. Pawning a sixth permanently
+  sells the oldest pawn first, after an explicit confirmation warning.
+
+### Three center-floor arcade machines
+
+Three distinct two-tile cabinets stand between the blackjack and Hold'em
+dealers. Each opens a purpose-built 160x144 screen with hard pixel edges,
+limited Game Boy-inspired palettes, cabinet sounds, and persistent records.
+
+#### Crash
+
+- Choose a 10, 50, 100, or 500-coin wager and launch at 1.00x.
+- The multiplier climbs continuously; press A to cash out before the hidden
+  crash point.
+- The crash distribution uses a 3% house edge, includes immediate 1.00x
+  crashes, and caps extreme rounds at 50.00x.
+- Successful payouts use the multiplier visible at the instant of cash-out
+  and floor fractional coins.
+
+#### Tube Flyer
+
+- Every flight costs exactly 10 coins.
+- Press A or Up to flap through continuously scrolling tube gaps.
+- Every completely passed tube immediately adds one coin, so earned coins are
+  preserved even when the bird later crashes or the player quits the flight.
+- Score, paid coins, and the best flight are tracked independently.
+
+#### Prize Case
+
+- Opening one case costs 500 coins.
+- A 25-card rarity-colored reel spins for 3.75 seconds and eases onto the
+  reward selected by the weighted loot table before the animation begins.
+- The premium Pokemon pool contains Bulbasaur, Charmander, Squirtle, Omanyte,
+  Kabuto, Aerodactyl, Dragonite, Mew, and a special Pikachu that knows Surf.
+- The item pool includes Rare Candy, PP Up, two Max Revives, three rare TMs,
+  and a gold-and-black Master Ball jackpot card.
+- Approximate odds are 27.0% Rare Candy, 20.8% PP Up, 18.7% Max Revives,
+  20.8% combined TMs, 12.5% Pokemon, and 0.1% Master Ball.
+- Pokemon use the same safe party/PC delivery as the Prize Corner. If the
+  selected item or Pokemon cannot be stored, the full 500 coins are refunded.
 
 ### Expanded Pokemon Prize Corner
 
@@ -193,6 +287,8 @@ also rejected without charging coins when the Bag has no room.
 
 ## Controls
 
+### Blackjack
+
 | Screen | Control | Action |
 | --- | --- | --- |
 | Bet selection | Left / Right | Change the stake |
@@ -204,15 +300,64 @@ also rejected without charging coins when the Bag has no room.
 | Result | A | Start another hand |
 | Result | B | Leave the table |
 
+### Arcade machines
+
+| Machine | Stage | Control | Action |
+| --- | --- | --- | --- |
+| Crash | Wager | Left / Right | Change the wager |
+| Crash | Wager | A | Launch |
+| Crash | Running | A | Cash out immediately |
+| Tube Flyer | Ready | A | Pay 10 coins and start |
+| Tube Flyer | Flying | A / Up | Flap |
+| Tube Flyer | Flying | B | End the flight and keep earned coins |
+| Prize Case | Ready | A | Pay 500 coins and open |
+| Any machine | Ready / Result | B | Leave |
+
+### Texas Hold'em
+
+| Stage | Control | Action |
+| --- | --- | --- |
+| Bet-size selection | Left / Right | Change the size of each starting wager |
+| Bet-size selection | A | Pay the shown start cost and deal |
+| Bet-size selection | B | Leave the table |
+| Any decision | Left / Right | Choose an available action |
+| Any decision | A | Confirm Check or Bet |
+| Any street | B | Check immediately |
+| Result | A | Start another hand |
+| Result | B | Leave the table |
+
 ## Compatibility and limitations
 
-- Blackjack Corner needs the Coin Case for blackjack and prize redemption.
-- Splits, insurance, and surrender are not included in version 0.1.0.
+- Blackjack Corner needs the Coin Case for table games, arcade machines,
+  prize redemption, and the pawn broker.
+- Blackjack does not include splits, insurance, or surrender.
+- Texas Hold'em is a custom house-banked game, not multiplayer poker.
 - Mods or total conversions that replace the Celadon Game Corner, Prize Room,
   or their scripts may conflict even if the launcher cannot detect it.
 - Save a backup before combining large content mods.
 
 ## Development
+
+The runtime is organized by feature instead of accumulating logic in the
+entrypoint:
+
+```text
+games/
+  blackjack/    rules.lua  screen.lua  view.lua
+  holdem/       rules.lua  screen.lua  view.lua
+  crash/        rules.lua  screen.lua  view.lua
+  tube_flyer/   rules.lua  screen.lua  view.lua
+  prize_case/   rules.lua  screen.lua  view.lua
+  shared/       ui.lua
+other/
+  pawn/         rules.lua
+  prizes/       catalog.lua
+  coin_case.lua lounge.lua services.lua ui.lua
+main.lua        composition, registration, and hooks only
+```
+
+Modules are loaded through `mod:read()` so the layout remains compatible with
+both unpacked development installs and packaged mod ZIPs.
 
 Clone this repository into a Gen1Recomp checkout so it is located at
 `mods/blackjack_corner`, then run these commands from the Gen1Recomp root:
@@ -221,6 +366,9 @@ Clone this repository into a Gen1Recomp checkout so it is located at
 python3 tools/modkit.py validate mods/blackjack_corner --base fixture
 python3 tools/modkit.py lint mods/blackjack_corner
 luajit mods/blackjack_corner/tests/blackjack_rules_test.lua
+luajit mods/blackjack_corner/tests/holdem_rules_test.lua
+luajit mods/blackjack_corner/tests/pawn_test.lua
+luajit mods/blackjack_corner/tests/arcade_rules_test.lua
 luajit mods/blackjack_corner/tests/blackjack_mod_test.lua
 ```
 

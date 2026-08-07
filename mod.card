@@ -1,19 +1,23 @@
 return {
-  summary = "Blackjack, version-aware Pokemon prizes, shinies, and a Master Ball in Celadon.",
+  summary = "Two table games, three arcade machines, Pokemon pawning, shinies, and rare prizes in Celadon.",
   author = "martin2844",
-  tags = { "minigame", "game-corner", "blackjack", "shiny", "prizes" },
+  tags = { "minigame", "game-corner", "casino", "blackjack", "holdem", "crash", "arcade", "shiny", "prizes" },
   differences = {
     changed = {
-      "the Game Corner gambler runs a blackjack table",
+      "the Game Corner opens into a larger two-table casino lounge",
       "all three Prize Corner counters offer expanded catalogues",
     },
     added = {
       "blackjack with hit, stand, double down, and 3:2 naturals",
+      "house-banked Texas Hold'em with progressive 4x, 3x, 2x, and 1x betting",
+      "a Rocket pawn broker with five recoverable Pokemon slots",
+      "Crash, Tube Flyer, and weighted Prize Case arcade machines",
       "opposite-version exclusives, starters, fossils, and shiny upgrades",
       "a one-time 9,999-coin Master Ball prize",
     },
     known = {
-      "the first release has no split or insurance actions",
+      "blackjack has no split or insurance actions",
+      "Hold'em has no multiplayer or optional Trips side bet",
       "shiny art uses a shared casino-gold treatment rather than species-specific Gen-II colors",
     },
   },

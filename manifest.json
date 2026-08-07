@@ -1,7 +1,7 @@
 {
   "id": "blackjack_corner",
   "name": "Blackjack Corner",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "api": 2,
   "entry": "main.lua",
   "profile": "content",
@@ -15,6 +15,6 @@
   "dependencies": [],
   "optional_dependencies": [],
   "conflicts": [],
-  "description": "Adds blackjack, expanded version-aware prizes, shiny upgrades, and a one-time Master Ball to Celadon Game Corner.",
+  "description": "Expands Celadon with blackjack, Hold'em, Crash, Tube Flyer, prize cases, Pokemon pawning, shinies, and rare prizes.",
   "github": "martin2844/gen1recomp-blackjack-corner"
 }

@@ -1,7 +1,7 @@
 package.path = "./?.lua;./?/init.lua;" .. package.path
 
 local T = require("tests.modkit")
-local Rules = assert(loadfile("mods/blackjack_corner/rules.lua"))()
+local Rules = assert(loadfile("mods/blackjack_corner/games/blackjack/rules.lua"))()
 
 local function card(rank, suit) return { rank = tostring(rank), suit = suit or "S" } end
 local function deck(...)

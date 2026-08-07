@@ -253,7 +253,8 @@ local REASON = {
 function View.draw(state, Font, Rules, coinCount, bets)
   drawTable()
   glyph("BLACKJACK", 8, 8, C.cream, 2)
-  glyph(("C %04d"):format(coinCount), 128, 10, C.gold)
+  local coinLabel = "C " .. tostring(coinCount)
+  glyph(coinLabel, 152 - glyphWidth(coinLabel), 10, C.gold)
 
   if state.phase == "bet" then
     glyph("PLACE YOUR BET", 24, 28, C.cream, 2)
@@ -304,5 +305,7 @@ function View.draw(state, Font, Rules, coinCount, bets)
 end
 
 View.colors = C
+View.glyph = glyph
+View.glyphWidth = glyphWidth
 
 return View

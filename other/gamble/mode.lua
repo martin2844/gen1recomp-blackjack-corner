@@ -12,6 +12,17 @@ local BALL_NAMES = {
   "OAKSLAB_BULBASAUR_POKE_BALL", "OAKSLAB_EEVEE_POKE_BALL",
 }
 
+local OAK_GAMBLE_TEXTS = {
+  _OaksLabRivalFedUpWithWaitingText =
+    "{RIVAL}: Gramps!\nCan we gamble\nalready?",
+  _OaksLabOakChooseMonText =
+    "OAK: Choosing is\nsafe.\fSafe is terribly\ndull!\fSpin the roulette,\n{PLAYER}!\fGamble for your\nfirst POKéMON!",
+  _OaksLabRivalWhatAboutMeText =
+    "{RIVAL}: Hey!\nI want a spin too!",
+  _OaksLabOakBePatientText =
+    "OAK: That's the\nspirit, {RIVAL}!\fNever let {PLAYER}\nhoard the action.\fYou gamble next!",
+}
+
 local function copyParty(party)
   local out = {}
   for index, slot in ipairs(party or {}) do
@@ -65,6 +76,29 @@ function Gamble.install(mod, opts)
     end
   end
 
+  local function applyOakDialogue(game)
+    local data = game and game.data
+    local text = data and data.text
+    if not text then return end
+    data._blackjackCornerOriginalOakTexts =
+      data._blackjackCornerOriginalOakTexts or {}
+    local originals = data._blackjackCornerOriginalOakTexts
+    for key, value in pairs(OAK_GAMBLE_TEXTS) do
+      if originals[key] == nil then originals[key] = text[key] or false end
+      text[key] = value
+    end
+  end
+
+  local function restoreOakDialogue(game)
+    local data = game and game.data
+    local text, originals = data and data.text,
+      data and data._blackjackCornerOriginalOakTexts
+    if not text or not originals then return end
+    for key in pairs(OAK_GAMBLE_TEXTS) do
+      text[key] = originals[key] == false and nil or originals[key]
+    end
+  end
+
   mod.hooks:wrap("intro.oak_speech.build", function(next, steps, speech)
     steps = next(steps, speech)
     mod.ui.insertStepAfter(steps, "oak_welcome", {
@@ -84,8 +118,10 @@ function Gamble.install(mod, opts)
       save.inventory.COIN_CASE = math.max(1, save.inventory.COIN_CASE or 0)
       save.coins = math.max(100, tonumber(save.coins) or 0)
       applyLabSprites(ev.speech.game)
+      applyOakDialogue(ev.speech.game)
     elseif ev.speech and ev.speech.game then
       restoreLabSprites(ev.speech.game)
+      restoreOakDialogue(ev.speech.game)
     end
   end)
 
@@ -120,14 +156,14 @@ function Gamble.install(mod, opts)
         and (game.save.flags.EVENT_FOLLOWED_OAK_INTO_LAB
           or game.save.flags.EVENT_FOLLOWED_OAK_INTO_LAB_2
           or game.save.flags.EVENT_OAK_ASKED_TO_CHOOSE_MON) then
-      opts.text(game, "No choosing today.\fThe roulette gives\nyou one POKEMON.\fYour rival spins\nseparately.", done)
+      opts.text(game, "No choosing today!\fAny fool can pick.\fA bold trainer lets\nluck decide.\fSpin for your first\nPOKéMON!", done)
       return
     end
     return runBase("TEXT_OAKSLAB_OAK1", game, ow, npc, done)
   end
   talk.TEXT_OAKSLAB_RIVAL = function(game, ow, npc, done)
     if active() and not game.save.flags.EVENT_GOT_STARTER then
-      opts.text(game, "Fine by me!\fI'll win with\nwhatever I roll.", done)
+      opts.text(game, "Now you're talking!\fI'll gamble too--\nand still beat you.", done)
       return
     end
     return runBase("TEXT_OAKSLAB_RIVAL", game, ow, npc, done)
@@ -219,7 +255,13 @@ function Gamble.install(mod, opts)
   mod.events:on("game.ready", function(ev)
     local game = ev and ev.game
     if not game then return end
-    if active() then applyLabSprites(game) else restoreLabSprites(game) end
+    if active() then
+      applyLabSprites(game)
+      applyOakDialogue(game)
+    else
+      restoreLabSprites(game)
+      restoreOakDialogue(game)
+    end
   end)
 
   return { active = active, complete = complete }

@@ -6,6 +6,7 @@ Roulette.STRIP_LENGTH = 21
 Roulette.WINNER_INDEX = 17
 Roulette.CARD_STEP = 52
 Roulette.STOP_OFFSET = (Roulette.WINNER_INDEX - 1) * Roulette.CARD_STEP
+Roulette.RESPIN_COST = 1000
 
 local EXCLUDED = {
   ARTICUNO = true, ZAPDOS = true, MOLTRES = true, MEWTWO = true, MEW = true,
@@ -14,6 +15,10 @@ local EXCLUDED = {
 -- These two legal base-stage rolls otherwise have no damaging move at level 5
 -- and can strand a new save before Poké Balls or another party member exist.
 Roulette.FALLBACK_MOVES = { ABRA = "CONFUSION", MAGIKARP = "TACKLE" }
+
+function Roulette.canRespin(money)
+  return math.floor(tonumber(money) or 0) >= Roulette.RESPIN_COST
+end
 
 function Roulette.pool(pokemonData)
   local evolved = {}

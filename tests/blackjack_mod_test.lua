@@ -66,8 +66,12 @@ T.check(api and api.rules and api.holdem_rules and api.holdem_view and api.catal
     and api.redeemPokemon and api.pawnLedger and api.crash_rules
     and api.flappy_rules and api.case_rules and api.giveCaseReward
     and api.horse_rules and api.plinko_rules and api.roulette_rules
+    and api.roulette_view
     and api.gamble and api.gym_cases,
   "games, prizes, coin exchange, pawning, and arcade rules are exported")
+T.check(api.roulette_view.RESULT_BUTTON_Y
+    + api.roulette_view.RESULT_BUTTON_HEIGHT <= api.roulette_view.FRAME_CONTENT_BOTTOM,
+  "the starter result button stays fully inside the visible frame")
 
 do
   local steps = { { id = "oak_welcome", kind = "say" } }
@@ -78,6 +82,12 @@ do
   T.eq(built[2].kind, "yesno", "Gamble Mode is an explicit yes-or-no choice")
   T.check(built[2].defaultNo, "ordinary rules remain the safe default")
 
+  run.data.text._OaksLabOakChooseMonText =
+    "OAK: There are 3\nPOKEMON here!"
+  run.data.text._OaksLabOakBePatientText =
+    "OAK: Be patient!\nYou can have one too!"
+  local originalOakChoice = run.data.text._OaksLabOakChooseMonText
+  local originalOakRival = run.data.text._OaksLabOakBePatientText
   local introGame = { data = run.data, save = { inventory = {}, coins = 0 } }
   Runtime.emit("intro.oak_speech.answered", {
     saveKey = "gamble_mode", value = true, speech = { game = introGame },
@@ -86,6 +96,12 @@ do
     "Gamble Mode starts the player with a Coin Case")
   T.eq(introGame.save.coins, 100,
     "Gamble Mode supplies a small starting stake")
+  T.check(not run.data.text._OaksLabOakChooseMonText:find("3\nPOK", 1, true),
+    "Gamble Mode removes Oak's three-Pokemon choice speech")
+  T.check(run.data.text._OaksLabOakChooseMonText:find("Gamble", 1, true) ~= nil,
+    "Gamble Mode makes Oak pitch the starter roulette")
+  T.check(run.data.text._OaksLabOakBePatientText:find("gamble", 1, true) ~= nil,
+    "Oak explicitly encourages the rival to gamble too")
   for index, object in ipairs(run.data.maps.OAKS_LAB.objects) do
     T.eq(object.sprite, ("SPRITE_STARTER_ROULETTE_%02d"):format(index),
       "Oak's three gift balls become one roulette cabinet")
@@ -97,6 +113,10 @@ do
     T.eq(object.sprite, "SPRITE_POKE_BALL",
       "declining Gamble Mode restores Oak's ordinary gift-ball art")
   end
+  T.eq(run.data.text._OaksLabOakChooseMonText, originalOakChoice,
+    "declining Gamble Mode restores Oak's ordinary starter speech")
+  T.eq(run.data.text._OaksLabOakBePatientText, originalOakRival,
+    "declining Gamble Mode restores Oak's ordinary rival speech")
 end
 
 do
@@ -712,7 +732,7 @@ do
 end
 
 do
-  local game = gameWith(100)
+  local game = gameWith(100, 3000)
   game.input = noInput
   local screen = run.data.screens.BlackjackCornerStarterRoulette.new(game, {})
   screen:start()
@@ -720,7 +740,14 @@ do
   T.eq(screen.strip[api.roulette_rules.WINNER_INDEX], screen.playerStarter,
     "the starter reel stops on the predetermined player roll")
   screen:settle()
-  T.eq(screen.phase, "result", "a starter spin settles successfully")
+  T.eq(screen.phase, "offer", "a starter spin pauses for a keep-or-reroll choice")
+  T.eq(#game.save.party, 0, "the rolled starter is not awarded before acceptance")
+  T.check(screen:respin(), "an affordable starter reroll begins")
+  T.eq(game.save.money, 2000, "a starter reroll charges exactly one thousand")
+  T.eq(screen.phase, "spinning", "a paid reroll restarts the animated reel")
+  screen:settle()
+  screen:accept()
+  T.eq(screen.phase, "result", "accepting the final roll settles successfully")
   T.eq(#game.save.party, 1, "the rolled starter reaches the player's party")
   T.check(game.save.flags.EVENT_GOT_STARTER,
     "settling the roulette unlocks Oak's Lab exit flow")
@@ -730,8 +757,18 @@ do
   local duplicate = run.data.screens.BlackjackCornerStarterRoulette.new(game, {})
   duplicate.playerStarter, duplicate.rivalStarter = "FIXMON_A", "FIXMON_B"
   duplicate:settle()
+  duplicate:accept()
   T.eq(duplicate.phase, "failed", "the roulette refuses a second starter")
   T.eq(#game.save.party, 1, "a refused second spin cannot duplicate the starter")
+
+  local poor = gameWith(100, 999)
+  poor.input = noInput
+  local unaffordable = run.data.screens.BlackjackCornerStarterRoulette.new(poor, {})
+  unaffordable:start()
+  unaffordable:settle()
+  T.check(not unaffordable:respin(), "an unaffordable starter reroll is refused")
+  T.eq(poor.save.money, 999, "a refused starter reroll takes no money")
+  T.eq(unaffordable.phase, "offer", "a refused reroll keeps the current offer")
 end
 
 do

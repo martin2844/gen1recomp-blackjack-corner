@@ -323,6 +323,7 @@ return function(mod)
   mod.exports.crash_rules, mod.exports.flappy_rules = CrashRules, FlappyRules
   mod.exports.case_rules, mod.exports.giveCaseReward = CaseRules, Service.giveCaseReward
   mod.exports.horse_rules, mod.exports.plinko_rules = HorseRules, PlinkoRules
-  mod.exports.roulette_rules, mod.exports.gamble = RouletteRules, Gamble
+  mod.exports.roulette_rules, mod.exports.roulette_view = RouletteRules, RouletteView
+  mod.exports.gamble = Gamble
   mod.exports.gym_cases = Gym
 end

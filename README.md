@@ -138,11 +138,15 @@ complete remix.
 - The player's starter is drawn from every base-stage, non-legendary Gen 1
   species. Unevolved species that never evolve are valid, so the result can
   range from Caterpie or Magikarp to Lapras, Snorlax, or Aerodactyl.
+- Every roll can be kept for free or rerolled for ¥1,000. A reroll spends
+  ordinary money rather than casino coins, and the current Pokemon remains
+  available until the player confirms KEEP.
 - Magikarp and Abra remain possible, but receive Tackle or Confusion at level 5
   so an unlucky spin cannot make the opening battle unwinnable.
 - The rival receives a separate roll and cannot receive the exact same result.
   Their starter follows its evolution line as later rival teams gain levels.
-- Oak and the rival use new dialogue that makes the no-choice rules explicit.
+- Oak becomes a witty gambling evangelist who replaces the three-Pokemon
+  choice speech and encourages both the player and rival to trust the wheel.
 - Every Gym Leader still awards the correct badge, but the direct TM is
   replaced by one animated Gym Case.
 
@@ -461,7 +465,9 @@ also rejected without charging coins when the Bag has no room.
 
 | Screen | Control | Action |
 | --- | --- | --- |
-| Starter Roulette | A or B after the result | Accept the rolled starter and return to Oak's Lab |
+| Starter Roulette | Left / Right or Up / Down | Choose KEEP or SPIN ¥1000 |
+| Starter Roulette | A | Confirm the highlighted option |
+| Starter Roulette | B | Safely keep the current roll |
 | Gym Case | A after the reel | Accept the reward and close the one-use case |
 | Saved Gym Case | Start menu > GYM CASE | Retry delivery of the exact saved reward |
 

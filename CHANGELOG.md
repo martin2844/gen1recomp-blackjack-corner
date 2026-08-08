@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- The starter roulette now pauses on each roll and lets the player either keep
+  that Pokemon or spend ¥1,000 for another spin. The Pokemon is not awarded
+  until KEEP is confirmed, and unaffordable rerolls are visibly disabled.
+- Gamble Mode rewrites Oak's complete laboratory introduction: he no longer
+  mentions three Pokemon, treats choosing as boring, and enthusiastically
+  encourages both the player and rival to gamble for their starters.
+
+### Fixed
+
+- The starter confirmation screen now keeps its result text and CONTINUE
+  button fully inside the visible Game Boy frame.
+
 ## [0.3.0] - 2026-08-08
 
 ### Added

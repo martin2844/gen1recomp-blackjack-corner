@@ -9,7 +9,8 @@ return function(mod)
   local paths = {
     blackjack = "games/blackjack/", holdem = "games/holdem/",
     crash = "games/crash/", tube = "games/tube_flyer/",
-    case = "games/prize_case/",
+    case = "games/prize_case/", horse = "games/horse_racing/",
+    plinko = "games/plinko/", roulette = "games/starter_roulette/",
   }
   local Rules = loadLocal(mod, paths.blackjack .. "rules.lua")
   local BlackjackView = loadLocal(mod, paths.blackjack .. "view.lua")
@@ -18,16 +19,25 @@ return function(mod)
   local CrashRules = loadLocal(mod, paths.crash .. "rules.lua")
   local FlappyRules = loadLocal(mod, paths.tube .. "rules.lua")
   local CaseRules = loadLocal(mod, paths.case .. "rules.lua")
+  local HorseRules = loadLocal(mod, paths.horse .. "rules.lua")
+  local PlinkoRules = loadLocal(mod, paths.plinko .. "rules.lua")
+  local RouletteRules = loadLocal(mod, paths.roulette .. "rules.lua")
   local ArcadeUI = loadLocal(mod, "games/shared/ui.lua")
   local CrashView = loadLocal(mod, paths.crash .. "view.lua")(ArcadeUI)
   local TubeView = loadLocal(mod, paths.tube .. "view.lua")(ArcadeUI)
   local CaseView = loadLocal(mod, paths.case .. "view.lua")(ArcadeUI)
+  local HorseView = loadLocal(mod, paths.horse .. "view.lua")(ArcadeUI)
+  local PlinkoView = loadLocal(mod, paths.plinko .. "view.lua")(ArcadeUI)
+  local RouletteView = loadLocal(mod, paths.roulette .. "view.lua")(ArcadeUI)
   local Catalog = loadLocal(mod, "other/prizes/catalog.lua")
   local Pawn = loadLocal(mod, "other/pawn/rules.lua")
   local Services = loadLocal(mod, "other/services.lua")
   local UIFactory = loadLocal(mod, "other/ui.lua")
   local CoinCase = loadLocal(mod, "other/coin_case.lua")
   local Lounge = loadLocal(mod, "other/lounge.lua")
+  local GambleMode = loadLocal(mod, "other/gamble/mode.lua")
+  local GymCases = loadLocal(mod, "other/gamble/gym_cases.lua")
+  local PalletCasino = loadLocal(mod, "other/pallet_casino.lua")
   local Stats = require("src.pokemon.Stats")
   local Sound = require("src.core.Sound")
 
@@ -39,7 +49,12 @@ return function(mod)
     crash = "BlackjackCornerCrash",
     tube = "BlackjackCornerTubeFlyer",
     case = "BlackjackCornerPrizeCase",
+    horse = "BlackjackCornerHorseRacing",
+    plinko = "BlackjackCornerPlinko",
+    roulette = "BlackjackCornerStarterRoulette",
+    gymCase = "BlackjackCornerGymCase",
     lounge = "BLACKJACK_LOUNGE",
+    pallet = "PALLET_CASINO",
   }
   local config = {
     coinCap = 1000000,
@@ -89,10 +104,35 @@ return function(mod)
     rewardPool = function(game) return Service.caseRewardPool(game, CaseRules) end,
     giveReward = Service.giveCaseReward,
   }))
+  local HorseRacing = loadLocal(mod, paths.horse .. "screen.lua")(context({
+    rules = HorseRules, view = HorseView,
+  }))
+  local Plinko = loadLocal(mod, paths.plinko .. "screen.lua")(context({
+    rules = PlinkoRules, view = PlinkoView,
+  }))
+
+  local Gamble = GambleMode.install(mod, {
+    rules = RouletteRules, service = Service, screenId = ids.roulette,
+    text = UI.text,
+  })
+  local StarterRoulette = loadLocal(mod, paths.roulette .. "screen.lua")({
+    mod = mod, rules = RouletteRules, view = RouletteView,
+    close = UI.close, play = play, complete = Gamble.complete,
+  })
+  local Gym = GymCases.install(mod, { active = Gamble.active, screenId = ids.gymCase })
+  local GymCase = loadLocal(mod, paths.case .. "screen.lua")(context({
+    rules = GymCases.rules(CaseRules), view = CaseView, cost = 0,
+    title = "GYM CASE", autoOpen = true, oneShot = true,
+    counterKey = "gym_cases_opened", rewardPool = Gym.pool,
+    giveReward = Service.giveCaseReward, onChosen = Gym.onChosen,
+    onDelivered = Gym.onDelivered,
+  }))
 
   for screen, class in pairs({
     [ids.blackjack] = Blackjack, [ids.holdem] = Holdem,
     [ids.crash] = Crash, [ids.tube] = TubeFlyer, [ids.case] = PrizeCase,
+    [ids.horse] = HorseRacing, [ids.plinko] = Plinko,
+    [ids.roulette] = StarterRoulette, [ids.gymCase] = GymCase,
   }) do mod.content.screens:register(screen, { new = class.new }) end
   mod.content.screens:register(ids.pokemon, { new = UI.pokemonMenu })
   mod.content.screens:register(ids.item, { new = UI.itemMenu })
@@ -108,7 +148,7 @@ return function(mod)
       })
     end
   end
-  for _, machine in ipairs({ "crash", "flappy", "case" }) do
+  for _, machine in ipairs({ "crash", "flappy", "case", "horse", "plinko" }) do
     for piece = 1, 2 do
       mod.content.sprites:register(("SPRITE_ARCADE_%s_%02d")
         :format(machine:upper(), piece), {
@@ -117,12 +157,28 @@ return function(mod)
         })
     end
   end
+  for piece = 1, 3 do
+    mod.content.sprites:register(("SPRITE_STARTER_ROULETTE_%02d"):format(piece), {
+      image = ("save/mod-derived/blackjack_corner/world/starter_roulette_%02d.png")
+        :format(piece), frames = 1, trueColor = true,
+    })
+  end
   Lounge.register(mod, ids.lounge)
+  PalletCasino.register(mod, ids)
 
   mod.content.map_scripts:register("GAME_CORNER", { talk = {
     TEXT_GAMECORNER_CLERK1 = UI.coinClerk,
     TEXT_GAMECORNER_CLERK = UI.coinClerk,
     TEXT_PAWN_BROKER = UI.pawnBroker,
+    TEXT_CASINO_DEBTOR = function(game, _, _, done)
+      UI.text(game, "I had a winning\nsystem yesterday.\fToday I sold my\nBIKE to test it.", done)
+    end,
+    TEXT_CASINO_DREAMER = function(game, _, _, done)
+      UI.text(game, "One jackpot and\nI'm leaving town.\fThat's what I said\nlast month.", done)
+    end,
+    TEXT_CASINO_REGULAR = function(game, _, _, done)
+      UI.text(game, "The floor hides\ncoins sometimes.\fPeople stare at\nscreens, not down.", done)
+    end,
     TEXT_BLACKJACK_LOUNGE_SIGN = function(game, _, _, done)
       UI.text(game, "CASINO LOUNGE\nTwo tables open!", done)
     end,
@@ -164,6 +220,46 @@ return function(mod)
     end,
     TEXT_CASE_MACHINE = function(game, _, _, done)
       open(game, "PRIZE CASE!\f500 coins opens\none mystery prize.", ids.case, done)
+    end,
+    TEXT_LOUNGE_COLD_STREAK = function(game, _, _, done)
+      UI.text(game, "Seven cold hands.\fThe eighth has to\nturn around... right?", done)
+    end,
+    TEXT_LOUNGE_CARD_COUNTER = function(game, _, _, done)
+      UI.text(game, "I count every card.\fThen panic and bet\nthe wrong table.", done)
+    end,
+    TEXT_LOUNGE_LAST_CHIP = function(game, _, _, done)
+      UI.text(game, "This is my last\nchip.\fI've said that\nthree times tonight.", done)
+    end,
+  } })
+
+  mod.content.map_scripts:register("PALLET_TOWN", { talk = {
+    TEXT_PALLET_CASINO_SIGN = function(game, _, _, done)
+      UI.text(game, "PALLET CASINO\nLuck starts here.\fRegret starts\ninside.", done)
+    end,
+  } })
+  mod.content.map_scripts:register(ids.pallet, { talk = {
+    TEXT_HORSE_RACING = function(game, _, _, done)
+      open(game, "LIVE RACE TV!\fPick a runner and\nback it with coins.", ids.horse, done)
+    end,
+    TEXT_PLINKO = function(game, _, _, done)
+      open(game, "PLINKO!\fDrop the ball.\nTrust the pegs.", ids.plinko, done)
+    end,
+    TEXT_CASE_MACHINE = function(game, _, _, done)
+      open(game, "PRIZE CASE!\f500 coins opens\none mystery prize.", ids.case, done)
+    end,
+    TEXT_PALLET_CASINO_PAWN = UI.pawnBroker,
+    TEXT_PALLET_CASINO_CLERK = UI.coinClerk,
+    TEXT_PALLET_CASINO_GRANNY = function(game, _, _, done)
+      UI.text(game, "I came for milk.\fThat was six hours\nago.", done)
+    end,
+    TEXT_PALLET_CASINO_GAMBLER = function(game, _, _, done)
+      UI.text(game, "COMET is safe.\fSafe bets are how\nthey get you.", done)
+    end,
+    TEXT_PALLET_CASINO_YOUNGSTER = function(game, _, _, done)
+      UI.text(game, "Mom thinks I'm at\nPROF.OAK's lab.\fDon't tell her.", done)
+    end,
+    TEXT_PALLET_CASINO_LOSER = function(game, _, _, done)
+      UI.text(game, "I pawned my best\nPOKEMON.\fThirty percent feels\nvery far away.", done)
     end,
   } })
 
@@ -226,4 +322,7 @@ return function(mod)
     Service.pawnPokemon, Service.redeemPokemon
   mod.exports.crash_rules, mod.exports.flappy_rules = CrashRules, FlappyRules
   mod.exports.case_rules, mod.exports.giveCaseReward = CaseRules, Service.giveCaseReward
+  mod.exports.horse_rules, mod.exports.plinko_rules = HorseRules, PlinkoRules
+  mod.exports.roulette_rules, mod.exports.gamble = RouletteRules, Gamble
+  mod.exports.gym_cases = Gym
 end

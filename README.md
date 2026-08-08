@@ -3,28 +3,32 @@
 [![Latest release](https://img.shields.io/github/v/release/martin2844/gen1recomp-blackjack-corner)](https://github.com/martin2844/gen1recomp-blackjack-corner/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Blackjack Corner turns Celadon Game Corner into a larger casino destination
-for the [Pokemon Gen 1 Recompilation Project](https://github.com/bryanthaboi/gen1recomp).
-It adds a larger two-table casino lounge, full pixel-art blackjack and
-house-banked Texas Hold'em, larger coin exchanges, expanded version-aware
-Pokemon prizes, a shady Pokemon pawn broker, persistent shiny upgrades, rare
-items, a one-time Master Ball, and three original arcade machines.
+Blackjack Corner turns Pokemon Gen 1 into a living casino remix for the
+[Pokemon Gen 1 Recompilation Project](https://github.com/bryanthaboi/gen1recomp).
+Its optional Gamble Mode reaches from Oak's Lab to every Gym: the starter is
+random, the rival rolls separately, Gym TMs become mystery cases, and Pallet
+Town gains its own gloomy casino. Celadon's expanded floor remains the main
+destination, with blackjack, house-banked Texas Hold'em, Crash, Tube Flyer,
+Prize Cases, animated horse racing, Plinko, Pokemon pawning, shinies, rare
+items, and a one-time Master Ball.
 
 The mod supports Pokemon Red, Blue, and Yellow. It contains no ROM or
 ROM-derived artwork; world and shiny graphics are generated locally from the
 player's imported game data.
 
-## Version 0.2 highlights
+## Version 0.3 highlights
 
 | Area | What the release adds |
 | --- | --- |
-| Casino | A dedicated 20x12 lounge with separate blackjack and Hold'em tables plus three center-floor arcade cabinets |
-| Table games | Blackjack with 3:2 naturals and a house-banked Hold'em game with optional 4x/3x, 2x, and 1x street bets |
-| Arcade | Crash, Tube Flyer, and a 500-coin weighted Prize Case with premium Pokemon and item jackpots |
+| Adventure | Optional save-scoped Gamble Mode changes the starter, rival team, and all eight Gym Leader rewards |
+| Pallet Town | A new early-game mini-casino with horse racing, Plinko, Prize Cases, coin sales, pawning, gamblers, and hidden coins |
+| Celadon | A dedicated 20x12 lounge with separate blackjack and Hold'em tables plus three center-floor arcade cabinets |
+| Seven games | Blackjack, Hold'em, Crash, Tube Flyer, Prize Case, animated horse racing, and Plinko |
 | Services | Bulk coin purchases and a pawn broker that stores up to five exact party Pokemon for later redemption |
 | Rewards | Version-exclusive Pokemon, starters, fossils, shiny upgrades, rare TMs, Surfing Pikachu, Dragonite, Mew, and Master Balls |
 | Economy | A 1,000,000-coin Coin Case used consistently by the new games, original slots, and hidden coin pickups |
-| Code quality | Small per-game modules under `games/`, supporting systems under `other/`, and 407 automated checks |
+| Atmosphere | Ten new gamblers and staff plus eight new one-time floor pickups across three casino interiors |
+| Code quality | Small per-game modules under `games/`, supporting systems under `other/`, and 506 automated checks |
 
 ## Screenshots
 
@@ -32,7 +36,7 @@ player's imported game data.
 
 ![The expanded Casino Lounge with blackjack, Texas Hold'em, and three arcade machines](assets/screenshots/expanded-casino-floor.png)
 
-### New Games and Services
+### Games and Services
 
 <table>
   <tr>
@@ -42,43 +46,43 @@ player's imported game data.
     </td>
     <td width="50%">
       <img src="assets/screenshots/pawn-broker-appraisals.png" alt="Pawn Pokemon menu showing individual coin appraisals and five storage slots">
-      <br><sub>Compare individual appraisals and manage up to five recoverable Pokemon.</sub>
+      <br><sub>Compare appraisals and manage up to five recoverable Pokemon.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%">
       <img src="assets/screenshots/holdem-straight-win.png" alt="Texas Hold'em result screen showing a winning straight">
-      <br><sub>Play progressive, house-banked Hold'em through the showdown.</sub>
+      <br><sub>Play progressive house-banked Hold'em through showdown.</sub>
     </td>
     <td width="50%">
-      <img src="assets/screenshots/tube-flyer-gameplay.png" alt="Tube Flyer in progress with the bird flying between green tubes">
-      <br><sub>Guide Tube Flyer through gaps and earn one coin per tube.</sub>
+      <img src="assets/screenshots/tube-flyer-gameplay.png" alt="Tube Flyer in progress between green tubes">
+      <br><sub>Guide Tube Flyer through gaps for one coin per tube.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%">
-      <img src="assets/screenshots/crash-wager-selection.png" alt="Crash wager screen with 10, 50, 100, and 500 coin choices">
+      <img src="assets/screenshots/crash-wager-selection.png" alt="Crash wager screen with four coin choices">
       <br><sub>Choose a Crash wager before launching the multiplier.</sub>
     </td>
     <td width="50%">
-      <img src="assets/screenshots/crash-cash-out.png" alt="Crash result screen showing a successful cash-out at 1.20x">
-      <br><sub>Cash out before the hidden crash point to secure the payout.</sub>
+      <img src="assets/screenshots/crash-cash-out.png" alt="Crash result after a successful cash-out">
+      <br><sub>Cash out before the hidden crash point.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%">
-      <img src="assets/screenshots/prize-case-entry.png" alt="Prize Case start screen advertising a 500 coin case">
+      <img src="assets/screenshots/prize-case-entry.png" alt="Prize Case start screen">
       <br><sub>Open a 500-coin case containing rare Pokemon and items.</sub>
     </td>
     <td width="50%">
-      <img src="assets/screenshots/prize-case-opening.png" alt="Prize Case rarity-colored reward reel while a case is opening">
-      <br><sub>Watch the rarity-colored reel slow onto its selected reward.</sub>
+      <img src="assets/screenshots/prize-case-opening.png" alt="Prize Case rarity-colored reel">
+      <br><sub>Watch the reel slow onto its selected reward.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%">
-      <img src="assets/screenshots/prize-case-reward.png" alt="Prize Case reward screen awarding TM Substitute">
-      <br><sub>Collect premium Pokemon, rare TMs, supplies, or the Master Ball jackpot.</sub>
+      <img src="assets/screenshots/prize-case-reward.png" alt="Prize Case reward screen">
+      <br><sub>Collect Pokemon, rare TMs, supplies, or the jackpot.</sub>
     </td>
     <td width="50%"></td>
   </tr>
@@ -86,38 +90,20 @@ player's imported game data.
 
 ### Dedicated Blackjack Lounge
 
-![The player standing in the dedicated Blackjack Lounge in Celadon Game Corner](assets/screenshots/blackjack-lounge.png)
+![The player standing in the dedicated Blackjack Lounge](assets/screenshots/blackjack-lounge.png)
 
 <table>
   <tr>
-    <td width="50%">
-      <img src="assets/screenshots/blackjack-bet-selection.png" alt="Blackjack bet selection with four pixel-art betting chips">
-      <br><sub>Choose a 10, 50, 100, or 500-coin bet.</sub>
-    </td>
-    <td width="50%">
-      <img src="assets/screenshots/blackjack-hand-actions.png" alt="A live blackjack hand with Hit, Stand, and Double actions">
-      <br><sub>Play a hand using Hit, Stand, or Double.</sub>
-    </td>
+    <td width="50%"><img src="assets/screenshots/blackjack-bet-selection.png" alt="Blackjack bet selection"><br><sub>Choose a 10, 50, 100, or 500-coin bet.</sub></td>
+    <td width="50%"><img src="assets/screenshots/blackjack-hand-actions.png" alt="Live blackjack hand"><br><sub>Play using Hit, Stand, or Double.</sub></td>
   </tr>
   <tr>
-    <td width="50%">
-      <img src="assets/screenshots/blackjack-win-result.png" alt="Blackjack win screen after the dealer busts">
-      <br><sub>Distinct results explain each hand and payout.</sub>
-    </td>
-    <td width="50%">
-      <img src="assets/screenshots/shiny-upgrade-choice.png" alt="Pokemon Prize Corner offering normal and shiny redemption choices">
-      <br><sub>Upgrade any Pokemon prize to a persistent shiny.</sub>
-    </td>
+    <td width="50%"><img src="assets/screenshots/blackjack-win-result.png" alt="Blackjack win screen"><br><sub>Each result explains the hand and payout.</sub></td>
+    <td width="50%"><img src="assets/screenshots/shiny-upgrade-choice.png" alt="Normal and shiny prize choices"><br><sub>Upgrade any Pokemon prize to a persistent shiny.</sub></td>
   </tr>
   <tr>
-    <td width="50%">
-      <img src="assets/screenshots/coin-clerk-bulk-purchases.png" alt="Game Corner coin clerk offering larger bulk coin purchases">
-      <br><sub>Buy larger coin bundles without repeating the original exchange.</sub>
-    </td>
-    <td width="50%">
-      <img src="assets/screenshots/pokemon-prize-list.png" alt="Expanded Pokemon prize list with aligned names and coin prices">
-      <br><sub>Browse expanded prizes with clean, level-free price rows.</sub>
-    </td>
+    <td width="50%"><img src="assets/screenshots/coin-clerk-bulk-purchases.png" alt="Bulk coin purchases"><br><sub>Buy larger coin bundles in one exchange.</sub></td>
+    <td width="50%"><img src="assets/screenshots/pokemon-prize-list.png" alt="Expanded Pokemon prize list"><br><sub>Browse clean, level-free prize rows.</sub></td>
   </tr>
 </table>
 
@@ -128,13 +114,97 @@ player's imported game data.
    Use the named mod ZIP, not GitHub's automatic source-code archives.
 2. Open Gen1Recomp and choose **MODS > Import mod .zip**.
 3. Select the downloaded ZIP, enable **Blackjack Corner**, and start the game.
-4. Bring the Coin Case to Celadon Game Corner. The new double-door at the
-   lower-left leads to the Casino Lounge.
+4. Start a new game and answer **YES** to Oak's Gamble Mode prompt for the
+   full-adventure remix. Answer **NO** to keep normal story progression while
+   retaining the Celadon casino expansion.
+5. Gamble Mode starts with a Coin Case and 100 coins. Pallet's new southwest
+   casino is immediately available; Celadon's double-door leads to the larger
+   Casino Lounge later in the adventure.
 
 Requires Gen1Recomp Mod API 2 and an engine version in the range
 `>=0.0.0-0 <2.0.0`.
 
 ## Features
+
+### Optional Gamble Mode
+
+Professor Oak asks whether to enable Gamble Mode before the new adventure
+begins. The choice belongs to that save: choosing **NO** leaves Oak's starter
+selection and all Gym TM rewards untouched, while choosing **YES** enables the
+complete remix.
+
+- The player starts with a Coin Case and 100 coins.
+- Oak's Lab replaces the gift Poké Balls with a three-piece roulette cabinet.
+- The player's starter is drawn from every base-stage, non-legendary Gen 1
+  species. Unevolved species that never evolve are valid, so the result can
+  range from Caterpie or Magikarp to Lapras, Snorlax, or Aerodactyl.
+- Magikarp and Abra remain possible, but receive Tackle or Confusion at level 5
+  so an unlucky spin cannot make the opening battle unwinnable.
+- The rival receives a separate roll and cannot receive the exact same result.
+  Their starter follows its evolution line as later rival teams gain levels.
+- Oak and the rival use new dialogue that makes the no-choice rules explicit.
+- Every Gym Leader still awards the correct badge, but the direct TM is
+  replaced by one animated Gym Case.
+
+Gamble Mode is selected only during a new-game introduction. Existing saves
+are never silently converted.
+
+### Gym Leader prize cases
+
+Each of the eight badges unlocks one persistent, zero-cost Gym Case. Its reel
+contains exactly one final reward:
+
+- The defeated leader's original TM has the strongest individual weight.
+- TMs from earlier defeated Gyms remain possible, expanding the pool as the
+  adventure continues.
+- Pokemon rewards begin with Nidoran, Pikachu, and Abra, then grow to Eevee,
+  all three starters, both fossils, Dratini, and Aerodactyl.
+- The selected reward is saved as soon as the reel begins. If the Bag, party,
+  and PC cannot accept it, **GYM CASE** appears in the Start menu so the exact
+  same prize can be claimed later.
+- A Gym Case never charges coins and never replaces the leader's badge or
+  post-battle progression.
+
+### Pallet Town mini-casino
+
+A new building in Pallet's southwest clearing creates an intentionally seedy
+early-game casino floor. It is available immediately in Gamble Mode and
+contains everything needed to enter the economy without waiting for Celadon:
+
+- A live race terminal, an animated Plinko board, and a 500-coin Prize Case.
+- A bulk coin clerk using the original exchange rate.
+- A Rocket pawn broker who accepts party Pokemon under the same five-ticket,
+  30%-redemption rules as Celadon.
+- Four wandering patrons with original dialogue about bad systems, hidden
+  debts, and Pokemon they regret pawning.
+- Three one-time hidden coin pickups on the floor.
+
+#### Animated horse racing
+
+- Choose COMET, LUCKY, DUSK, or GHOST and wager 10, 50, 100, or 500 coins.
+- The terminal posts each runner's real 2x, 3x, 5x, or 8x payout before the
+  ticket is placed.
+- Four pixel horses run simultaneously for six seconds with changing visible
+  leads and a fixed result chosen from the posted weighted odds.
+- Only the selected winning horse pays. Losing tickets pay zero and are
+  recorded separately from wins.
+
+#### Plinko
+
+- Choose a 10, 50, 100, or 500-coin drop.
+- A visible ball bounces through eight animated peg rows into one of nine
+  buckets.
+- Center outcomes pay 0.20x, intermediate buckets pay 0.65x, 1.50x, or 3.50x,
+  and the two rare outside buckets pay 9.00x.
+- All 256 left/right paths are represented, for an overall 4.375% house edge.
+
+### Living casino floors
+
+The original Game Corner, the separate Casino Lounge, and Pallet Casino now
+share a larger cast without replacing vanilla NPCs. Debtors, dreamers, card
+counters, cold-streak regulars, clerks, and pawn brokers move around the
+floors and tell their own short stories. Eight additional one-time coin
+pickups reward looking down while everyone else watches the machines.
 
 ### A larger two-table Casino Lounge
 
@@ -356,19 +426,6 @@ also rejected without charging coins when the Bag has no room.
 | Result | A | Start another hand |
 | Result | B | Leave the table |
 
-### Arcade machines
-
-| Machine | Stage | Control | Action |
-| --- | --- | --- | --- |
-| Crash | Wager | Left / Right | Change the wager |
-| Crash | Wager | A | Launch |
-| Crash | Running | A | Cash out immediately |
-| Tube Flyer | Ready | A | Pay 10 coins and start |
-| Tube Flyer | Flying | A / Up | Flap |
-| Tube Flyer | Flying | B | End the flight and keep earned coins |
-| Prize Case | Ready | A | Pay 500 coins and open |
-| Any machine | Ready / Result | B | Leave |
-
 ### Texas Hold'em
 
 | Stage | Control | Action |
@@ -382,10 +439,38 @@ also rejected without charging coins when the Bag has no room.
 | Result | A | Start another hand |
 | Result | B | Leave the table |
 
+### Arcade machines
+
+| Machine | Stage | Control | Action |
+| --- | --- | --- | --- |
+| Crash | Wager | Left / Right | Change the wager |
+| Crash | Wager | A | Launch |
+| Crash | Running | A | Cash out immediately |
+| Tube Flyer | Ready | A | Pay 10 coins and start |
+| Tube Flyer | Flying | A / Up | Flap |
+| Tube Flyer | Flying | B | End the flight and keep earned coins |
+| Prize Case | Ready | A | Pay 500 coins and open |
+| Horse Racing | Selection | Up / Down | Choose a runner |
+| Horse Racing | Selection | Left / Right | Change the wager |
+| Horse Racing | Selection | A | Place the ticket and start the race |
+| Plinko | Selection | Left / Right | Change the wager |
+| Plinko | Selection | A | Pay and drop the ball |
+| Any machine | Ready / Result | B | Leave |
+
+### Gamble Mode screens
+
+| Screen | Control | Action |
+| --- | --- | --- |
+| Starter Roulette | A or B after the result | Accept the rolled starter and return to Oak's Lab |
+| Gym Case | A after the reel | Accept the reward and close the one-use case |
+| Saved Gym Case | Start menu > GYM CASE | Retry delivery of the exact saved reward |
+
 ## Compatibility and limitations
 
 - Blackjack Corner needs the Coin Case for table games, arcade machines,
   prize redemption, and the pawn broker.
+- Gamble Mode is a new-save choice. It cannot be enabled retroactively from
+  the options menu, and declining it leaves story rewards untouched.
 - Blackjack does not include splits, insurance, or surrender.
 - Texas Hold'em is a custom house-banked game, not multiplayer poker.
 - Mods or total conversions that replace the Celadon Game Corner, Prize Room,
@@ -404,11 +489,15 @@ games/
   crash/        rules.lua  screen.lua  view.lua
   tube_flyer/   rules.lua  screen.lua  view.lua
   prize_case/   rules.lua  screen.lua  view.lua
+  horse_racing/ rules.lua  screen.lua  view.lua
+  plinko/       rules.lua  screen.lua  view.lua
+  starter_roulette/ rules.lua  screen.lua  view.lua
   shared/       ui.lua
 other/
+  gamble/       mode.lua  gym_cases.lua
   pawn/         rules.lua
   prizes/       catalog.lua
-  coin_case.lua lounge.lua services.lua ui.lua
+  coin_case.lua lounge.lua pallet_casino.lua services.lua ui.lua
 main.lua        composition, registration, and hooks only
 ```
 
@@ -425,6 +514,7 @@ luajit mods/blackjack_corner/tests/blackjack_rules_test.lua
 luajit mods/blackjack_corner/tests/holdem_rules_test.lua
 luajit mods/blackjack_corner/tests/pawn_test.lua
 luajit mods/blackjack_corner/tests/arcade_rules_test.lua
+luajit mods/blackjack_corner/tests/gamble_rules_test.lua
 luajit mods/blackjack_corner/tests/blackjack_mod_test.lua
 ```
 

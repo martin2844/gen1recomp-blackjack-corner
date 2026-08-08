@@ -44,8 +44,10 @@ function UI.frame(title, Font, coinCount, theme)
   UI.color(theme.header); UI.rect("fill", 7, 7, 146, 18)
   UI.color(C.cream); UI.rect("fill", 7, 23, 146, 2)
   UI.color(C.ink); Font.draw(title, 10, 11)
-  local label = UI.compactCoins(coinCount)
-  Font.draw(label, 150 - Font.width(label), 11)
+  if coinCount ~= nil then
+    local label = UI.compactCoins(coinCount)
+    Font.draw(label, 150 - Font.width(label), 11)
+  end
 end
 
 function UI.button(Font, label, y, enabled, theme)

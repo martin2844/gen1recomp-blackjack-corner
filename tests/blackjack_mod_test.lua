@@ -4,6 +4,7 @@ local T = require("tests.modkit")
 local Stats = require("src.pokemon.Stats")
 local Pokemon = require("src.pokemon.Pokemon")
 local SlotMachine = require("src.ui.SlotMachine")
+local Runtime = require("src.mods.Runtime")
 local CoinCase = assert(loadfile("mods/blackjack_corner/other/coin_case.lua"))()
 
 local data = T.fixtures.fresh()
@@ -11,6 +12,7 @@ local lobby = {}
 for key, value in pairs(data.tilesets[T.fixtures.ids.tileset]) do lobby[key] = value end
 lobby.id = "LOBBY"
 data.tilesets.LOBBY = lobby
+data.tilesets.OVERWORLD = lobby
 local blocks = {}
 for i = 1, 90 do blocks[i] = 31 end
 data.maps.GAME_CORNER = {
@@ -29,6 +31,29 @@ data.maps.GAME_CORNER = {
       sprite = "SPRITE_FIXTURE", text = "TEXT_GAMECORNER_GAMBLER", x = 11, y = 15 },
   },
 }
+local palletBlocks = {}
+for i = 1, 90 do palletBlocks[i] = 1 end
+data.maps.PALLET_TOWN = {
+  id = "PALLET_TOWN", label = "PalletTown", index = 0,
+  tileset = "OVERWORLD", width = 10, height = 9,
+  blocks = palletBlocks, borderBlock = 11, connections = {}, signs = {},
+  warps = {
+    { x = 5, y = 5, destMap = "FIXTURE_MAP", destWarp = 1 },
+    { x = 13, y = 5, destMap = "FIXTURE_MAP", destWarp = 1 },
+    { x = 12, y = 11, destMap = "FIXTURE_MAP", destWarp = 1 },
+  },
+  objects = {},
+}
+data.maps.OAKS_LAB = {
+  id = "OAKS_LAB", label = "OaksLab", index = 40,
+  tileset = "LOBBY", width = 5, height = 5,
+  blocks = {}, borderBlock = 15, connections = {}, signs = {}, warps = {},
+  objects = {
+    { index = 1, name = "OAKSLAB_CHARMANDER_POKE_BALL", sprite = "SPRITE_POKE_BALL" },
+    { index = 2, name = "OAKSLAB_SQUIRTLE_POKE_BALL", sprite = "SPRITE_POKE_BALL" },
+    { index = 3, name = "OAKSLAB_BULBASAUR_POKE_BALL", sprite = "SPRITE_POKE_BALL" },
+  },
+}
 
 local run = T.sdk.loadMod("mods/blackjack_corner", { data = data, dev = true })
 T.eq(#run.errors, 0, "blackjack mod loads cleanly")
@@ -39,8 +64,163 @@ local api = run.loader.exports.blackjack_corner
 T.check(api and api.rules and api.holdem_rules and api.holdem_view and api.catalog and api.view
     and api.buyCoins and api.coinOffers and api.pawn and api.pawnPokemon
     and api.redeemPokemon and api.pawnLedger and api.crash_rules
-    and api.flappy_rules and api.case_rules and api.giveCaseReward,
+    and api.flappy_rules and api.case_rules and api.giveCaseReward
+    and api.horse_rules and api.plinko_rules and api.roulette_rules
+    and api.gamble and api.gym_cases,
   "games, prizes, coin exchange, pawning, and arcade rules are exported")
+
+do
+  local steps = { { id = "oak_welcome", kind = "say" } }
+  local built = Runtime.call("intro.oak_speech.build", function(rows) return rows end,
+    steps, {})
+  T.eq(built[2].id, "blackjack_corner_gamble_mode",
+    "new games ask about Gamble Mode during Oak's introduction")
+  T.eq(built[2].kind, "yesno", "Gamble Mode is an explicit yes-or-no choice")
+  T.check(built[2].defaultNo, "ordinary rules remain the safe default")
+
+  local introGame = { data = run.data, save = { inventory = {}, coins = 0 } }
+  Runtime.emit("intro.oak_speech.answered", {
+    saveKey = "gamble_mode", value = true, speech = { game = introGame },
+  })
+  T.eq(introGame.save.inventory.COIN_CASE, 1,
+    "Gamble Mode starts the player with a Coin Case")
+  T.eq(introGame.save.coins, 100,
+    "Gamble Mode supplies a small starting stake")
+  for index, object in ipairs(run.data.maps.OAKS_LAB.objects) do
+    T.eq(object.sprite, ("SPRITE_STARTER_ROULETTE_%02d"):format(index),
+      "Oak's three gift balls become one roulette cabinet")
+  end
+  Runtime.emit("intro.oak_speech.answered", {
+    saveKey = "gamble_mode", value = false, speech = { game = introGame },
+  })
+  for _, object in ipairs(run.data.maps.OAKS_LAB.objects) do
+    T.eq(object.sprite, "SPRITE_POKE_BALL",
+      "declining Gamble Mode restores Oak's ordinary gift-ball art")
+  end
+end
+
+do
+  local Game = require("src.core.Game")
+  local Overworld = require("src.world.OverworldController")
+  local oldData, oldSave, oldStack = Game.data, Game.save, Game.stack
+  Game.data = run.data
+  local oldBubblebeam = Game.data.items.TM_BUBBLEBEAM
+  Game.data.items.TM_BUBBLEBEAM = { name = "TM BUBBLEBEAM" }
+  Game.save = {
+    coins = 0, flags = {}, inventory = {}, defeatedTrainers = {},
+    player = { name = "RED" }, party = {}, boxes = {}, currentBox = 1,
+  }
+  Game.stack = { pushed = {}, push = function(self, screen)
+    self.pushed[#self.pushed + 1] = screen
+  end }
+  Runtime.emit("intro.oak_speech.answered", {
+    saveKey = "gamble_mode", value = true, speech = { game = Game },
+  })
+  local vanilla = Overworld._blackjackCornerGymCases.vanilla
+  local gameUpvalue, oldOverworldGame
+  for index = 1, 20 do
+    local name, value = debug.getupvalue(vanilla, index)
+    if not name then break end
+    if name == "Game" then
+      gameUpvalue, oldOverworldGame = index, value
+      debug.setupvalue(vanilla, index, Game)
+      break
+    end
+  end
+  T.check(gameUpvalue ~= nil, "the gym reward integration reaches the live game state")
+  local victoryDone = false
+  local overworld = { runVictoryHook = function() victoryDone = true end }
+  Overworld.checkVictoryRewards(overworld, "OPP_MISTY", 1)
+  T.eq(Game.save.inventory.CASCADEBADGE, 1,
+    "Gamble Mode keeps the gym leader's badge reward")
+  T.eq(Game.save.inventory.TM_BUBBLEBEAM, nil,
+    "Gamble Mode suppresses the gym leader's direct TM reward")
+  T.check(victoryDone, "the ordinary post-victory script still runs")
+  T.eq(#api.gym_cases.queue(), 1,
+    "the suppressed gym TM becomes one persistent prize case")
+  T.eq(Game.stack.pushed[1].screenId, "BlackjackCornerGymCase",
+    "the gym case opens after a leader victory")
+  for index = 1, 19 do Game.save.inventory["GYM_FILLER_" .. index] = 1 end
+  local gymCase = Game.stack.pushed[1]
+  gymCase:update(0)
+  T.eq(gymCase.phase, "spinning", "the queued Gym Case auto-opens once")
+  gymCase:settle()
+  T.check(gymCase.claimSaved, "a full Bag preserves the exact Gym Case claim")
+  T.eq(#api.gym_cases.queue(), 1,
+    "a failed Gym Case delivery remains in the persistent queue")
+  local chosen = api.gym_cases.queue()[1].reward.id
+  for index = 1, 19 do Game.save.inventory["GYM_FILLER_" .. index] = nil end
+  local retry = run.data.screens.BlackjackCornerGymCase.new(Game, {
+    caseData = api.gym_cases.queue()[1], autoOpen = true, oneShot = true,
+  })
+  retry:update(0)
+  T.eq(retry.winner.id, chosen, "a Gym Case retry keeps the exact selected prize")
+  retry:settle()
+  T.eq(#api.gym_cases.queue(), 0, "a delivered Gym Case leaves the queue")
+  T.eq(Game.save.inventory[chosen], 1, "the retried Gym Case reaches the Bag")
+  Runtime.emit("intro.oak_speech.answered", {
+    saveKey = "gamble_mode", value = false, speech = { game = Game },
+  })
+  Game.save = {
+    coins = 0, flags = {}, inventory = {}, defeatedTrainers = {},
+    player = { name = "RED" }, party = {}, boxes = {}, currentBox = 1,
+  }
+  Game.stack = { pushed = {}, push = function(self, screen)
+    self.pushed[#self.pushed + 1] = screen
+  end }
+  victoryDone = false
+  Overworld.checkVictoryRewards(overworld, "OPP_MISTY", 1)
+  T.eq(Game.save.inventory.TM_BUBBLEBEAM, 1,
+    "declining Gamble Mode restores the leader's direct TM reward")
+  T.eq(#api.gym_cases.queue(), 0,
+    "ordinary Gym progression does not enqueue a mystery case")
+  T.check(victoryDone, "ordinary Gym progression still runs its victory hook")
+  debug.setupvalue(vanilla, gameUpvalue, oldOverworldGame)
+  Game.data.items.TM_BUBBLEBEAM = oldBubblebeam
+  Game.data, Game.save, Game.stack = oldData, oldSave, oldStack
+end
+
+do
+  local Game = require("src.core.Game")
+  local oldData, oldSave = Game.data, Game.save
+  local oldMagikarp, oldAbra = run.data.pokemon.MAGIKARP, run.data.pokemon.ABRA
+  local oldTackle, oldConfusion = run.data.moves.TACKLE, run.data.moves.CONFUSION
+  local function starterDef(source, name)
+    local out = {}
+    for key, value in pairs(source) do out[key] = value end
+    out.name, out.evolutions = name, {}
+    return out
+  end
+  run.data.pokemon.MAGIKARP = starterDef(run.data.pokemon.FIXMON_A, "MAGIKARP")
+  run.data.pokemon.ABRA = starterDef(run.data.pokemon.FIXMON_A, "ABRA")
+  run.data.moves.TACKLE = run.data.moves.FIX_CUT
+  run.data.moves.CONFUSION = run.data.moves.FIX_CUT
+  local game = {
+    data = run.data,
+    save = { coins = 0, inventory = {}, party = {}, flags = {},
+      pokedex = { seen = {}, owned = {} }, player = { name = "RED", id = 1 } },
+  }
+  Game.data, Game.save = run.data, game.save
+  Runtime.emit("intro.oak_speech.answered", {
+    saveKey = "gamble_mode", value = true, speech = { game = game },
+  })
+  local ok = api.gamble.complete(game, "MAGIKARP", "ABRA")
+  T.check(ok, "a risky Magikarp roulette roll is still deliverable")
+  T.eq(game.save.party[1].moves[#game.save.party[1].moves].id, "TACKLE",
+    "a level-five Magikarp starter receives its anti-softlock attack")
+  local rivalParty = Runtime.call("trainer.party", function(_, _, party) return party end,
+    "OPP_RIVAL1", 1, { { species = "FIXMON_A", level = 5 } })
+  T.eq(rivalParty[1].species, "ABRA",
+    "the rival's separately rolled species replaces the vanilla starter")
+  T.eq(rivalParty[1].moves[1], "CONFUSION",
+    "a risky rival roll receives the same anti-softlock treatment")
+  Runtime.emit("intro.oak_speech.answered", {
+    saveKey = "gamble_mode", value = false, speech = { game = game },
+  })
+  Game.data, Game.save = oldData, oldSave
+  run.data.pokemon.MAGIKARP, run.data.pokemon.ABRA = oldMagikarp, oldAbra
+  run.data.moves.TACKLE, run.data.moves.CONFUSION = oldTackle, oldConfusion
+end
 T.check(run.data.screens.BlackjackCornerTable ~= nil, "blackjack screen is registered")
 T.check(run.data.screens.BlackjackCornerHoldemTable ~= nil, "holdem screen is registered")
 T.check(run.data.screens.BlackjackCornerPokemonPrizes ~= nil,
@@ -52,8 +232,51 @@ T.check(run.data.screens.BlackjackCornerTubeFlyer ~= nil,
   "tube flyer screen is registered")
 T.check(run.data.screens.BlackjackCornerPrizeCase ~= nil,
   "prize case screen is registered")
+T.check(run.data.screens.BlackjackCornerHorseRacing ~= nil,
+  "animated horse racing screen is registered")
+T.check(run.data.screens.BlackjackCornerPlinko ~= nil,
+  "Plinko screen is registered")
+T.check(run.data.screens.BlackjackCornerStarterRoulette ~= nil,
+  "starter roulette screen is registered")
+T.check(run.data.screens.BlackjackCornerGymCase ~= nil,
+  "Gym Case screen is registered")
 T.check(run.data.maps.BLACKJACK_LOUNGE ~= nil,
   "blackjack has a dedicated lounge map")
+T.check(run.data.maps.PALLET_CASINO ~= nil,
+  "Pallet Town has a dedicated mini-casino map")
+T.eq(run.data.maps.PALLET_TOWN.warps[4].destMap, "PALLET_CASINO",
+  "the new Pallet casino facade has a working entrance")
+T.eq(run.data.maps.PALLET_TOWN.blocks[63], 0x3a,
+  "the Pallet casino facade uses a visible door block")
+T.eq(#run.data.field.hiddenCoins.PALLET_CASINO, 3,
+  "the Pallet casino hides three one-time coin pickups")
+
+do
+  local oldBide, oldBubble = run.data.items.TM_BIDE, run.data.items.TM_BUBBLEBEAM
+  local oldNidoran, oldPikachu = run.data.pokemon.NIDORAN_M, run.data.pokemon.PIKACHU
+  run.data.items.TM_BIDE = { name = "TM BIDE" }
+  run.data.items.TM_BUBBLEBEAM = { name = "TM BUBBLEBEAM" }
+  run.data.pokemon.NIDORAN_M = { name = "NIDORAN M" }
+  run.data.pokemon.PIKACHU = { name = "PIKACHU" }
+  local rows = api.gym_cases.pool({ data = run.data },
+    { order = 2, tm = "TM_BUBBLEBEAM" })
+  local byId, bySpecies = {}, {}
+  for _, row in ipairs(rows) do
+    if row.kind == "item" then byId[row.id] = row else bySpecies[row.species] = row end
+  end
+  T.eq(byId.TM_BUBBLEBEAM.tier, "gold",
+    "the current leader's TM is the Gym Case headline reward")
+  T.eq(byId.TM_BUBBLEBEAM.weight, 420,
+    "the current leader's TM has the strongest individual case weight")
+  T.eq(byId.TM_BIDE.weight, 90,
+    "an earlier Gym TM remains in the progressive reward pool")
+  T.check(bySpecies.NIDORAN_M and bySpecies.PIKACHU,
+    "early Gym Cases include their unlocked basic Pokemon")
+  T.eq(bySpecies.BULBASAUR, nil,
+    "later starter rewards remain locked at the second badge")
+  run.data.items.TM_BIDE, run.data.items.TM_BUBBLEBEAM = oldBide, oldBubble
+  run.data.pokemon.NIDORAN_M, run.data.pokemon.PIKACHU = oldNidoran, oldPikachu
+end
 T.eq(run.data.maps.GAME_CORNER.blocks[82], 61,
   "a double-door replaces one lower Game Corner floor block")
 T.eq(run.data.maps.GAME_CORNER.blocks[75], 31,
@@ -419,6 +642,96 @@ do
   T.eq(screen.phase, "result", "a collision ends the tube flyer round")
   screen:draw()
   T.check(true, "the tube flyer result renders without an engine error")
+end
+
+do
+  local game = gameWith(100)
+  game.input = noInput
+  local screen = run.data.screens.BlackjackCornerHorseRacing.new(game, {})
+  screen:start()
+  T.eq(screen.phase, "racing", "horse racing starts with an affordable ticket")
+  T.eq(game.save.coins, 90, "horse racing deducts the selected wager once")
+  screen.race.winner = screen.horseIndex
+  screen:finish()
+  T.eq(screen.phase, "result", "horse racing settles into a result screen")
+  T.eq(screen.payout, 20, "the favorite pays its posted two-times return")
+  T.eq(game.save.coins, 110, "a winning race ticket credits its full return")
+  screen:draw()
+  T.check(true, "the animated race result renders without an engine error")
+
+  local poor = gameWith(9)
+  poor.input = noInput
+  local refused = run.data.screens.BlackjackCornerHorseRacing.new(poor, {})
+  refused:start()
+  T.eq(refused.phase, "bet", "an unaffordable race ticket is refused")
+  T.eq(poor.save.coins, 9, "a refused race ticket takes no coins")
+
+  local loserGame = gameWith(100)
+  loserGame.input = noInput
+  local loser = run.data.screens.BlackjackCornerHorseRacing.new(loserGame, {})
+  loser:start()
+  loser.race.winner = 2
+  loser:finish()
+  T.eq(loser.payout, 0, "a losing race ticket pays nothing")
+  T.eq(loserGame.save.coins, 90, "a losing race consumes the complete wager")
+
+  local cappedGame = gameWith(1000000)
+  cappedGame.input = noInput
+  local capped = run.data.screens.BlackjackCornerHorseRacing.new(cappedGame, {})
+  capped.horseIndex, capped.betIndex = 4, 4
+  capped:start()
+  capped.race.winner = 4
+  capped:finish()
+  T.eq(capped.payout, 500,
+    "a race payout clips to the Coin Case space freed by its wager")
+  T.eq(cappedGame.save.coins, 1000000,
+    "a winning long shot never overflows the million-coin cap")
+end
+
+do
+  local game = gameWith(100)
+  game.input = noInput
+  local screen = run.data.screens.BlackjackCornerPlinko.new(game, {})
+  screen:dropBall()
+  T.eq(screen.phase, "dropping", "Plinko begins with an affordable drop")
+  T.eq(game.save.coins, 90, "Plinko deducts the selected wager once")
+  screen.drop.slot = 9
+  screen:finish()
+  T.eq(screen.phase, "result", "Plinko settles into a result screen")
+  T.eq(screen.payout, 90, "the outside Plinko bucket pays nine times")
+  T.eq(game.save.coins, 180, "Plinko credits the selected bucket payout")
+  screen:draw()
+  T.check(true, "the animated Plinko result renders without an engine error")
+
+  local poor = gameWith(9)
+  poor.input = noInput
+  local refused = run.data.screens.BlackjackCornerPlinko.new(poor, {})
+  refused:dropBall()
+  T.eq(refused.phase, "bet", "an unaffordable Plinko drop is refused")
+  T.eq(poor.save.coins, 9, "a refused Plinko drop takes no coins")
+end
+
+do
+  local game = gameWith(100)
+  game.input = noInput
+  local screen = run.data.screens.BlackjackCornerStarterRoulette.new(game, {})
+  screen:start()
+  T.eq(screen.phase, "spinning", "the starter roulette enters its animated spin")
+  T.eq(screen.strip[api.roulette_rules.WINNER_INDEX], screen.playerStarter,
+    "the starter reel stops on the predetermined player roll")
+  screen:settle()
+  T.eq(screen.phase, "result", "a starter spin settles successfully")
+  T.eq(#game.save.party, 1, "the rolled starter reaches the player's party")
+  T.check(game.save.flags.EVENT_GOT_STARTER,
+    "settling the roulette unlocks Oak's Lab exit flow")
+  screen:draw()
+  T.check(true, "the starter result renders without an engine error")
+
+  local duplicate = run.data.screens.BlackjackCornerStarterRoulette.new(game, {})
+  duplicate.playerStarter, duplicate.rivalStarter = "FIXMON_A", "FIXMON_B"
+  duplicate:settle()
+  T.eq(duplicate.phase, "failed", "the roulette refuses a second starter")
+  T.eq(#game.save.party, 1, "a refused second spin cannot duplicate the starter")
 end
 
 do

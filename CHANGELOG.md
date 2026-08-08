@@ -1,5 +1,67 @@
 # Changelog
 
+## [0.3.0] - 2026-08-08
+
+### Added
+
+- An optional, save-scoped **Gamble Mode** choice during Professor Oak's new
+  game introduction. Declining it preserves the ordinary starter and Gym TM
+  progression.
+- A 100-coin opening stake and permanent Coin Case when Gamble Mode begins.
+- A starter roulette in Oak's Lab that replaces the three gift balls, draws
+  from all valid base-stage non-legendary species, and gives the rival a
+  separate random starter whose evolution tracks later battle levels.
+- Eight persistent Gym Cases. Every Gym Leader still awards their badge, but
+  their direct TM becomes a one-prize animated case containing unlocked Gym
+  TMs or increasingly valuable Pokemon.
+- Failed Gym Case delivery remains claimable from the Start menu instead of
+  losing the selected reward when the Bag or Pokemon storage is full.
+- A dedicated Pallet Town mini-casino with a new exterior, reciprocal indoor
+  warp, horse-racing terminal, Plinko board, Prize Case machine, bulk coin
+  clerk, and Pokemon pawn broker.
+- Animated four-runner horse racing with distinct win probabilities, posted
+  2x/3x/5x/8x payouts, 10/50/100/500-coin wagers, visible lead changes, and
+  genuine losing tickets.
+- An animated eight-row Plinko game with 256 possible paths, nine payout
+  buckets from 0.20x to 9.00x, four wager sizes, and a 4.375% house edge.
+- Ten new gamblers, debtors, dreamers, and casino workers spread across the
+  Game Corner, Casino Lounge, and Pallet Casino, each with original dialogue.
+- Eight additional one-time hidden coin pickups across all three casino
+  floors.
+- New generated world sprites for horse racing, Plinko, and Oak's three-piece
+  starter roulette cabinet.
+- Integration coverage for Oak's mode prompt, starting economy, lab art, and
+  a complete Gym Leader reward replacement path.
+
+### Changed
+
+- The mod now expands the full adventure when Gamble Mode is enabled rather
+  than operating only as a Celadon destination.
+- Oak explicitly explains that there is no starter choice, and the rival
+  acknowledges their own independent spin.
+- Existing saves and new games that decline Gamble Mode retain vanilla story
+  progression while still having access to the Celadon casino expansion.
+- The automated suite now covers 506 assertions across game rules, UI,
+  services, maps, saves, and engine integration.
+
+### Fixed
+
+- Yellow's single starter-ball layout now uses the center roulette cabinet
+  piece instead of the left edge.
+- Gamble Mode uses a version-neutral Oak's Lab rival exit, preventing Yellow's
+  Pikachu-only cry and disobedience scene from playing for a random starter.
+- Level-5 Magikarp and Abra rolls receive Tackle or Confusion respectively, so
+  their missing damaging moves cannot trap a new save before Poké Balls exist.
+- A failed zero-cost Gym Case claim no longer displays a misleading coin
+  refund; it clearly reports that the exact claim was saved.
+- The starter roulette header no longer renders an empty Coin Case counter.
+- Returning to the title and declining Gamble Mode now restores Oak's ordinary
+  gift-ball sprites instead of leaking roulette art from the previous save.
+- Disabling the mod now makes its engine-level Gym reward wrapper fall through
+  cleanly to the original reward path.
+- Long roulette species names and maximum Plinko payouts now fit inside their
+  pixel cards and result panel without clipping.
+
 ## [0.2.0] - 2026-08-07
 
 ### Added

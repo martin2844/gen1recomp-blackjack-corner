@@ -1,13 +1,18 @@
 return {
-  summary = "Two table games, three arcade machines, Pokemon pawning, shinies, and rare prizes in Celadon.",
+  summary = "An optional game-wide casino remix with two live floors, random starters, gym cases, seven games, pawning, shinies, and rare prizes.",
   author = "martin2844",
   tags = { "minigame", "game-corner", "casino", "blackjack", "holdem", "crash", "arcade", "shiny", "prizes" },
   differences = {
     changed = {
       "the Game Corner opens into a larger two-table casino lounge",
       "all three Prize Corner counters offer expanded catalogues",
+      "Gamble Mode replaces Oak's starter choice with a random roulette",
+      "Gym Leaders award one persistent TM-or-Pokemon case instead of a direct TM",
     },
     added = {
+      "a gloomy Pallet Town mini-casino with early coin, pawn, and case services",
+      "animated four-runner horse betting with posted odds and real losses",
+      "an eight-row animated Plinko board with nine payout buckets",
       "blackjack with hit, stand, double down, and 3:2 naturals",
       "house-banked Texas Hold'em with progressive 4x, 3x, 2x, and 1x betting",
       "a Rocket pawn broker with five recoverable Pokemon slots",
@@ -16,6 +21,7 @@ return {
       "a one-time 9,999-coin Master Ball prize",
     },
     known = {
+      "Gamble Mode is chosen only for a new save; existing saves keep their original story rules",
       "blackjack has no split or insurance actions",
       "Hold'em has no multiplayer or optional Trips side bet",
       "shiny art uses a shared casino-gold treatment rather than species-specific Gen-II colors",

@@ -58,31 +58,51 @@ function PalletCasino.register(mod, ids)
       "TEXT_PALLET_CASINO_PAWN", 2, 3)
     appendNpc(objects, "PALLET_CASINO_CLERK", "SPRITE_CLERK",
       "TEXT_PALLET_CASINO_CLERK", 17, 3)
+    appendNpc(objects, "PALLET_BLACKJACK_DEALER", "SPRITE_GAMBLER",
+      "TEXT_PALLET_BLACKJACK_TABLE", 4, 9)
+    appendNpc(objects, "PALLET_HOLDEM_DEALER", "SPRITE_GAMBLER",
+      "TEXT_PALLET_HOLDEM_TABLE", 15, 9)
+    for _, tableDef in ipairs({
+      { id = "BLACKJACK", x = 2, text = "TEXT_PALLET_BLACKJACK_TABLE" },
+      { id = "HOLDEM", x = 14, text = "TEXT_PALLET_HOLDEM_TABLE" },
+    }) do
+      for piece = 1, 8 do
+        local column, line = (piece - 1) % 4, math.floor((piece - 1) / 4)
+        objects[#objects + 1] = {
+          index = #objects + 1,
+          name = ("PALLET_%s_TABLE_%02d"):format(tableDef.id, piece),
+          movement = "STAY", range = "DOWN",
+          sprite = ("SPRITE_%s_TABLE_%02d"):format(tableDef.id, piece),
+          x = tableDef.x + column, y = 10 + line,
+          text = line == 1 and tableDef.text or nil,
+        }
+      end
+    end
     appendNpc(objects, "PALLET_CASINO_GRANNY", "SPRITE_GRANNY",
-      "TEXT_PALLET_CASINO_GRANNY", 2, 8, "WALK", "LEFT_RIGHT")
+      "TEXT_PALLET_CASINO_GRANNY", 2, 14, "WALK", "LEFT_RIGHT")
     appendNpc(objects, "PALLET_CASINO_GAMBLER", "SPRITE_GAMBLER",
-      "TEXT_PALLET_CASINO_GAMBLER", 7, 8, "WALK", "UP_DOWN")
+      "TEXT_PALLET_CASINO_GAMBLER", 7, 14, "WALK", "UP_DOWN")
     appendNpc(objects, "PALLET_CASINO_YOUNGSTER", "SPRITE_YOUNGSTER",
-      "TEXT_PALLET_CASINO_YOUNGSTER", 12, 8, "WALK", "LEFT_RIGHT")
+      "TEXT_PALLET_CASINO_YOUNGSTER", 12, 14, "WALK", "LEFT_RIGHT")
     appendNpc(objects, "PALLET_CASINO_LOSER", "SPRITE_GENTLEMAN",
-      "TEXT_PALLET_CASINO_LOSER", 17, 8, "WALK", "UP_DOWN")
+      "TEXT_PALLET_CASINO_LOSER", 17, 14, "WALK", "UP_DOWN")
+
+    local palletBlocks = { 63, 64, 64, 64, 64, 64, 64, 64, 64, 63 }
+    for _ = 2, 8 do
+      for _ = 1, 10 do palletBlocks[#palletBlocks + 1] = 32 end
+    end
+    for _, block in ipairs({ 27, 27, 27, 27, 61, 27, 27, 27, 27, 27 }) do
+      palletBlocks[#palletBlocks + 1] = block
+    end
 
     mod.content.maps:register(ids.pallet, {
       id = ids.pallet, label = "PalletCasino", index = 1101,
-      tileset = "LOBBY", width = 10, height = 6,
-      blocks = {
-        63, 64, 64, 64, 64, 64, 64, 64, 64, 63,
-        32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
-        32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
-        32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
-        32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
-        27, 27, 27, 27, 61, 27, 27, 27, 27, 27,
-      },
+      tileset = "LOBBY", width = 10, height = 9, blocks = palletBlocks,
       borderBlock = 15, palette = "SLOTS2", connections = {}, signs = {},
       objects = objects,
       warps = {
-        { x = 8, y = 11, destMap = "PALLET_TOWN", destWarp = entryWarp },
-        { x = 9, y = 11, destMap = "PALLET_TOWN", destWarp = entryWarp },
+        { x = 8, y = 17, destMap = "PALLET_TOWN", destWarp = entryWarp },
+        { x = 9, y = 17, destMap = "PALLET_TOWN", destWarp = entryWarp },
       },
     })
   end
@@ -112,8 +132,8 @@ function PalletCasino.register(mod, ids)
 
   mod.content.field:patch("hiddenCoins", {
     PALLET_CASINO = {
-      { x = 1, y = 7, coins = 20 }, { x = 10, y = 9, coins = 50 },
-      { x = 18, y = 6, coins = 20 },
+      { x = 1, y = 7, coins = 20 }, { x = 10, y = 15, coins = 50 },
+      { x = 18, y = 14, coins = 20 },
     },
     GAME_CORNER = { __append = {
       { x = 6, y = 8, coins = 50 }, { x = 13, y = 9, coins = 100 },

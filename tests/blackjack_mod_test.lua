@@ -275,6 +275,48 @@ T.eq(#run.data.field.hiddenCoins.PALLET_CASINO, 3,
   "the Pallet casino hides three one-time coin pickups")
 
 do
+  local palletCasino = run.data.maps.PALLET_CASINO
+  T.eq(palletCasino.width, 10, "Pallet Casino keeps its twenty-cell width")
+  T.eq(palletCasino.height, 9, "Pallet Casino expands for two card tables")
+  T.eq(#palletCasino.blocks, 90, "the expanded Pallet Casino block grid is complete")
+  T.eq(palletCasino.warps[1].y, 17, "the Pallet Casino exit moves to its new bottom wall")
+  local objects, indices = {}, {}
+  for _, object in ipairs(palletCasino.objects) do
+    objects[object.name] = object
+    T.check(not indices[object.index], "Pallet Casino object indices remain unique")
+    indices[object.index] = true
+    T.check(object.x >= 0 and object.x < palletCasino.width * 2
+        and object.y >= 0 and object.y < palletCasino.height * 2,
+      object.name .. " stays inside Pallet Casino")
+  end
+  T.check(objects.PALLET_BLACKJACK_DEALER ~= nil,
+    "Pallet Casino has a dedicated blackjack dealer")
+  T.check(objects.PALLET_HOLDEM_DEALER ~= nil,
+    "Pallet Casino has a dedicated Hold'em dealer")
+  for _, tableId in ipairs({ "BLACKJACK", "HOLDEM" }) do
+    for piece = 1, 8 do
+      local name = ("PALLET_%s_TABLE_%02d"):format(tableId, piece)
+      T.check(objects[name] ~= nil, name .. " is present in Pallet Casino")
+      if piece > 4 then
+        T.eq(objects[name].text, "TEXT_PALLET_" .. tableId .. "_TABLE",
+          name .. " opens its card game from the front rail")
+      end
+    end
+  end
+  local function contributedTalk(textId)
+    for _, contribution in ipairs(
+        run.loader.content.map_scripts:chain("PALLET_CASINO")) do
+      if contribution.talk and contribution.talk[textId] then return true end
+    end
+    return false
+  end
+  T.check(contributedTalk("TEXT_PALLET_BLACKJACK_TABLE"),
+    "the Pallet blackjack table opens the blackjack screen")
+  T.check(contributedTalk("TEXT_PALLET_HOLDEM_TABLE"),
+    "the Pallet Hold'em table opens the poker screen")
+end
+
+do
   local lounge = run.data.maps.BLACKJACK_LOUNGE
   T.eq(lounge.width, 10, "the expanded Lounge keeps its twenty-cell width")
   T.eq(lounge.height, 9, "the Lounge gains a full lower arcade floor")

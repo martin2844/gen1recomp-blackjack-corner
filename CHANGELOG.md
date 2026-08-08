@@ -13,6 +13,8 @@
 - The Celadon Casino Lounge now spans 20x18 walk cells. Its original tables
   and three cabinets remain up front, while Horse Racing and Plinko anchor a
   new rear arcade with redistributed patrons and hidden coins.
+- Pallet Casino now spans 20x18 walk cells and adds dedicated blackjack and
+  Texas Hold'em tables, so all seven casino games are playable from Pallet.
 
 ### Fixed
 

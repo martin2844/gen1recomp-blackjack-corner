@@ -244,6 +244,12 @@ return function(mod)
     end,
   } })
   mod.content.map_scripts:register(ids.pallet, { talk = {
+    TEXT_PALLET_BLACKJACK_TABLE = function(game, _, _, done)
+      open(game, "PALLET BLACKJACK!\fGet closer to 21\nthan the dealer.", ids.blackjack, done)
+    end,
+    TEXT_PALLET_HOLDEM_TABLE = function(game, _, _, done)
+      open(game, "PALLET HOLD'EM!\fBeat the house with\nyour best five cards.", ids.holdem, done)
+    end,
     TEXT_HORSE_RACING = function(game, _, _, done)
       open(game, "LIVE RACE TV!\fPick a runner and\nback it with coins.", ids.horse, done)
     end,

@@ -21,14 +21,14 @@ player's imported game data.
 | Area | What the release adds |
 | --- | --- |
 | Adventure | Optional save-scoped Gamble Mode changes the starter, rival team, and all eight Gym Leader rewards |
-| Pallet Town | A new early-game mini-casino with horse racing, Plinko, Prize Cases, coin sales, pawning, gamblers, and hidden coins |
+| Pallet Town | A new early-game casino with blackjack, Hold'em, horse racing, Plinko, Prize Cases, coin sales, pawning, gamblers, and hidden coins |
 | Celadon | A dedicated 20x18 lounge with two tables, three front cabinets, and a rear Horse Racing and Plinko arcade |
 | Seven games | Blackjack, Hold'em, Crash, Tube Flyer, Prize Case, animated horse racing, and Plinko |
 | Services | Bulk coin purchases and a pawn broker that stores up to five exact party Pokemon for later redemption |
 | Rewards | Version-exclusive Pokemon, starters, fossils, shiny upgrades, rare TMs, Surfing Pikachu, Dragonite, Mew, and Master Balls |
 | Economy | A 1,000,000-coin Coin Case used consistently by the new games, original slots, and hidden coin pickups |
 | Atmosphere | Ten new gamblers and staff plus eight new one-time floor pickups across three casino interiors |
-| Code quality | Small per-game modules under `games/`, supporting systems under `other/`, and 612 automated checks |
+| Code quality | Small per-game modules under `games/`, supporting systems under `other/`, and 704 automated checks |
 
 ## Screenshots
 
@@ -176,6 +176,8 @@ early-game casino floor. It is available immediately in Gamble Mode and
 contains everything needed to enter the economy without waiting for Celadon:
 
 - A live race terminal, an animated Plinko board, and a 500-coin Prize Case.
+- Full blackjack and Texas Hold'em tables with dedicated dealers, using the
+  same rules, progressive wagering, and Coin Case balance as Celadon.
 - A bulk coin clerk using the original exchange rate.
 - A Rocket pawn broker who accepts party Pokemon under the same five-ticket,
   30%-redemption rules as Celadon.

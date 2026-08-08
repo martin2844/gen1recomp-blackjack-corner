@@ -68,11 +68,11 @@ return function(UI)
   end
 
   function View.draw(state, Font, coinCount)
-    UI.frame("PRIZE CASE", Font, coinCount, theme)
+    UI.frame(state.title or "PRIZE CASE", Font, coinCount, theme)
     if state.phase == "ready" then
       caseGraphic()
-      UI.color(C.ink); UI.centered(Font, "500 COINS", 82)
-      UI.button(Font, "A OPEN CASE", 96, coinCount >= 500, theme)
+      UI.color(C.ink); UI.centered(Font, tostring(state.cost or 500) .. " COINS", 82)
+      UI.button(Font, "A OPEN CASE", 96, coinCount >= (state.cost or 500), theme)
       UI.color(C.ink); UI.centered(Font, state.notice or "RARE PRIZES INSIDE", 120)
       UI.centered(Font, "B EXIT", 130)
     else
@@ -98,7 +98,8 @@ return function(UI)
       else
         UI.panel(12, 101, 136, 37, state.refunded and C.redLight or C.paper)
         UI.color(C.ink)
-        UI.centered(Font, state.refunded and "500 REFUNDED" or "YOU GOT", 105)
+        UI.centered(Font, state.refunded and ((state.cost or 500) .. " REFUNDED")
+          or state.claimSaved and "CLAIM SAVED" or "YOU GOT", 105)
         UI.centered(Font, state.message or "PRIZE", 117)
         UI.centered(Font, "A AGAIN  B EXIT", 129)
       end

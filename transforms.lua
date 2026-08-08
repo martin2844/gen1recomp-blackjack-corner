@@ -153,6 +153,7 @@ local function buildMachine(ctx, id, c)
   fill(image, 2, 2, 12, 3, c.trim)
   fill(image, 3, 6, 10, 10, c.outline)
   fill(image, 4, 7, 8, 8, c.screen)
+
   if id == "crash" then
     pixel(image, 5, 13, c.green); pixel(image, 6, 12, c.green)
     pixel(image, 7, 11, c.green); pixel(image, 8, 9, c.green)
@@ -161,16 +162,29 @@ local function buildMachine(ctx, id, c)
     fill(image, 5, 7, 2, 3, c.green); fill(image, 5, 13, 2, 2, c.green)
     fill(image, 10, 7, 2, 5, c.green); fill(image, 10, 14, 2, 1, c.green)
     fill(image, 7, 10, 3, 2, c.trim); pixel(image, 9, 10, c.paper)
+  elseif id == "horse" then
+    fill(image, 4, 12, 7, 2, c.red); fill(image, 9, 10, 3, 3, c.red)
+    fill(image, 5, 14, 2, 1, c.paper); fill(image, 9, 14, 2, 1, c.paper)
+    fill(image, 4, 8, 8, 1, c.green)
+  elseif id == "plinko" then
+    for y = 8, 14, 2 do
+      for x = 5 + ((y / 2) % 2), 11, 3 do pixel(image, x, y, c.paper) end
+    end
+    circle(image, 8, 7, 1, c.red)
   else
-    for x = 4, 11, 3 do fill(image, x, 8, 2, 5, x == 10 and c.trim or c.paper) end
+    for x = 4, 11, 3 do
+      fill(image, x, 8, 2, 5, x == 10 and c.trim or c.paper)
+    end
     fill(image, 4, 14, 8, 1, c.red)
   end
+
   fill(image, 4, 18, 8, 3, c.outline)
   fill(image, 5, 18, 3, 2, c.trim)
   circle(image, 10, 19, 1, c.red)
   fill(image, 3, 23, 10, 2, c.outline)
   fill(image, 5, 24, 6, 2, c.paper)
   fill(image, 2, 28, 12, 3, c.outline)
+
   for piece = 0, 1 do
     local part = ctx.blank(16, 16, 0, 0, 0, 0)
     ctx.blit(part, image, 0, 0, 0, piece * 16, 16, 16)
@@ -192,7 +206,21 @@ return function(ctx)
   end
   buildTable(ctx, "blackjack", TABLE_COLORS)
   buildTable(ctx, "holdem", HOLDEM_COLORS)
-  for _, id in ipairs({ "crash", "flappy", "case" }) do
+  for _, id in ipairs({ "crash", "flappy", "case", "horse", "plinko" }) do
     buildMachine(ctx, id, MACHINE_COLORS)
+  end
+
+  -- Three 16x16 pieces replace Oak's Poké Balls only in Gamble Mode.
+  local roulette = ctx.blank(48, 16, 0, 0, 0, 0)
+  fill(roulette, 0, 1, 48, 14, MACHINE_COLORS.outline)
+  fill(roulette, 2, 3, 44, 10, MACHINE_COLORS.body)
+  fill(roulette, 5, 5, 38, 6, MACHINE_COLORS.screen)
+  for x = 8, 40, 8 do circle(roulette, x, 8, 3,
+    x == 24 and MACHINE_COLORS.trim or MACHINE_COLORS.paper) end
+  fill(roulette, 22, 2, 4, 12, MACHINE_COLORS.trim)
+  for piece = 0, 2 do
+    local part = ctx.blank(16, 16, 0, 0, 0, 0)
+    ctx.blit(part, roulette, 0, 0, piece * 16, 0, 16, 16)
+    ctx.writeImage(part, ("world/starter_roulette_%02d.png"):format(piece + 1))
   end
 end

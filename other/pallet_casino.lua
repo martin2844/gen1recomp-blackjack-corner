@@ -29,6 +29,9 @@ function PalletCasino.register(mod, ids)
     -- A second small lab-style facade in Pallet's southwest clearing.
     blocks[52], blocks[53], blocks[54] = 0x0c, 0x0d, 0x0e
     blocks[62], blocks[63], blocks[64] = 0x10, 0x3a, 0x00
+    -- The original pond begins immediately below the new door. Replace its
+    -- northwest block with lawn so the warp has a reachable dry landing.
+    blocks[73] = 0x01
     local warps = cloneList(pallet.warps)
     local entryWarp = #warps + 1
     warps[#warps + 1] = { x = 4, y = 13, destMap = ids.pallet, destWarp = 1 }
@@ -93,13 +96,18 @@ function PalletCasino.register(mod, ids)
     { index = 15, name = "CASINO_REGULAR", sprite = "SPRITE_GRANNY",
       text = "TEXT_CASINO_REGULAR", x = 16, y = 15, movement = "WALK", range = "LEFT_RIGHT" },
   } } })
+  local lounge = mod.content.maps:get(ids.lounge)
+  local nextLoungeIndex = 1
+  for _, object in ipairs(lounge and lounge.objects or {}) do
+    nextLoungeIndex = math.max(nextLoungeIndex, (tonumber(object.index) or 0) + 1)
+  end
   mod.content.maps:patch(ids.lounge, { objects = { __append = {
-    { index = 28, name = "LOUNGE_COLD_STREAK", sprite = "SPRITE_FISHER",
-      text = "TEXT_LOUNGE_COLD_STREAK", x = 3, y = 9, movement = "WALK", range = "LEFT_RIGHT" },
-    { index = 29, name = "LOUNGE_CARD_COUNTER", sprite = "SPRITE_GIRL",
-      text = "TEXT_LOUNGE_CARD_COUNTER", x = 11, y = 9, movement = "WALK", range = "UP_DOWN" },
-    { index = 30, name = "LOUNGE_LAST_CHIP", sprite = "SPRITE_MIDDLE_AGED_MAN",
-      text = "TEXT_LOUNGE_LAST_CHIP", x = 16, y = 9, movement = "WALK", range = "LEFT_RIGHT" },
+    { index = nextLoungeIndex, name = "LOUNGE_COLD_STREAK", sprite = "SPRITE_FISHER",
+      text = "TEXT_LOUNGE_COLD_STREAK", x = 3, y = 14, movement = "WALK", range = "LEFT_RIGHT" },
+    { index = nextLoungeIndex + 1, name = "LOUNGE_CARD_COUNTER", sprite = "SPRITE_GIRL",
+      text = "TEXT_LOUNGE_CARD_COUNTER", x = 10, y = 14, movement = "WALK", range = "UP_DOWN" },
+    { index = nextLoungeIndex + 2, name = "LOUNGE_LAST_CHIP", sprite = "SPRITE_MIDDLE_AGED_MAN",
+      text = "TEXT_LOUNGE_LAST_CHIP", x = 16, y = 14, movement = "WALK", range = "LEFT_RIGHT" },
   } } })
 
   mod.content.field:patch("hiddenCoins", {
@@ -111,8 +119,8 @@ function PalletCasino.register(mod, ids)
       { x = 6, y = 8, coins = 50 }, { x = 13, y = 9, coins = 100 },
     } },
     [ids.lounge] = {
-      { x = 1, y = 10, coins = 50 }, { x = 10, y = 10, coins = 100 },
-      { x = 18, y = 10, coins = 50 },
+      { x = 1, y = 10, coins = 50 }, { x = 10, y = 15, coins = 100 },
+      { x = 18, y = 14, coins = 50 },
     },
   })
 end

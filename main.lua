@@ -180,7 +180,7 @@ return function(mod)
       UI.text(game, "The floor hides\ncoins sometimes.\fPeople stare at\nscreens, not down.", done)
     end,
     TEXT_BLACKJACK_LOUNGE_SIGN = function(game, _, _, done)
-      UI.text(game, "CASINO LOUNGE\nTwo tables open!", done)
+      UI.text(game, "CASINO LOUNGE\nTables up front.\fLive arcade in\nthe back!", done)
     end,
   } })
 
@@ -204,7 +204,7 @@ return function(mod)
         ids.holdem, done)
     end,
     TEXT_CASINO_HOSTESS = function(game, _, _, done)
-      UI.text(game, "Welcome to the\nCASINO LOUNGE!\fBLACKJACK left,\nHOLD'EM right.", done)
+      UI.text(game, "Welcome to the\nCASINO LOUNGE!\fTables up front.\nArcade in back.", done)
     end,
     TEXT_BLACKJACK_PATRON = function(game, _, _, done)
       UI.text(game, "I always double\ndown on eleven!", done)
@@ -220,6 +220,12 @@ return function(mod)
     end,
     TEXT_CASE_MACHINE = function(game, _, _, done)
       open(game, "PRIZE CASE!\f500 coins opens\none mystery prize.", ids.case, done)
+    end,
+    TEXT_HORSE_RACING = function(game, _, _, done)
+      open(game, "LIVE RACE TV!\fPick a runner and\nback it with coins.", ids.horse, done)
+    end,
+    TEXT_PLINKO = function(game, _, _, done)
+      open(game, "PLINKO!\fDrop the ball.\nTrust the pegs.", ids.plinko, done)
     end,
     TEXT_LOUNGE_COLD_STREAK = function(game, _, _, done)
       UI.text(game, "Seven cold hands.\fThe eighth has to\nturn around... right?", done)

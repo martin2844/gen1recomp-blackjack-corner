@@ -22,13 +22,13 @@ player's imported game data.
 | --- | --- |
 | Adventure | Optional save-scoped Gamble Mode changes the starter, rival team, and all eight Gym Leader rewards |
 | Pallet Town | A new early-game mini-casino with horse racing, Plinko, Prize Cases, coin sales, pawning, gamblers, and hidden coins |
-| Celadon | A dedicated 20x12 lounge with separate blackjack and Hold'em tables plus three center-floor arcade cabinets |
+| Celadon | A dedicated 20x18 lounge with two tables, three front cabinets, and a rear Horse Racing and Plinko arcade |
 | Seven games | Blackjack, Hold'em, Crash, Tube Flyer, Prize Case, animated horse racing, and Plinko |
 | Services | Bulk coin purchases and a pawn broker that stores up to five exact party Pokemon for later redemption |
 | Rewards | Version-exclusive Pokemon, starters, fossils, shiny upgrades, rare TMs, Surfing Pikachu, Dragonite, Mew, and Master Balls |
 | Economy | A 1,000,000-coin Coin Case used consistently by the new games, original slots, and hidden coin pickups |
 | Atmosphere | Ten new gamblers and staff plus eight new one-time floor pickups across three casino interiors |
-| Code quality | Small per-game modules under `games/`, supporting systems under `other/`, and 506 automated checks |
+| Code quality | Small per-game modules under `games/`, supporting systems under `other/`, and 612 automated checks |
 
 ## Screenshots
 
@@ -214,8 +214,10 @@ pickups reward looking down while everyone else watches the machines.
 
 - A new double-door in the original Game Corner opens into a separate casino
   room instead of crowding the slot-machine floor.
-- The 20x12-cell lounge has separate blackjack and Texas Hold'em tables,
-  dedicated dealers, spectators, a central aisle, and a reciprocal exit.
+- The 20x18-cell lounge has separate blackjack and Texas Hold'em tables,
+  dedicated dealers, spectators, a long central aisle, and a reciprocal exit.
+- Crash, Tube Flyer, and Prize Case remain between the tables; a new rear
+  arcade adds animated Horse Racing and Plinko terminals inside Celadon too.
 - Both tables are compact four-tile-wide assemblies with distinct green and
   blue felt, betting marks, cards, chips, and fully interactive front rails.
 - Either table's dealer can explain the game and open its screen.

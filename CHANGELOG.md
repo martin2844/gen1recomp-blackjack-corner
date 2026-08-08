@@ -10,11 +10,16 @@
 - Gamble Mode rewrites Oak's complete laboratory introduction: he no longer
   mentions three Pokemon, treats choosing as boring, and enthusiastically
   encourages both the player and rival to gamble for their starters.
+- The Celadon Casino Lounge now spans 20x18 walk cells. Its original tables
+  and three cabinets remain up front, while Horse Racing and Plinko anchor a
+  new rear arcade with redistributed patrons and hidden coins.
 
 ### Fixed
 
 - The starter confirmation screen now keeps its result text and CONTINUE
   button fully inside the visible Game Boy frame.
+- Pallet Casino now has a dry, walkable landing between its door and the
+  original pond, making the exterior warp reachable without Surf.
 
 ## [0.3.0] - 2026-08-08
 

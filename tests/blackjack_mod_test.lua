@@ -33,6 +33,7 @@ data.maps.GAME_CORNER = {
 }
 local palletBlocks = {}
 for i = 1, 90 do palletBlocks[i] = 1 end
+palletBlocks[73] = 0x1d -- the real Pallet pond directly below the new facade
 data.maps.PALLET_TOWN = {
   id = "PALLET_TOWN", label = "PalletTown", index = 0,
   tileset = "OVERWORLD", width = 10, height = 9,
@@ -268,8 +269,42 @@ T.eq(run.data.maps.PALLET_TOWN.warps[4].destMap, "PALLET_CASINO",
   "the new Pallet casino facade has a working entrance")
 T.eq(run.data.maps.PALLET_TOWN.blocks[63], 0x3a,
   "the Pallet casino facade uses a visible door block")
+T.eq(run.data.maps.PALLET_TOWN.blocks[73], 0x01,
+  "the Pallet casino door has a dry walkable landing below it")
 T.eq(#run.data.field.hiddenCoins.PALLET_CASINO, 3,
   "the Pallet casino hides three one-time coin pickups")
+
+do
+  local lounge = run.data.maps.BLACKJACK_LOUNGE
+  T.eq(lounge.width, 10, "the expanded Lounge keeps its twenty-cell width")
+  T.eq(lounge.height, 9, "the Lounge gains a full lower arcade floor")
+  T.eq(#lounge.blocks, 90, "the expanded Lounge has one block for every map cell")
+  T.eq(lounge.warps[1].y, 17, "the Lounge exit moves to the new bottom wall")
+  local objects, indices = {}, {}
+  for _, object in ipairs(lounge.objects) do
+    objects[object.name] = object
+    T.check(not indices[object.index], "Lounge object indices remain unique")
+    indices[object.index] = true
+    T.check(object.x >= 0 and object.x < lounge.width * 2
+        and object.y >= 0 and object.y < lounge.height * 2,
+      object.name .. " stays inside the expanded Lounge")
+  end
+  T.eq(objects.HORSE_MACHINE_02.text, "TEXT_HORSE_RACING",
+    "the Lounge includes an interactive Horse Racing terminal")
+  T.eq(objects.PLINKO_MACHINE_02.text, "TEXT_PLINKO",
+    "the Lounge includes an interactive Plinko terminal")
+  local function contributedTalk(textId)
+    for _, contribution in ipairs(
+        run.loader.content.map_scripts:chain("BLACKJACK_LOUNGE")) do
+      if contribution.talk and contribution.talk[textId] then return true end
+    end
+    return false
+  end
+  T.check(contributedTalk("TEXT_HORSE_RACING"),
+    "the Lounge can open Horse Racing from its new terminal")
+  T.check(contributedTalk("TEXT_PLINKO"),
+    "the Lounge can open Plinko from its new terminal")
+end
 
 do
   local oldBide, oldBubble = run.data.items.TM_BIDE, run.data.items.TM_BUBBLEBEAM
@@ -317,7 +352,7 @@ end
 do
   local lounge = run.data.maps.BLACKJACK_LOUNGE
   T.eq(lounge.width, 10, "the casino lounge is twenty walk cells wide")
-  T.eq(lounge.height, 6, "the casino lounge is twelve walk cells tall")
+  T.eq(lounge.height, 9, "the casino lounge is eighteen walk cells tall")
   T.eq(lounge.palette, "SLOTS1", "the lounge inherits the Game Corner palette")
   T.eq(lounge.warps[1].destWarp, 4, "the left exit returns to the left entrance tile")
   T.eq(lounge.warps[2].destWarp, 5, "the right exit returns to the right entrance tile")
@@ -337,20 +372,24 @@ do
   T.eq(broker.x, 8, "the broker stands behind the original counter")
   T.eq(broker.y, 6, "the broker stays in the counter row")
   for index, machine in ipairs({
-    { id = "CRASH", x = 8, text = "TEXT_CRASH_MACHINE" },
-    { id = "FLAPPY", x = 10, text = "TEXT_FLAPPY_MACHINE" },
-    { id = "CASE", x = 12, text = "TEXT_CASE_MACHINE" },
+    { id = "CRASH", x = 8, y = 2, text = "TEXT_CRASH_MACHINE" },
+    { id = "FLAPPY", x = 10, y = 2, text = "TEXT_FLAPPY_MACHINE" },
+    { id = "CASE", x = 12, y = 2, text = "TEXT_CASE_MACHINE" },
+    { id = "HORSE", x = 6, y = 10, text = "TEXT_HORSE_RACING" },
+    { id = "PLINKO", x = 13, y = 10, text = "TEXT_PLINKO" },
   }) do
     local top = objectNamed("BLACKJACK_LOUNGE", machine.id .. "_MACHINE_01")
     local controls = objectNamed("BLACKJACK_LOUNGE", machine.id .. "_MACHINE_02")
     T.check(top and controls, machine.id .. " has a two-tile arcade cabinet")
     T.eq(top.x, machine.x, machine.id .. " occupies its center-lounge column")
-    T.eq(top.y, 3, machine.id .. " cabinet starts on the dealer row")
-    T.eq(controls.y, 4, machine.id .. " controls face the player")
+    T.eq(top.y, machine.y + 1, machine.id .. " cabinet starts on its arcade row")
+    T.eq(controls.y, machine.y + 2, machine.id .. " controls face the player")
     T.eq(controls.text, machine.text, machine.id .. " opens its own minigame")
     T.check(run.data.sprites[("SPRITE_ARCADE_%s_01"):format(machine.id)] ~= nil,
       machine.id .. " has generated cabinet art")
-    T.eq(index * 2 + 6, machine.x, machine.id .. " machines are evenly spaced")
+    if index <= 3 then
+      T.eq(index * 2 + 6, machine.x, machine.id .. " machines are evenly spaced")
+    end
   end
   for _, tableId in ipairs({ "BLACKJACK", "HOLDEM" }) do
     for piece = 1, 8 do

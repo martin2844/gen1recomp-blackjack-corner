@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [0.4.0] - 2026-08-09
+
 ### Changed
 
 - Gym Case TM weights are rebalanced for variety. The current leader's TM is

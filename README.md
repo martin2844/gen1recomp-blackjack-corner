@@ -16,7 +16,7 @@ The mod supports Pokemon Red, Blue, and Yellow. It contains no ROM or
 ROM-derived artwork; world and shiny graphics are generated locally from the
 player's imported game data.
 
-## Version 0.3 highlights
+## Version 0.4 highlights
 
 | Area | What the release adds |
 | --- | --- |
@@ -109,7 +109,7 @@ player's imported game data.
 
 ## Install
 
-1. Download the named `blackjack_corner-<version>.zip` asset from the
+1. Download `blackjack_corner-0.4.0.zip` from the
    [latest release](https://github.com/martin2844/gen1recomp-blackjack-corner/releases/latest).
    Use the named mod ZIP, not GitHub's automatic source-code archives.
 2. Open Gen1Recomp and choose **MODS > Import mod .zip**.

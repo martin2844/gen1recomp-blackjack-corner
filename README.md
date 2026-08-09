@@ -28,7 +28,7 @@ player's imported game data.
 | Rewards | Version-exclusive Pokemon, starters, fossils, shiny upgrades, rare TMs, Surfing Pikachu, Dragonite, Mew, and Master Balls |
 | Economy | A 1,000,000-coin Coin Case used consistently by the new games, original slots, and hidden coin pickups |
 | Atmosphere | Ten new gamblers and staff plus eight new one-time floor pickups across three casino interiors |
-| Code quality | Small per-game modules under `games/`, supporting systems under `other/`, and 704 automated checks |
+| Code quality | Small per-game modules under `games/`, supporting systems under `other/`, and 707 automated checks |
 
 ## Screenshots
 

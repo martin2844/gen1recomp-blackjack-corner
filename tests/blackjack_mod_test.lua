@@ -34,6 +34,9 @@ data.maps.GAME_CORNER = {
 local palletBlocks = {}
 for i = 1, 90 do palletBlocks[i] = 1 end
 palletBlocks[73] = 0x1d -- the real Pallet pond directly below the new facade
+palletBlocks[74] = 0x1e
+palletBlocks[83] = 0x65
+palletBlocks[84] = 0x64
 data.maps.PALLET_TOWN = {
   id = "PALLET_TOWN", label = "PalletTown", index = 0,
   tileset = "OVERWORLD", width = 10, height = 9,
@@ -271,6 +274,12 @@ T.eq(run.data.maps.PALLET_TOWN.blocks[63], 0x3a,
   "the Pallet casino facade uses a visible door block")
 T.eq(run.data.maps.PALLET_TOWN.blocks[73], 0x01,
   "the Pallet casino door has a dry walkable landing below it")
+T.eq(run.data.maps.PALLET_TOWN.blocks[74], 0x01,
+  "the Pallet casino forecourt clears the complete old pond edge")
+T.eq(run.data.maps.PALLET_TOWN.blocks[83], 0x1d,
+  "the Pallet pond moves its bordered upper-left corner down one row")
+T.eq(run.data.maps.PALLET_TOWN.blocks[84], 0x1e,
+  "the Pallet pond moves its bordered upper-right corner down one row")
 T.eq(#run.data.field.hiddenCoins.PALLET_CASINO, 3,
   "the Pallet casino hides three one-time coin pickups")
 

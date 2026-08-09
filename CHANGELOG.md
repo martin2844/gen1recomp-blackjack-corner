@@ -22,6 +22,8 @@
   button fully inside the visible Game Boy frame.
 - Pallet Casino now has a dry, walkable landing between its door and the
   original pond, making the exterior warp reachable without Surf.
+- Pallet Casino's complete pond bank now sits one block farther south, giving
+  the entrance a clean two-block forecourt and a continuous bordered shoreline.
 
 ## [0.3.0] - 2026-08-08
 

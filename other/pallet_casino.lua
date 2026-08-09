@@ -29,9 +29,11 @@ function PalletCasino.register(mod, ids)
     -- A second small lab-style facade in Pallet's southwest clearing.
     blocks[52], blocks[53], blocks[54] = 0x0c, 0x0d, 0x0e
     blocks[62], blocks[63], blocks[64] = 0x10, 0x3a, 0x00
-    -- The original pond begins immediately below the new door. Replace its
-    -- northwest block with lawn so the warp has a reachable dry landing.
-    blocks[73] = 0x01
+    -- Move the complete pond bank one block south. This leaves a dry two-block
+    -- forecourt at the new door while preserving the bordered water channel
+    -- that continues into Route 21 below Pallet Town.
+    blocks[73], blocks[74] = 0x01, 0x01
+    blocks[83], blocks[84] = 0x1d, 0x1e
     local warps = cloneList(pallet.warps)
     local entryWarp = #warps + 1
     warps[#warps + 1] = { x = 4, y = 13, destMap = ids.pallet, destWarp = 1 }

@@ -18,7 +18,7 @@
   and three cabinets remain up front, while Horse Racing and Plinko anchor a
   new rear arcade with redistributed patrons and hidden coins.
 - Pallet Casino now spans 20x18 walk cells and adds dedicated blackjack and
-  Texas Hold'em tables, so all seven casino games are playable from Pallet.
+  Texas Hold'em tables, so five casino games are playable from Pallet.
 - All eight Gym Leaders now introduce their Gamble Mode case rewards in their
   own voices before the reel opens, replacing the original direct-TM pitch.
 

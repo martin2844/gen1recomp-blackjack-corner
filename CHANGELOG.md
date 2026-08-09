@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Gym Case TM weights are rebalanced for variety. The current leader's TM is
+  still featured, but Brock's Bide chance falls from roughly 43% to 15%.
 - The starter roulette now pauses on each roll and lets the player either keep
   that Pokemon or spend ¥1,000 for another spin. The Pokemon is not awarded
   until KEEP is confirmed, and unaffordable rerolls are visibly disabled.

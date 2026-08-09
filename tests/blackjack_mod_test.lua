@@ -397,11 +397,23 @@ end
 
 do
   local oldBide, oldBubble = run.data.items.TM_BIDE, run.data.items.TM_BUBBLEBEAM
-  local oldNidoran, oldPikachu = run.data.pokemon.NIDORAN_M, run.data.pokemon.PIKACHU
+  local oldNidoranM, oldNidoranF = run.data.pokemon.NIDORAN_M,
+    run.data.pokemon.NIDORAN_F
+  local oldPikachu = run.data.pokemon.PIKACHU
   run.data.items.TM_BIDE = { name = "TM BIDE" }
   run.data.items.TM_BUBBLEBEAM = { name = "TM BUBBLEBEAM" }
   run.data.pokemon.NIDORAN_M = { name = "NIDORAN M" }
+  run.data.pokemon.NIDORAN_F = { name = "NIDORAN F" }
   run.data.pokemon.PIKACHU = { name = "PIKACHU" }
+  local brockRows = api.gym_cases.pool({ data = run.data },
+    { order = 1, tm = "TM_BIDE" })
+  local brockTotal, brockBide = 0, nil
+  for _, row in ipairs(brockRows) do
+    brockTotal = brockTotal + row.weight
+    if row.id == "TM_BIDE" then brockBide = row end
+  end
+  T.check(brockBide and brockBide.weight / brockTotal <= 0.16,
+    "Bide stays below sixteen percent of Brock's Gym Case pool")
   local rows = api.gym_cases.pool({ data = run.data },
     { order = 2, tm = "TM_BUBBLEBEAM" })
   local byId, bySpecies = {}, {}
@@ -410,16 +422,18 @@ do
   end
   T.eq(byId.TM_BUBBLEBEAM.tier, "gold",
     "the current leader's TM is the Gym Case headline reward")
-  T.eq(byId.TM_BUBBLEBEAM.weight, 420,
-    "the current leader's TM has the strongest individual case weight")
-  T.eq(byId.TM_BIDE.weight, 90,
-    "an earlier Gym TM remains in the progressive reward pool")
+  T.eq(byId.TM_BUBBLEBEAM.weight, 100,
+    "the current leader's TM is featured without dominating the case")
+  T.eq(byId.TM_BIDE.weight, 50,
+    "an earlier Gym TM remains possible at a reduced weight")
   T.check(bySpecies.NIDORAN_M and bySpecies.PIKACHU,
     "early Gym Cases include their unlocked basic Pokemon")
   T.eq(bySpecies.BULBASAUR, nil,
     "later starter rewards remain locked at the second badge")
   run.data.items.TM_BIDE, run.data.items.TM_BUBBLEBEAM = oldBide, oldBubble
-  run.data.pokemon.NIDORAN_M, run.data.pokemon.PIKACHU = oldNidoran, oldPikachu
+  run.data.pokemon.NIDORAN_M, run.data.pokemon.NIDORAN_F =
+    oldNidoranM, oldNidoranF
+  run.data.pokemon.PIKACHU = oldPikachu
 end
 T.eq(run.data.maps.GAME_CORNER.blocks[82], 61,
   "a double-door replaces one lower Game Corner floor block")

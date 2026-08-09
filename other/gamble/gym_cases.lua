@@ -3,6 +3,8 @@
 local GymCases = {}
 
 GymCases.KEY = "gym_case_queue"
+GymCases.CURRENT_TM_WEIGHT = 100
+GymCases.EARLIER_TM_WEIGHT = 50
 GymCases.GYMS = {
   BOULDERBADGE = { order = 1, leader = "BROCK", dialogue =
     "That was a solid\nvictory.\fEvery battle is a\nlesson, {PLAYER}.\fYou earned a\nGYM CASE.\fGive it a spin and\nlearn what luck\nhas in store.\fGood luck!" },
@@ -91,7 +93,8 @@ function GymCases.install(mod, opts)
         rows[#rows + 1] = { kind = "item", id = reward.item, quantity = 1,
           label = game.data.items[reward.item].name or reward.item,
           tier = reward.item == entry.tm and "gold" or "rare",
-          weight = reward.item == entry.tm and 420 or 90 }
+          weight = reward.item == entry.tm and GymCases.CURRENT_TM_WEIGHT
+            or GymCases.EARLIER_TM_WEIGHT }
       end
     end
     for _, prize in ipairs(POKEMON) do

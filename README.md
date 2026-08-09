@@ -28,7 +28,7 @@ player's imported game data.
 | Rewards | Version-exclusive Pokemon, starters, fossils, shiny upgrades, rare TMs, Surfing Pikachu, Dragonite, Mew, and Master Balls |
 | Economy | A 1,000,000-coin Coin Case used consistently by the new games, original slots, and hidden coin pickups |
 | Atmosphere | Ten new gamblers and staff plus eight new one-time floor pickups across three casino interiors |
-| Code quality | Small per-game modules under `games/`, supporting systems under `other/`, and 733 automated checks |
+| Code quality | Small per-game modules under `games/`, supporting systems under `other/`, and 734 automated checks |
 
 ## Screenshots
 
@@ -158,7 +158,9 @@ are never silently converted.
 Each of the eight badges unlocks one persistent, zero-cost Gym Case. Its reel
 contains exactly one final reward:
 
-- The defeated leader's original TM has the strongest individual weight.
+- The defeated leader's original TM remains a featured prize, but its weight
+  is capped so the case produces a varied mix of TMs and Pokemon. In Brock's
+  first case, Bide is roughly a 15% result instead of dominating the pool.
 - The leader delivers their badge dialogue in the Gym before the case opens,
   then personally invites the player to spin with dialogue written for their
   personality; no TM explanation is shown over the case screen.

@@ -5,13 +5,16 @@ return function(ctx)
 
   function Screen.new(game, opts)
     opts = opts or {}
+    local cost = ctx.cost == nil and Rules.COST or ctx.cost
+    local claimKey = ctx.claimKey or "paid_case_claim"
     return setmetatable({ game = game, onClose = opts.onClose,
       phase = "ready", duration = Rules.SPIN_DURATION,
       winnerIndex = Rules.WINNER_INDEX, caseData = opts.caseData,
       autoOpen = opts.autoOpen or ctx.autoOpen,
       oneShot = opts.oneShot or ctx.oneShot,
       title = opts.title or ctx.title or "PRIZE CASE",
-      cost = ctx.cost == nil and Rules.COST or ctx.cost }, Screen)
+      cost = cost, claimKey = claimKey,
+      hasSavedClaim = cost > 0 and mod.save:get(claimKey) ~= nil }, Screen)
   end
 
   function Screen:sgbPalettes()
@@ -24,39 +27,48 @@ return function(ctx)
   end
 
   function Screen:open()
-    if ctx.coins(self.game) < self.cost then
+    local savedClaim = self.cost > 0 and mod.save:get(self.claimKey) or nil
+    if not savedClaim and ctx.coins(self.game) < self.cost then
       self.notice = "NEED " .. tostring(self.cost) .. " COINS"
       return
     end
     local pool = ctx.rewardPool(self.game, self.caseData)
     local random = function(maximum) return love.math.random(1, maximum) end
-    self.winner = self.caseData and self.caseData.reward or Rules.choose(pool, random)
-    if ctx.onChosen then ctx.onChosen(self.caseData, self.winner) end
+    self.winner = savedClaim or self.caseData and self.caseData.reward
+      or Rules.choose(pool, random)
+    if not savedClaim and ctx.onChosen then ctx.onChosen(self.caseData, self.winner) end
     self.strip = Rules.strip(pool, self.winner, random)
-    self.game.save.coins = ctx.coins(self.game) - self.cost
-    if self.cost > 0 then
+    if not savedClaim then
+      self.game.save.coins = ctx.coins(self.game) - self.cost
+    end
+    if self.cost > 0 and not savedClaim then
       self.reputationRound = ctx.beginRound("prize_case", self.cost)
       -- The campaign settles on the paid reel's immutable choice. Delivery
       -- retries must never duplicate reputation.
-      ctx.settleRound(self.game, self.reputationRound, "win", self.cost)
+      local _, progress = ctx.settleRound(
+        self.game, self.reputationRound, "win", self.cost)
+      self.rankUpPending = progress and progress.rankUp
+      mod.save:set(self.claimKey, self.winner)
     end
     self.elapsed, self.reelOffset = 0, 0
-    self.phase, self.notice, self.message, self.refunded = "spinning", nil, nil, false
-    mod.save:set(ctx.counterKey or "cases_opened",
-      mod.save:get(ctx.counterKey or "cases_opened", 0) + 1)
+    self.phase, self.notice, self.message = "spinning", nil, nil
+    self.refunded, self.claimSaved, self.hasSavedClaim = false, false, savedClaim ~= nil
+    if not savedClaim then
+      mod.save:set(ctx.counterKey or "cases_opened",
+        mod.save:get(ctx.counterKey or "cases_opened", 0) + 1)
+    end
     ctx.play(self.game, "Slots_New_Spin")
   end
 
   function Screen:settle()
     if self.phase ~= "spinning" then return end
     local ok, message = ctx.giveReward(self.game, self.winner)
-    self.refunded = not ok and self.cost > 0
-    self.claimSaved = not ok and self.cost == 0
-    if not ok then
-      self.game.save.coins = math.min(ctx.coinCap,
-        ctx.coins(self.game) + self.cost)
-    elseif ctx.onDelivered then
-      ctx.onDelivered(self.caseData, self.winner)
+    self.refunded = false
+    self.claimSaved = not ok
+    if ok then
+      if self.cost > 0 then mod.save:set(self.claimKey, nil) end
+      self.hasSavedClaim = false
+      if ctx.onDelivered then ctx.onDelivered(self.caseData, self.winner) end
     end
     self.message, self.phase = message, "result"
     ctx.play(self.game, ok and "Slots_Reward" or "Slots_Stop_Wheel")
@@ -77,9 +89,24 @@ return function(ctx)
     elseif self.oneShot and (input:wasPressed("a") or input:wasPressed("b")) then
       self:close()
     elseif input:wasPressed("a") then
-      self.phase, self.notice = "ready", nil
-      ctx.play(self.game, "Press_AB")
-    elseif input:wasPressed("b") then self:close() end
+      if self.claimSaved then
+        self.phase = "ready"
+        self:open()
+      elseif self.rankUpPending and ctx.showRankUp then
+        self.rankUpPending = false
+        ctx.showRankUp(self.game)
+      else
+        self.phase, self.notice = "ready", nil
+        ctx.play(self.game, "Press_AB")
+      end
+    elseif input:wasPressed("b") then
+      if self.rankUpPending and ctx.showRankUp then
+        self.rankUpPending = false
+        ctx.showRankUp(self.game)
+      else
+        self:close()
+      end
+    end
   end
 
   function Screen:draw()

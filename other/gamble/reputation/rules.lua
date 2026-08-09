@@ -5,6 +5,17 @@ Rules.GAMES = {
   prize_case = true, horse_racing = true, plinko = true,
 }
 
+Rules.GAME_ORDER = {
+  "blackjack", "holdem", "crash", "tube_flyer",
+  "prize_case", "horse_racing", "plinko",
+}
+
+Rules.GAME_LABELS = {
+  blackjack = "BLACKJACK", holdem = "HOLD'EM", crash = "CRASH",
+  tube_flyer = "TUBE FLYER", prize_case = "PRIZE CASE",
+  horse_racing = "RACING", plinko = "PLINKO",
+}
+
 Rules.RANKS = {
   { id = "ROOKIE", label = "ROOKIE", points = 0, badges = 0, reward = 0 },
   { id = "REGULAR", label = "REGULAR", points = 100, badges = 1, reward = 250 },
@@ -50,7 +61,7 @@ end
 
 function Rules.nextRank(currentId)
   local rank = Rules.RANKS[rankIndex(currentId) + 1]
-  return rank and not rank.deferred and rank or nil
+  return rank
 end
 
 function Rules.progress(points, badges)
@@ -61,8 +72,9 @@ function Rules.progress(points, badges)
     next = nextRank,
     points = math.max(0, math.floor(tonumber(points) or 0)),
     badges = math.max(0, math.floor(tonumber(badges) or 0)),
+    blockedByArena = nextRank and nextRank.deferred == true or false,
     blockedByBadges = nextRank and points >= nextRank.points
-      and badges < nextRank.badges or false,
+      and badges < nextRank.badges and not nextRank.deferred or false,
   }
 end
 

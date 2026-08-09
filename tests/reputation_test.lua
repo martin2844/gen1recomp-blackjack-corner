@@ -25,6 +25,22 @@ T.eq(clean.debt.balance, 0, "future debt state has an additive default")
 T.check(not clean.house.repossessed and not clean.arena.unlocked,
   "future campaign chapters begin disabled")
 
+local future = State.sanitize({
+  schema = 7,
+  futureChapter = { enabled = true },
+  reputation = { rank = "BOGUS", futureStat = 42 },
+  debt = { balance = 7, principal = 99 },
+})
+T.eq(future.schema, 7, "newer campaign schemas are never downgraded")
+T.check(future.futureChapter.enabled and future.reputation.futureStat == 42,
+  "unknown future campaign fields survive sanitation")
+T.eq(future.debt.principal, 99, "unknown nested debt fields survive sanitation")
+T.eq(future.reputation.rank, "ROOKIE", "invalid saved ranks are rejected")
+local futureAgain = State.sanitize(future)
+T.eq(futureAgain.schema, 7, "repeated future-schema loading is idempotent")
+T.eq(futureAgain.debt.principal, 99,
+  "repeated sanitation preserves unknown nested fields")
+
 T.eq(Rules.rankFor(9999, 0).id, "ROOKIE",
   "reputation banks behind the first badge ceiling")
 T.eq(Rules.rankFor(100, 1).id, "REGULAR",
@@ -34,6 +50,9 @@ T.eq(Rules.rankFor(500, 3).id, "HIGH_ROLLER",
 T.eq(Rules.rankFor(1500, 5).id, "VIP", "five badges unlock VIP")
 T.eq(Rules.rankFor(99999, 8).id, "VIP",
   "the deferred Kingpin rank cannot unlock before the arena release")
+T.check(Rules.progress(4000, 8).next.deferred
+    and Rules.progress(4000, 8).blockedByArena,
+  "VIP progress names the reserved Kingpin arena unlock")
 T.check(Rules.progress(100, 0).blockedByBadges,
   "the progress model explains a badge-locked rank")
 T.check(Rules.pointsFor(500, "win", false) > Rules.pointsFor(500, "loss", false),
@@ -75,6 +94,12 @@ T.check(not ok, "the same casino round cannot settle twice")
 T.eq(service.snapshot(game).completedGames, 1,
   "duplicate settlement cannot duplicate reputation")
 
+local rookieSecond = assert(service.beginRound("blackjack", 10))
+local rookieSecondResult
+ok, rookieSecondResult = service.settleRound(game, rookieSecond, "loss", 0)
+T.eq(rookieSecondResult.points, Rules.pointsFor(10, "loss", false),
+  "a game earns its discovery bonus only once within one rank")
+
 for gameId in pairs(Rules.GAMES) do
   local round = assert(service.beginRound(gameId, 10))
   T.check(service.settleRound(game, round, "draw", 10),
@@ -96,6 +121,18 @@ T.eq(service.consumeRankUp().id, "REGULAR",
   "the High Roller screen consumes the pending presentation")
 T.eq(service.consumeRankUp(), nil, "rank-up presentation is exactly once")
 
+local regularDiscovery = assert(service.beginRound("blackjack", 10))
+local regularDiscoveryResult
+ok, regularDiscoveryResult = service.settleRound(
+  game, regularDiscovery, "loss", 0)
+T.eq(regularDiscoveryResult.points, Rules.pointsFor(10, "loss", true),
+  "the same game earns a fresh discovery bonus after ranking up")
+local regularRepeat = assert(service.beginRound("blackjack", 10))
+local regularRepeatResult
+ok, regularRepeatResult = service.settleRound(game, regularRepeat, "loss", 0)
+T.eq(regularRepeatResult.points, Rules.pointsFor(10, "loss", false),
+  "the per-rank discovery bonus still settles only once")
+
 campaign = save.gamble_campaign
 campaign.reputation.points = 500
 campaign.reputation.rank = "REGULAR"
@@ -111,6 +148,39 @@ T.eq(game.save.coins, beforeReward + 1000,
   "removing a badge ceiling grants its rank reward once")
 T.eq(service.consumeRankUp().id, "HIGH_ROLLER",
   "badge-triggered rank-ups keep their presentation")
+
+campaign = save.gamble_campaign
+campaign.reputation.points = 99
+campaign.reputation.rank = "ROOKIE"
+campaign.reputation.rankRewardsClaimed = {}
+campaign.reputation.pendingRankUps = {}
+campaign.reputation.pendingRewardCoins = 0
+campaign.reputation.discoveredGames = {}
+game.save.inventory.CASCADEBADGE = nil
+game.save.inventory.THUNDERBADGE = nil
+game.save.coins = 1000000
+local cappedRound = assert(service.beginRound("crash", 10))
+ok = service.settleRound(game, cappedRound, "loss", 0)
+T.check(ok, "a rank-up at the Coin Case cap still settles")
+T.eq(game.save.coins, 1000000, "rank rewards never overflow the Coin Case")
+T.eq(save.gamble_campaign.reputation.pendingRewardCoins, 250,
+  "an undeliverable rank reward is banked in full")
+game.save.coins = 999900
+local cappedSnapshot = service.snapshot(game)
+T.eq(game.save.coins, 1000000, "banked rewards fill newly available Coin Case space")
+T.eq(cappedSnapshot.pendingRewardCoins, 150,
+  "the unpaid reward remainder stays claimable")
+game.save.coins = 999000
+cappedSnapshot = service.snapshot(game)
+T.eq(game.save.coins, 999150, "the remaining banked reward is delivered later")
+T.eq(cappedSnapshot.pendingRewardCoins, 0,
+  "a banked rank reward is paid exactly once")
+
+campaign = save.gamble_campaign
+campaign.reputation.byGame.blackjack.played = 5
+campaign.reputation.byGame.plinko.played = 2
+T.eq(service.snapshot(game).favoriteGame.id, "blackjack",
+  "the status snapshot exposes a deterministic most-played game")
 
 enabled = false
 local before = save.gamble_campaign.reputation.points

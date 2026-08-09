@@ -14,6 +14,18 @@ local function factory(mod, opts)
     return campaign
   end
 
+  local function deliverPendingRewards(game, rep)
+    if not (game and game.save) or rep.pendingRewardCoins <= 0 then return 0 end
+    local current = math.max(0, math.floor(tonumber(game.save.coins) or 0))
+    local delivered = math.min(rep.pendingRewardCoins,
+      math.max(0, opts.coinCap - current))
+    if delivered > 0 then
+      game.save.coins = current + delivered
+      rep.pendingRewardCoins = rep.pendingRewardCoins - delivered
+    end
+    return delivered
+  end
+
   local function awardRanks(game, rep, oldRank, newRank)
     local oldIndex, newIndex = Rules.rankIndex(oldRank), Rules.rankIndex(newRank)
     for index = oldIndex + 1, newIndex do
@@ -21,12 +33,22 @@ local function factory(mod, opts)
       if rank and not rank.deferred and not rep.rankRewardsClaimed[rank.id] then
         rep.rankRewardsClaimed[rank.id] = true
         rep.pendingRankUps[#rep.pendingRankUps + 1] = rank.id
-        if rank.reward > 0 and game and game.save then
-          game.save.coins = math.min(opts.coinCap,
-            math.max(0, tonumber(game.save.coins) or 0) + rank.reward)
-        end
+        rep.pendingRewardCoins = rep.pendingRewardCoins + rank.reward
       end
     end
+    deliverPendingRewards(game, rep)
+  end
+
+  local function favoriteGame(rep)
+    local selected, plays = nil, 0
+    for _, gameId in ipairs(Rules.GAME_ORDER) do
+      local count = rep.byGame[gameId] and rep.byGame[gameId].played or 0
+      if count > plays then selected, plays = gameId, count end
+    end
+    return selected and {
+      id = selected, label = Rules.GAME_LABELS[selected] or selected,
+      played = plays,
+    } or nil
   end
 
   function Service.ensure()
@@ -38,11 +60,13 @@ local function factory(mod, opts)
     if not campaign then return nil end
     local rep = campaign.reputation
     local progress = Rules.progress(rep.points, Rules.badgeCount(game))
+    local dirty = deliverPendingRewards(game, rep) > 0
     if Rules.rankIndex(progress.current.id) > Rules.rankIndex(rep.rank) then
       awardRanks(game, rep, rep.rank, progress.current.id)
       rep.rank = progress.current.id
-      persist(campaign)
+      dirty = true
     end
+    if dirty then persist(campaign) end
     return {
       schema = campaign.schema,
       points = rep.points,
@@ -51,6 +75,7 @@ local function factory(mod, opts)
       nextRank = progress.next,
       badges = progress.badges,
       blockedByBadges = progress.blockedByBadges,
+      blockedByArena = progress.blockedByArena,
       lifetimeWagered = rep.lifetimeWagered,
       completedGames = rep.completedGames,
       wins = rep.wins,
@@ -59,6 +84,8 @@ local function factory(mod, opts)
       currentLossStreak = rep.currentLossStreak,
       bestLossStreak = rep.bestLossStreak,
       byGame = rep.byGame,
+      favoriteGame = favoriteGame(rep),
+      pendingRewardCoins = rep.pendingRewardCoins,
       pendingRankUps = rep.pendingRankUps,
     }
   end
@@ -73,6 +100,7 @@ local function factory(mod, opts)
     rep.pendingRounds[token] = {
       gameId = gameId,
       stake = math.max(0, math.floor(tonumber(stake) or 0)),
+      rankAtStart = rep.rank,
     }
     persist(campaign)
     return token
@@ -93,8 +121,11 @@ local function factory(mod, opts)
     result = ({ win = true, loss = true, draw = true })[result]
       and result or "loss"
     returned = math.max(0, math.floor(tonumber(returned) or 0))
-    local first = not rep.discoveredGames[pending.gameId]
-    rep.discoveredGames[pending.gameId] = true
+    local discoveryRank = pending.rankAtStart or rep.rank
+    rep.discoveredGames[discoveryRank] = rep.discoveredGames[discoveryRank] or {}
+    local discoveries = rep.discoveredGames[discoveryRank]
+    local first = not discoveries[pending.gameId]
+    discoveries[pending.gameId] = true
     local gained = Rules.pointsFor(pending.stake, result, first)
     rep.points = rep.points + gained
     rep.lifetimeWagered = rep.lifetimeWagered + pending.stake

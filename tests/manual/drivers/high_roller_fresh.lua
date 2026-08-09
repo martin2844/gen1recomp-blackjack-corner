@@ -11,16 +11,17 @@ return function(game)
 
   local bucket = loader.modSave.blackjack_corner or {}
   loader.modSave.blackjack_corner = bucket
-  bucket.gamble_mode = true
-  bucket.gamble_campaign = nil
-
-  game.save.inventory = game.save.inventory or {}
-  game.save.inventory.COIN_CASE = math.max(1,
-    tonumber(game.save.inventory.COIN_CASE) or 0)
-  game.save.coins = math.max(500, tonumber(game.save.coins) or 0)
+  U.log("Start a NEW GAME and answer YES to Oak's Gamble Mode prompt.")
+  while bucket.gamble_mode == nil do coroutine.yield() end
+  assert(bucket.gamble_mode == true, "fresh scenario requires Gamble Mode YES")
+  assert((game.save.inventory or {}).COIN_CASE == 1,
+    "Oak's Gamble Mode flow did not grant the Coin Case")
+  assert((tonumber(game.save.coins) or 0) == 100,
+    "Oak's Gamble Mode flow did not grant exactly 100 starting coins")
+  assert(bucket.gamble_campaign ~= nil,
+    "Oak's Gamble Mode flow did not initialize campaign state")
 
   U.teleport(game, "PALLET_CASINO", 10, 11, "up")
-  exports.reputation.ensure()
   require("src.ui.Screens").push(game, "BlackjackCornerHighRoller")
   U.wait(5)
   local shotDir = os.getenv("SHOT_DIR") or "/tmp/blackjack-corner-v05/fresh"

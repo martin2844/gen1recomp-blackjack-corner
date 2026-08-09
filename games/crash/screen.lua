@@ -35,9 +35,15 @@ return function(ctx)
     self.payout = math.min(ctx.coinCap - ctx.coins(self.game),
       Rules.payout(self.bet, self.multiplier))
     self.game.save.coins = ctx.coins(self.game) + self.payout
-    ctx.settleRound(self.game, self.reputationRound, "win", self.payout)
+    local result = self.payout > self.bet and "win"
+      or self.payout == self.bet and "draw" or "loss"
+    local _, progress = ctx.settleRound(
+      self.game, self.reputationRound, result, self.payout)
+    self.rankUpPending = progress and progress.rankUp
     self.phase = "cashed"
-    mod.save:set("crash_wins", mod.save:get("crash_wins", 0) + 1)
+    if result == "win" then
+      mod.save:set("crash_wins", mod.save:get("crash_wins", 0) + 1)
+    end
     mod.save:set("crash_best_x100", math.max(
       mod.save:get("crash_best_x100", 100), math.floor(self.multiplier * 100)))
     ctx.play(self.game, "Slots_Reward")
@@ -61,13 +67,23 @@ return function(ctx)
       self.multiplier = Rules.multiplier(self.elapsed)
       if self.multiplier >= self.crashPoint then
         self.multiplier, self.phase = self.crashPoint, "crashed"
-        ctx.settleRound(self.game, self.reputationRound, "loss", 0)
+        local _, progress = ctx.settleRound(
+          self.game, self.reputationRound, "loss", 0)
+        self.rankUpPending = progress and progress.rankUp
         ctx.play(self.game, "Slots_Stop_Wheel")
       elseif input:wasPressed("a") then self:cashOut() end
     elseif input:wasPressed("a") then
-      self.phase, self.notice = "bet", nil
-      ctx.play(self.game, "Press_AB")
-    elseif input:wasPressed("b") then self:close() end
+      if self.rankUpPending and ctx.showRankUp then
+        self.rankUpPending = false; ctx.showRankUp(self.game)
+      else
+        self.phase, self.notice = "bet", nil
+        ctx.play(self.game, "Press_AB")
+      end
+    elseif input:wasPressed("b") then
+      if self.rankUpPending and ctx.showRankUp then
+        self.rankUpPending = false; ctx.showRankUp(self.game)
+      else self:close() end
+    end
   end
 
   function Screen:draw()

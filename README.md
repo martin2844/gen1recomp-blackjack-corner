@@ -46,7 +46,7 @@ without changing the always-available base casino expansion:
 - casino patrons and staff react to rank and sustained losses;
 - old saves lazily receive a versioned campaign record while existing game,
   pawn, case, party, and currency state stays intact.
-- the current headless suite covers 789 assertions, with Red and Blue native
+- the current headless suite covers 816 assertions, with Red and Blue native
   UI smoke runs layered on top.
 
 The implementation and release train are mapped in
@@ -559,6 +559,7 @@ luajit mods/blackjack_corner/tests/holdem_rules_test.lua
 luajit mods/blackjack_corner/tests/pawn_test.lua
 luajit mods/blackjack_corner/tests/arcade_rules_test.lua
 luajit mods/blackjack_corner/tests/gamble_rules_test.lua
+luajit mods/blackjack_corner/tests/reputation_test.lua
 luajit mods/blackjack_corner/tests/blackjack_mod_test.lua
 luajit mods/blackjack_corner/tests/shiny_fallback_test.lua
 ```

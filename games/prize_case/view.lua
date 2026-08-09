@@ -71,8 +71,10 @@ return function(UI)
     UI.frame(state.title or "PRIZE CASE", Font, coinCount, theme)
     if state.phase == "ready" then
       caseGraphic()
-      UI.color(C.ink); UI.centered(Font, tostring(state.cost or 500) .. " COINS", 82)
-      UI.button(Font, "A OPEN CASE", 96, coinCount >= (state.cost or 500), theme)
+      UI.color(C.ink); UI.centered(Font, state.hasSavedClaim and "CLAIM PAID"
+        or tostring(state.cost or 500) .. " COINS", 82)
+      UI.button(Font, state.hasSavedClaim and "A RETRY CLAIM" or "A OPEN CASE",
+        96, state.hasSavedClaim or coinCount >= (state.cost or 500), theme)
       UI.color(C.ink); UI.centered(Font, state.notice or "RARE PRIZES INSIDE", 120)
       UI.centered(Font, "B EXIT", 130)
     else
@@ -101,7 +103,8 @@ return function(UI)
         UI.centered(Font, state.refunded and ((state.cost or 500) .. " REFUNDED")
           or state.claimSaved and "CLAIM SAVED" or "YOU GOT", 105)
         UI.centered(Font, state.message or "PRIZE", 117)
-        UI.centered(Font, "A AGAIN  B EXIT", 129)
+        UI.centered(Font, state.claimSaved and "A RETRY  B EXIT"
+          or "A AGAIN  B EXIT", 129)
       end
     end
     love.graphics.setColor(1, 1, 1, 1)

@@ -33,10 +33,11 @@ return function(ctx)
     self.payout = math.min(ctx.coinCap - ctx.coins(self.game),
       Rules.payout(self.bet, self.drop.slot))
     self.game.save.coins = ctx.coins(self.game) + self.payout
-    ctx.settleRound(self.game, self.reputationRound,
+    local _, progress = ctx.settleRound(self.game, self.reputationRound,
       self.payout > self.bet and "win"
         or self.payout == self.bet and "draw" or "loss",
       self.payout)
+    self.rankUpPending = progress and progress.rankUp
     self.phase = "result"
     mod.save:set("plinko_best", math.max(mod.save:get("plinko_best", 0), self.payout))
     ctx.play(self.game, self.payout >= self.bet and "Slots_Reward" or "Slots_Stop_Wheel")
@@ -56,8 +57,14 @@ return function(ctx)
     elseif self.phase == "dropping" then
       if Rules.update(self.drop, math.min(0.05, dt or 1 / 60)) then self:finish() end
     elseif input:wasPressed("a") then
-      self.phase, self.notice = "bet", nil
-    elseif input:wasPressed("b") then self:close() end
+      if self.rankUpPending and ctx.showRankUp then
+        self.rankUpPending = false; ctx.showRankUp(self.game)
+      else self.phase, self.notice = "bet", nil end
+    elseif input:wasPressed("b") then
+      if self.rankUpPending and ctx.showRankUp then
+        self.rankUpPending = false; ctx.showRankUp(self.game)
+      else self:close() end
+    end
   end
 
   function Screen:draw()

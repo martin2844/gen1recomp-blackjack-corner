@@ -958,6 +958,10 @@ do
   local refundGame = gameWith(1000)
   refundGame.input = noInput
   refundGame.save.inventory.COIN_CASE = 1
+  local campaignBucket = run.loader.modSave.blackjack_corner
+  local previousMode = campaignBucket.gamble_mode
+  campaignBucket.gamble_mode = true
+  api.reputation.resetForQA()
   local refund = run.data.screens.BlackjackCornerPrizeCase.new(refundGame, {})
   refund:open()
   for index = 1, 19 do refundGame.save.inventory["FILLER_" .. index] = 1 end
@@ -965,11 +969,36 @@ do
     kind = "item", id = "NEW_CASE_ITEM", quantity = 1,
     label = "NEW ITEM", tier = "rare",
   }
+  campaignBucket.paid_case_claim = refund.winner
   refund:settle()
-  T.check(refund.refunded, "an undeliverable case prize triggers a refund")
-  T.eq(refundGame.save.coins, 1000, "failed case delivery refunds all 500 coins")
+  local failedProgress = api.reputation.snapshot(refundGame)
+  T.check(refund.claimSaved and not refund.refunded,
+    "an undeliverable paid case saves the exact claim")
+  T.eq(refundGame.save.coins, 500,
+    "a saved paid-case claim cannot become a free reputation wager")
   T.eq(refundGame.save.inventory.NEW_CASE_ITEM, nil,
     "failed case delivery does not partially add the reward")
+  local retry = run.data.screens.BlackjackCornerPrizeCase.new(refundGame, {})
+  T.check(retry.hasSavedClaim, "a new screen detects the pending paid claim")
+  retry:open()
+  T.eq(retry.winner.id, "NEW_CASE_ITEM",
+    "a paid claim retry preserves the immutable reward")
+  T.eq(refundGame.save.coins, 500, "retrying a saved claim never charges twice")
+  retry:settle()
+  local retriedProgress = api.reputation.snapshot(refundGame)
+  T.eq(retriedProgress.completedGames, failedProgress.completedGames,
+    "retrying a paid claim cannot duplicate campaign settlement")
+  T.eq(retriedProgress.points, failedProgress.points,
+    "retrying a paid claim cannot duplicate reputation")
+  refundGame.save.inventory.FILLER_19 = nil
+  local delivered = run.data.screens.BlackjackCornerPrizeCase.new(refundGame, {})
+  delivered:open()
+  delivered:settle()
+  T.eq(refundGame.save.inventory.NEW_CASE_ITEM, 1,
+    "a saved paid claim delivers after Bag space is made")
+  T.check(not run.loader.modSave.blackjack_corner.paid_case_claim,
+    "successful delivery clears the persistent paid claim")
+  campaignBucket.gamble_mode = previousMode
 end
 
 do
@@ -1088,7 +1117,7 @@ do
 
   game = prepared()
   local crash = run.data.screens.BlackjackCornerCrash.new(game, {})
-  crash:launch(); crash.multiplier = 1.5; crash:cashOut()
+  crash:launch(); crash.multiplier = 1.0; crash:cashOut()
 
   game = prepared()
   local tube = run.data.screens.BlackjackCornerTubeFlyer.new(game, {})
@@ -1113,6 +1142,8 @@ do
   end
   T.eq(snapshot.completedGames, 7,
     "the seven casino screens share one exactly-once campaign ledger")
+  T.eq(snapshot.byGame.crash.draws, 1,
+    "a break-even 1.00x Crash cashout records a draw instead of a win")
   case:settle()
   T.eq(api.reputation.snapshot(game).completedGames, 7,
     "Prize Case delivery cannot duplicate its reel settlement")
@@ -1128,6 +1159,24 @@ do
   local status = run.data.screens.BlackjackCornerHighRoller.new(game, {})
   status:draw()
   T.check(true, "the High Roller status panel renders without an engine error")
+
+  local campaign = run.loader.modSave.blackjack_corner.gamble_campaign
+  campaign.reputation.points = 99
+  campaign.reputation.rank = "ROOKIE"
+  campaign.reputation.rankRewardsClaimed = {}
+  campaign.reputation.pendingRankUps = {}
+  campaign.reputation.discoveredGames = {}
+  game = prepared()
+  game.save.inventory.BOULDERBADGE = 1
+  local rankGame = run.data.screens.BlackjackCornerTable.new(game, {})
+  rankGame:deal()
+  if not rankGame.settled then
+    rankGame.round.state, rankGame.round.result = "done", "loss"
+    rankGame.round.payout = 0
+    rankGame:recordRound()
+  end
+  T.check(rankGame.rankUpPending,
+    "a real game result carries its rank-up into result acknowledgement")
 
   bucket.gamble_mode = false
   menu = Runtime.call("ui.start_menu.items", function(_, rows) return rows end,

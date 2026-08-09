@@ -65,7 +65,9 @@ return function(ctx)
     UI.color(C.ink)
     if nextRank then
       Font.draw("NEXT " .. nextRank.label, 10, 64)
-      if state.blockedByBadges then
+      if state.blockedByArena then
+        UI.color(C.red); UI.centered(Font, "ARENA REQUIRED", 76)
+      elseif state.blockedByBadges then
         UI.color(C.red)
         UI.centered(Font, ("NEED %d BADGE%s"):format(nextRank.badges,
           nextRank.badges == 1 and "" or "S"), 76)
@@ -77,20 +79,27 @@ return function(ctx)
       Font.draw(("BADGES %d/8"):format(state.badges), 10, 70)
     end
 
-    UI.panel(10, 89, 140, 31, C.paper)
+    UI.panel(10, 87, 140, 39, C.paper)
     UI.color(C.ink)
     Font.draw(("W %d  L %d  D %d"):format(
-      state.wins or 0, state.losses or 0, state.draws or 0), 16, 94)
-    Font.draw("WAGERED " .. compact(state.lifetimeWagered), 16, 105)
+      state.wins or 0, state.losses or 0, state.draws or 0), 16, 91)
+    Font.draw("WAGERED " .. compact(state.lifetimeWagered), 16, 102)
     local streak = "COLD " .. tostring(state.currentLossStreak or 0)
-    Font.draw(streak, 144 - Font.width(streak), 105)
-    UI.color(C.ink); UI.centered(Font, "A/B RETURN", 130)
+    Font.draw(streak, 144 - Font.width(streak), 102)
+    local favorite = state.favoriteGame and state.favoriteGame.label or "NONE"
+    Font.draw("FAV " .. favorite, 16, 113)
+    if (state.pendingRewardCoins or 0) > 0 then
+      local banked = "BANK " .. compact(state.pendingRewardCoins)
+      Font.draw(banked, 144 - Font.width(banked), 113)
+    end
+    UI.color(C.ink); UI.centered(Font, "A/B RETURN", 132)
 
     if self.rankUp then
-      UI.panel(19, 47, 122, 48, C.goldLight, C.outline)
-      UI.color(C.red); UI.centered(Font, "RANK UP!", 55)
-      UI.color(C.ink); UI.centered(Font, self.rankUp.label, 68)
-      UI.centered(Font, "REWARD " .. tostring(self.rankUp.reward) .. " COINS", 80)
+      UI.panel(19, 43, 122, 58, C.goldLight, C.outline)
+      UI.color(C.red); UI.centered(Font, "RANK UP!", 49)
+      UI.color(C.ink); UI.centered(Font, self.rankUp.label, 62)
+      UI.centered(Font, "REWARD " .. tostring(self.rankUp.reward), 75)
+      UI.centered(Font, "COINS BANKED", 88)
     end
     love.graphics.setColor(1, 1, 1, 1)
   end

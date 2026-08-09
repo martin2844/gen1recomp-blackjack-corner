@@ -4,14 +4,22 @@ local GymCases = {}
 
 GymCases.KEY = "gym_case_queue"
 GymCases.GYMS = {
-  BOULDERBADGE = { order = 1, leader = "BROCK" },
-  CASCADEBADGE = { order = 2, leader = "MISTY" },
-  THUNDERBADGE = { order = 3, leader = "SURGE" },
-  RAINBOWBADGE = { order = 4, leader = "ERIKA" },
-  SOULBADGE = { order = 5, leader = "KOGA" },
-  MARSHBADGE = { order = 6, leader = "SABRINA" },
-  VOLCANOBADGE = { order = 7, leader = "BLAINE" },
-  EARTHBADGE = { order = 8, leader = "GIOVANNI" },
+  BOULDERBADGE = { order = 1, leader = "BROCK", dialogue =
+    "That was a solid\nvictory.\fEvery battle is a\nlesson, {PLAYER}.\fYou earned a\nGYM CASE.\fGive it a spin and\nlearn what luck\nhas in store.\fGood luck!" },
+  CASCADEBADGE = { order = 2, leader = "MISTY", dialogue =
+    "You really made\na splash!\fI like a trainer\nwho surprises me.\fYou earned a\nGYM CASE.\fGive it a spin.\nLet's see if luck\nlikes you too!\fGood luck!" },
+  THUNDERBADGE = { order = 3, leader = "SURGE", dialogue =
+    "Outstanding work,\nsoldier!\fYou earned a\nGYM CASE.\fStep up and spin\nfor your prize.\fThat's an order!\nGood luck!" },
+  RAINBOWBADGE = { order = 4, leader = "ERIKA", dialogue =
+    "What a lovely\nbattle.\fYou earned a\nGYM CASE.\fGive it a gentle\nspin.\fMay good fortune\nbloom for you." },
+  SOULBADGE = { order = 5, leader = "KOGA", dialogue =
+    "Your skill pierced\nevery illusion.\fYou earned a\nGYM CASE.\fSpin without fear.\nFortune favors\ndiscipline.\fGood luck." },
+  MARSHBADGE = { order = 6, leader = "SABRINA", dialogue =
+    "I did foresee\nyour victory...\fBut even I cannot\nread pure chance.\fThis GYM CASE is\nyours.\fSpin it, and reveal\nyour fate.\fGood luck." },
+  VOLCANOBADGE = { order = 7, leader = "BLAINE", dialogue =
+    "Hah! A blazing\nvictory!\fYou earned a\nGYM CASE.\fFinal question:\nwhat prize is\ninside?\fSpin it and find\nout! Good luck!" },
+  EARTHBADGE = { order = 8, leader = "GIOVANNI", dialogue =
+    "You have earned\nthis victory.\fI do not hand out\ncommon trinkets.\fTake this GYM CASE\nand spin it.\fLet chance decide\nwhat power you\nleave with." },
 }
 
 local POKEMON = {
@@ -110,6 +118,21 @@ function GymCases.install(mod, opts)
     saveQueue(rows)
   end
 
+  local function leaderDialogue(badge)
+    local gym = GymCases.GYMS[badge]
+    return gym and gym.dialogue or nil
+  end
+
+  local function victoryDialogue(game, reward)
+    local lines, text = {}, game.data.text or {}
+    for _, label in ipairs(reward.dialogue or {}) do
+      if text[label] and text[label] ~= "" then lines[#lines + 1] = text[label] end
+    end
+    lines[#lines + 1] = leaderDialogue(reward.badge)
+      or "You earned a\nGYM CASE.\fGive it a spin.\nGood luck!"
+    return table.concat(lines, "\f")
+  end
+
   local Overworld = require("src.world.OverworldController")
   local state = Overworld._blackjackCornerGymCases
   if type(state) ~= "table" then
@@ -134,13 +157,18 @@ function GymCases.install(mod, opts)
     end
     local entry = enqueue(reward)
     if reward.gotFlag then game.save.flags[reward.gotFlag] = true end
-    mod.ui.push(game, opts.screenId, { caseData = entry, autoOpen = true,
-      oneShot = true, title = "GYM CASE" })
-    local item, gotFlag = reward.item, reward.gotFlag
-    reward.item, reward.gotFlag = nil, nil
+    local item, gotFlag, dialogue = reward.item, reward.gotFlag, reward.dialogue
+    -- Let vanilla apply the badge, flags, trainer deactivation, and map hook,
+    -- but own the presentation here. Pushing the case before vanilla used to
+    -- put vanilla's TextBox above the opaque case screen.
+    reward.item, reward.gotFlag, reward.dialogue = nil, nil, {}
     local ok, result = pcall(state.vanilla, ow, trainerClass, partyIndex)
-    reward.item, reward.gotFlag = item, gotFlag
+    reward.item, reward.gotFlag, reward.dialogue = item, gotFlag, dialogue
     if not ok then error(result, 0) end
+    game.stack:push(mod.ui.TextBox.new(game, victoryDialogue(game, reward), function()
+      mod.ui.push(game, opts.screenId, { caseData = entry, autoOpen = true,
+        oneShot = true, title = "GYM CASE" })
+    end))
     return result
   end
 
@@ -159,6 +187,7 @@ function GymCases.install(mod, opts)
   return {
     queue = queue,
     pool = pool,
+    leaderDialogue = leaderDialogue,
     onChosen = onChosen,
     onDelivered = remove,
   }

@@ -15,6 +15,8 @@
   new rear arcade with redistributed patrons and hidden coins.
 - Pallet Casino now spans 20x18 walk cells and adds dedicated blackjack and
   Texas Hold'em tables, so all seven casino games are playable from Pallet.
+- All eight Gym Leaders now introduce their Gamble Mode case rewards in their
+  own voices before the reel opens, replacing the original direct-TM pitch.
 
 ### Fixed
 
@@ -24,6 +26,8 @@
   original pond, making the exterior warp reachable without Surf.
 - Pallet Casino's complete pond bank now sits one block farther south, giving
   the entrance a clean two-block forecourt and a continuous bordered shoreline.
+- Gym reward dialogue now finishes over the visible leader and Gym before the
+  opaque Gym Case opens, instead of rendering the text box on top of the reel.
 
 ## [0.3.0] - 2026-08-08
 

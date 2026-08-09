@@ -136,6 +136,10 @@ do
   }
   Game.stack = { pushed = {}, push = function(self, screen)
     self.pushed[#self.pushed + 1] = screen
+  end, pop = function(self)
+    return table.remove(self.pushed)
+  end, top = function(self)
+    return self.pushed[#self.pushed]
   end }
   Runtime.emit("intro.oak_speech.answered", {
     saveKey = "gamble_mode", value = true, speech = { game = Game },
@@ -162,8 +166,15 @@ do
   T.check(victoryDone, "the ordinary post-victory script still runs")
   T.eq(#api.gym_cases.queue(), 1,
     "the suppressed gym TM becomes one persistent prize case")
+  local leaderSpeech = Game.stack.pushed[1]
+  T.check(leaderSpeech and leaderSpeech.pages and not leaderSpeech.screenId,
+    "the leader speaks over the gym scene before the Gym Case opens")
+  T.eq(#Game.stack.pushed, 1,
+    "the opaque Gym Case does not sit behind the leader's dialogue")
+  Game.stack:pop()
+  leaderSpeech.onDone()
   T.eq(Game.stack.pushed[1].screenId, "BlackjackCornerGymCase",
-    "the gym case opens after a leader victory")
+    "finishing the leader's speech opens the Gym Case")
   for index = 1, 19 do Game.save.inventory["GYM_FILLER_" .. index] = 1 end
   local gymCase = Game.stack.pushed[1]
   gymCase:update(0)
@@ -191,6 +202,10 @@ do
   }
   Game.stack = { pushed = {}, push = function(self, screen)
     self.pushed[#self.pushed + 1] = screen
+  end, pop = function(self)
+    return table.remove(self.pushed)
+  end, top = function(self)
+    return self.pushed[#self.pushed]
   end }
   victoryDone = false
   Overworld.checkVictoryRewards(overworld, "OPP_MISTY", 1)
@@ -202,6 +217,29 @@ do
   debug.setupvalue(vanilla, gameUpvalue, oldOverworldGame)
   Game.data.items.TM_BUBBLEBEAM = oldBubblebeam
   Game.data, Game.save, Game.stack = oldData, oldSave, oldStack
+end
+
+do
+  local voices = {
+    BOULDERBADGE = { leader = "BROCK", marker = "lesson" },
+    CASCADEBADGE = { leader = "MISTY", marker = "splash" },
+    THUNDERBADGE = { leader = "SURGE", marker = "order" },
+    RAINBOWBADGE = { leader = "ERIKA", marker = "bloom" },
+    SOULBADGE = { leader = "KOGA", marker = "discipline" },
+    MARSHBADGE = { leader = "SABRINA", marker = "foresee" },
+    VOLCANOBADGE = { leader = "BLAINE", marker = "question" },
+    EARTHBADGE = { leader = "GIOVANNI", marker = "power" },
+  }
+  for badge, expected in pairs(voices) do
+    local speech = api.gym_cases.leaderDialogue(badge)
+    T.check(speech and speech:find(expected.marker, 1, true),
+      expected.leader .. " gives the Gym Case pitch in character")
+    T.check(not speech:find("TM", 1, true),
+      expected.leader .. " no longer explains a direct TM reward")
+    T.check(speech:find("GYM CASE", 1, true)
+        and speech:lower():find("spin", 1, true),
+      expected.leader .. " clearly tells the player to spin a Gym Case")
+  end
 end
 
 do

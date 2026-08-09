@@ -1,0 +1,15 @@
+{
+  "id": "shiny_indicators",
+  "name": "Gen II Shiny Indicators Fixture",
+  "version": "1.5.3",
+  "api": 2,
+  "entry": "main.lua",
+  "profile": "content",
+  "category": "VISUAL",
+  "game_version": ">=0.0.0-0 <2.0.0",
+  "priority": 130,
+  "permissions": [],
+  "dependencies": [],
+  "optional_dependencies": [],
+  "conflicts": []
+}

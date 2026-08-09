@@ -1,0 +1,15 @@
+{
+  "id": "SHINY_POKEMON",
+  "name": "Shiny Provider Fixture",
+  "version": "1.0.0",
+  "api": 2,
+  "entry": "main.lua",
+  "profile": "content",
+  "category": "VISUAL",
+  "game_version": ">=0.0.0-0 <2.0.0",
+  "priority": 150,
+  "permissions": [],
+  "dependencies": [],
+  "optional_dependencies": [],
+  "conflicts": []
+}

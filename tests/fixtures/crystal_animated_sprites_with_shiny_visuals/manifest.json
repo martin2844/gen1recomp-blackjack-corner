@@ -1,0 +1,15 @@
+{
+  "id": "crystal_animated_sprites_with_shiny_visuals",
+  "name": "Crystal Shiny Visuals Fixture",
+  "version": "1.5.0",
+  "api": 2,
+  "entry": "main.lua",
+  "profile": "content",
+  "category": "VISUAL",
+  "game_version": ">=0.0.0-0 <2.0.0",
+  "priority": 980,
+  "permissions": [],
+  "dependencies": [],
+  "optional_dependencies": [],
+  "conflicts": []
+}

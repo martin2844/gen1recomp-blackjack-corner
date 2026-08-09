@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+## [0.4.1] - 2026-08-10
+
+### Changed
+
+- The built-in shiny fallback now derives canonical Pokemon Crystal palettes
+  for all 151 Generation I species from the player's imported sprite cache.
+- Dedicated shiny mods load first and retain complete control. Blackjack
+  Corner only activates its bundled Gen II indicator when no supported shiny
+  provider is installed.
+- The fallback adds configurable entrance sparkles, a synthesized chime,
+  battle markers, and a Crystal-style status-screen icon.
+
+### Fixed
+
+- Shiny Pokemon no longer appear with a tiny black dot where the old
+  white-on-white battle sparkle left only its center outline visible.
+
 ## [0.4.0] - 2026-08-09
 
 ### Changed

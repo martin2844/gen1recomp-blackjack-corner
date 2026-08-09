@@ -11,7 +11,7 @@ local State = loadModule("other/gamble/state.lua")
 local Rules = loadModule("other/gamble/reputation/rules.lua")
 local ServiceFactory = loadModule("other/gamble/reputation/service.lua")
 
-T.eq(State.SCHEMA, 1, "the Gamble campaign save starts with an explicit schema")
+T.eq(State.SCHEMA, 2, "Rocket Credit advances the campaign schema explicitly")
 local clean = State.sanitize({ reputation = {
   points = -50, completedGames = "4", currentLossStreak = 0 / 0,
   byGame = { blackjack = { played = "2", wins = 1 } },
@@ -21,9 +21,16 @@ T.eq(clean.reputation.completedGames, 4, "numeric legacy fields migrate safely")
 T.eq(clean.reputation.currentLossStreak, 0, "NaN save values are repaired")
 T.eq(clean.reputation.byGame.blackjack.played, 2,
   "per-game campaign statistics survive sanitation")
-T.eq(clean.debt.balance, 0, "future debt state has an additive default")
-T.check(not clean.house.repossessed and not clean.arena.unlocked,
+T.eq(clean.debt.principal, 0, "Rocket Credit debt has an additive default")
+T.check(clean.house.status == "FAMILY_HOME" and not clean.arena.unlocked,
   "future campaign chapters begin disabled")
+
+local migratedDebt = State.sanitize({ schema = 1,
+  debt = { balance = 321 }, house = { repossessed = true } })
+T.eq(migratedDebt.schema, 2, "schema-one campaigns migrate in order")
+T.eq(migratedDebt.debt.principal, 321, "legacy debt balance becomes principal")
+T.eq(migratedDebt.house.status, "ROCKET_OWNED",
+  "legacy repossession state survives the schema-two migration")
 
 local future = State.sanitize({
   schema = 7,
@@ -77,7 +84,7 @@ T.eq(service.ensure(), nil, "base mode never creates Gamble campaign state")
 T.eq(save.gamble_campaign, nil, "base-mode saves remain untouched")
 enabled = true
 local campaign = service.ensure()
-T.eq(campaign.schema, 1, "Gamble Mode lazily creates its campaign state")
+T.eq(campaign.schema, 2, "Gamble Mode lazily creates current campaign state")
 T.eq(save.unrelated, "kept", "campaign initialization preserves other mod data")
 
 local game = { save = { coins = 100, inventory = {} } }

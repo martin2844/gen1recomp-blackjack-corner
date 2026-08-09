@@ -5,12 +5,15 @@ tests/pawn_test.lua
 tests/arcade_rules_test.lua
 tests/gamble_rules_test.lua
 tests/reputation_test.lua
+tests/credit_test.lua
 tests/manual/README.md
 tests/manual/MATRIX.md
 tests/manual/releases/v0.5.0.md
+tests/manual/releases/v0.6.0.md
 tests/manual/evidence/README.md
 tests/manual/drivers/high_roller_fresh.lua
 tests/manual/drivers/high_roller_rank_up.lua
 tests/manual/drivers/high_roller_badge_ceiling.lua
 tests/manual/drivers/high_roller_migration.lua
 tests/manual/drivers/high_roller_mode_off.lua
+tests/manual/drivers/rocket_credit_fresh.lua

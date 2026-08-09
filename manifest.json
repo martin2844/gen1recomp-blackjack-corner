@@ -1,7 +1,7 @@
 {
   "id": "blackjack_corner",
   "name": "Blackjack Corner",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "api": 2,
   "entry": "main.lua",
   "profile": "content",
@@ -22,6 +22,6 @@
     "shiny_visuals"
   ],
   "conflicts": [],
-  "description": "Adds an optional game-wide Gamble Mode, two live casinos, random starters, gym cases, horse racing, Plinko, table games, pawning, shinies, and rare prizes.",
+  "description": "Adds Gamble Mode, two live casinos, High Roller progression, Rocket credit, random starters, gym cases, seven games, pawning, shinies, and rare prizes.",
   "github": "martin2844/gen1recomp-blackjack-corner"
 }

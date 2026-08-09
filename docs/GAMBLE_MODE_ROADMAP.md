@@ -1,8 +1,8 @@
 # Gamble Mode Campaign Roadmap
 
 Status: APPROVED  
-Target branch: `feat/v0.5-high-roller`  
-First target release: `v0.5.0`  
+Target branch: `feat/v0.6-rocket-credit`  
+Current target release: `v0.6.0`  
 Last updated: 2026-08-09
 
 ## Product shape
@@ -110,7 +110,7 @@ Planned mod save key: `gamble_campaign`
 
 ```lua
 {
-  schema = 1,
+  schema = 2,
   reputation = {
     points = 0,
     rank = "ROOKIE",
@@ -127,7 +127,10 @@ Planned mod save key: `gamble_campaign`
     principal = 0,
     fees = 0,
     status = "CLEAR",
+    dueBadge = 0,
     lastBadgeFee = 0,
+    loansTaken = 0,
+    totalRepaid = 0,
     collectorsTriggered = {},
   },
   house = {
@@ -246,6 +249,17 @@ Implementation status on `feat/v0.5-high-roller`:
 - Start-menu High Roller panel and reactive casino dialogue: implemented;
 - automated coverage and supervised manual-test framework: implemented;
 - complete Red/Blue human release-matrix signoff: pending.
+
+## v0.6 implementation status
+
+Implementation status on `feat/v0.6-rocket-credit`:
+
+- schema-two debt and family-home migration: implemented;
+- rank-based fixed-fee Rocket loans: implemented;
+- repayment with coins or ordinary money: implemented;
+- badge-milestone default and idempotent late fees: implemented;
+- voluntary pawn-to-debt flow and luxury restrictions: pending;
+- collectors, zero-balance bailout, repossession, buyback, and restoration: pending.
 
 ### Chunk 1: campaign state and migrations
 

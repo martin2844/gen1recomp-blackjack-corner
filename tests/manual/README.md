@@ -1,6 +1,6 @@
-# Manual v0.5 QA
+# Manual Gamble Mode QA
 
-The v0.5 campaign systems need human review as well as Lua assertions. These
+The v0.5+ campaign systems need human review as well as Lua assertions. These
 drivers prepare a deterministic save, move the player to the feature under
 test, capture a baseline screenshot, and then stop automating. The game keeps
 running so a tester can take the keyboard and judge the complete E2E flow.
@@ -24,6 +24,11 @@ Wait for `MANUAL CONTROL READY` in the terminal. From that point onward the
 driver only yields and all controls belong to the tester. Keep a separate
 identity and screenshot directory for every matrix row so save state and
 evidence cannot leak between scenarios.
+
+For the v0.6 Rocket Credit slice, substitute
+`tests/manual/drivers/rocket_credit_fresh.lua`. The driver positions the player
+at the Celadon loan shark and opens the credit menu; continue manually through
+borrowing, statements, both repayment methods, and the default scenario.
 
 Before signing off a release:
 

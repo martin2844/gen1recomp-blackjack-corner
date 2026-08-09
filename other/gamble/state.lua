@@ -1,7 +1,7 @@
 local State = {}
 
 State.KEY = "gamble_campaign"
-State.SCHEMA = 1
+State.SCHEMA = 2
 
 local VALID_RANKS = {
   ROOKIE = true, REGULAR = true, HIGH_ROLLER = true,
@@ -132,8 +132,15 @@ function State.defaults()
       nextRoundId = 0,
     },
     -- Reserved now so later releases can migrate additively.
-    debt = { balance = 0, defaults = 0 },
-    house = { repossessed = false, boughtBack = false },
+    debt = {
+      principal = 0, fees = 0, status = "CLEAR", dueBadge = 0,
+      lastBadgeFee = 0, loansTaken = 0, totalRepaid = 0,
+      collectorsTriggered = {},
+    },
+    house = {
+      status = "FAMILY_HOME", bailoutClaimed = false,
+      buybackPaid = false, rocketBattleWon = false,
+    },
     arena = { unlocked = false, reputation = 0 },
   }
 end
@@ -144,6 +151,22 @@ State.MIGRATIONS = {
     ensureTable(value, "debt")
     ensureTable(value, "house")
     ensureTable(value, "arena")
+  end,
+  [2] = function(value)
+    local debt = ensureTable(value, "debt")
+    local legacyBalance = number(debt.balance, 0)
+    if debt.principal == nil and legacyBalance > 0 then
+      debt.principal = legacyBalance
+    end
+    debt.balance = nil
+    debt.defaults = nil
+    local house = ensureTable(value, "house")
+    if house.status == nil then
+      house.status = house.repossessed and "ROCKET_OWNED"
+        or house.boughtBack and "RESTORED" or "FAMILY_HOME"
+    end
+    house.repossessed = nil
+    house.boughtBack = nil
   end,
 }
 
@@ -190,10 +213,21 @@ function State.sanitize(value)
   rep.pendingRounds = sanitizePending(rep.pendingRounds)
   rep.settledRounds = sanitizeStrings(rep.settledRounds, 128)
   rep.nextRoundId = number(rep.nextRoundId, 0)
-  debt.balance = number(debt.balance, 0)
-  debt.defaults = number(debt.defaults, 0)
-  house.repossessed = house.repossessed == true
-  house.boughtBack = house.boughtBack == true
+  debt.principal = number(debt.principal, 0)
+  debt.fees = number(debt.fees, 0)
+  debt.status = ({ CLEAR = true, ACTIVE = true, DEFAULT = true })[debt.status]
+    and debt.status or (debt.principal + debt.fees > 0 and "ACTIVE" or "CLEAR")
+  debt.dueBadge = number(debt.dueBadge, 0)
+  debt.lastBadgeFee = number(debt.lastBadgeFee, 0)
+  debt.loansTaken = number(debt.loansTaken, 0)
+  debt.totalRepaid = number(debt.totalRepaid, 0)
+  debt.collectorsTriggered = sanitizeBooleanMap(debt.collectorsTriggered)
+  house.status = ({ FAMILY_HOME = true, ROCKET_OWNED = true,
+    BUYBACK_PAID = true, RESTORED = true })[house.status]
+    and house.status or "FAMILY_HOME"
+  house.bailoutClaimed = house.bailoutClaimed == true
+  house.buybackPaid = house.buybackPaid == true
+  house.rocketBattleWon = house.rocketBattleWon == true
   arena.unlocked = arena.unlocked == true
   arena.reputation = number(arena.reputation, 0)
   return out

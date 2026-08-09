@@ -4,6 +4,14 @@
 
 ### Added
 
+- The first v0.6 Rocket Credit slice: a visible loan shark in the Celadon
+  Lounge with rank-based offers, fixed fees, and one active loan at a time.
+- Repayment using either casino coins or ordinary money, with fees paid before
+  principal and every default remaining fully recoverable.
+- Badge-milestone deadlines and one-time late fees. Debt never grows with
+  real time, repeated menu opens, or repeated milestone checks.
+- A schema-two migration that carries legacy campaign, debt, and family-home
+  state forward without discarding fields owned by later versions.
 - The first v0.5 Gamble Mode campaign slice: a schema-versioned persistent
   state with additive placeholders for reputation, debt, house ownership, and
   the future underground arena.
@@ -24,6 +32,15 @@
 
 ### Fixed
 
+- Paid Prize Case claims now persist until delivery, so full storage cannot
+  refund the wager while retaining free reputation; retries keep the exact
+  reward and never charge or settle twice.
+- Rank rewards that do not fit in the Coin Case remain banked and are delivered
+  automatically when space becomes available.
+- Per-game discovery bonuses now reset once per rank, Crash treats a 1.00x
+  cashout as a draw, and real game results carry rank-ups into acknowledgement.
+- Campaign sanitation now rejects invalid ranks and preserves unknown future
+  top-level and nested fields instead of destructively downgrading saves.
 - Every paid game now uses a persistent round token so retries and repeated
   result callbacks cannot award reputation twice.
 - Progressive Blackjack and Hold'em bets add to the same campaign wager rather

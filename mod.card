@@ -1,5 +1,5 @@
 return {
-  summary = "An optional game-wide casino remix with two live floors, random starters, gym cases, seven games, pawning, shinies, and rare prizes.",
+  summary = "A game-wide casino remix with High Roller progression, Rocket credit, two live floors, seven games, pawning, and rare prizes.",
   author = "martin2844",
   tags = { "minigame", "game-corner", "casino", "blackjack", "holdem", "crash", "arcade", "shiny", "prizes" },
   differences = {
@@ -16,6 +16,7 @@ return {
       "blackjack with hit, stand, double down, and 3:2 naturals",
       "house-banked Texas Hold'em with progressive 4x, 3x, 2x, and 1x betting",
       "a Rocket pawn broker with five recoverable Pokemon slots",
+      "rank-based Rocket loans with fixed fees and recoverable default states",
       "Crash, Tube Flyer, and weighted Prize Case arcade machines",
       "opposite-version exclusives, starters, fossils, and shiny upgrades",
       "a one-time 9,999-coin Master Ball prize",

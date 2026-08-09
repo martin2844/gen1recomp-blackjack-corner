@@ -42,6 +42,9 @@ return function(mod)
   local ReputationRules = loadLocal(mod, "other/gamble/reputation/rules.lua")
   local ReputationService = loadLocal(mod, "other/gamble/reputation/service.lua")
   local ReputationScreen = loadLocal(mod, "other/gamble/reputation/screen.lua")
+  local CreditRules = loadLocal(mod, "other/gamble/credit/rules.lua")
+  local CreditService = loadLocal(mod, "other/gamble/credit/service.lua")
+  local CreditUIFactory = loadLocal(mod, "other/gamble/credit/ui.lua")
   local PalletCasino = loadLocal(mod, "other/pallet_casino.lua")
   local Sound = require("src.core.Sound")
 
@@ -135,6 +138,17 @@ return function(mod)
     state = CampaignState, rules = ReputationRules,
     active = Gamble.active, coinCap = config.coinCap,
   })
+  local Credit = CreditService(mod, {
+    state = CampaignState, rules = CreditRules, active = Gamble.active,
+    coinCap = config.coinCap, badgeCount = ReputationRules.badgeCount,
+    rank = function(game)
+      local snapshot = Progress.snapshot(game)
+      return snapshot and snapshot.rank or "ROOKIE"
+    end,
+  })
+  local CreditUI = CreditUIFactory(mod, {
+    credit = Credit, rules = CreditRules, text = UI.text,
+  })
   local HighRoller = ReputationScreen({
     mod = mod, ui = ArcadeUI, rules = ReputationRules,
     progress = Progress, close = UI.close,
@@ -169,6 +183,7 @@ return function(mod)
     local out = next(game, items)
     if type(out) ~= "table" or not Gamble.active() then return out end
     Progress.ensure()
+    Credit.syncMilestones(game)
     return mod.ui.insertBefore(out, "SAVE", {
       label = "HIGH ROLLER",
       onSelect = function() mod.ui.push(game, ids.highRoller) end,
@@ -267,6 +282,7 @@ return function(mod)
     TEXT_HOLDEM_PATRON = function(game, _, _, done)
       UI.text(game, "Four times before\nthe FLOP is bold!\fWait too long and\nyou can only bet 1x.", done)
     end,
+    TEXT_ROCKET_CREDIT = CreditUI.broker,
     TEXT_CRASH_MACHINE = function(game, _, _, done)
       open(game, "CRASH!\fMultiplier climbs.\nCash out before it drops!", ids.crash, done)
     end,
@@ -388,4 +404,6 @@ return function(mod)
   mod.exports.campaign_state = CampaignState
   mod.exports.reputation_rules = ReputationRules
   mod.exports.reputation = Progress
+  mod.exports.credit_rules = CreditRules
+  mod.exports.credit = Credit
 end

@@ -72,7 +72,8 @@ T.check(api and api.rules and api.holdem_rules and api.holdem_view and api.catal
     and api.horse_rules and api.plinko_rules and api.roulette_rules
     and api.roulette_view
     and api.gamble and api.gym_cases and api.campaign_state
-    and api.reputation_rules and api.reputation,
+    and api.reputation_rules and api.reputation
+    and api.credit_rules and api.credit,
   "games, prizes, coin exchange, pawning, and arcade rules are exported")
 T.check(api.roulette_view.RESULT_BUTTON_Y
     + api.roulette_view.RESULT_BUTTON_HEIGHT <= api.roulette_view.FRAME_CONTENT_BOTTOM,
@@ -396,6 +397,11 @@ do
     "the Lounge can open Horse Racing from its new terminal")
   T.check(contributedTalk("TEXT_PLINKO"),
     "the Lounge can open Plinko from its new terminal")
+  T.check(objects.ROCKET_LOAN_SHARK
+      and objects.ROCKET_LOAN_SHARK.text == "TEXT_ROCKET_CREDIT",
+    "a Rocket loan shark occupies the lower Lounge")
+  T.check(contributedTalk("TEXT_ROCKET_CREDIT"),
+    "the Rocket loan shark opens the credit service")
 end
 
 do

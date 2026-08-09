@@ -49,6 +49,8 @@ function Lounge.register(mod, mapId)
       sprite = "SPRITE_GENTLEMAN", text = "TEXT_BLACKJACK_PATRON", x = 8, y = 8 },
     { index = 5, name = "HOLDEM_PATRON", movement = "STAY", range = "RIGHT",
       sprite = "SPRITE_GENTLEMAN", text = "TEXT_HOLDEM_PATRON", x = 18, y = 8 },
+    { index = 6, name = "ROCKET_LOAN_SHARK", movement = "STAY", range = "LEFT",
+      sprite = "SPRITE_ROCKET", text = "TEXT_ROCKET_CREDIT", x = 18, y = 12 },
   }
   for _, machine in ipairs({
     { id = "CRASH", x = 8, y = 2, text = "TEXT_CRASH_MACHINE" },

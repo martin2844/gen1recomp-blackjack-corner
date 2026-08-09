@@ -30,9 +30,9 @@ player's imported game data.
 | Atmosphere | Ten new gamblers and staff plus eight new one-time floor pickups across three casino interiors |
 | Code quality | Small per-game modules under `games/`, supporting systems under `other/`, and 805 automated checks |
 
-## v0.5 development preview
+## v0.6 development preview
 
-The `feat/v0.5-high-roller` branch begins the progressive Gamble Mode campaign
+The `feat/v0.6-rocket-credit` branch builds the progressive Gamble Mode campaign
 without changing the always-available base casino expansion:
 
 - all seven paid casino games feed one exactly-once High Roller reputation
@@ -46,7 +46,13 @@ without changing the always-available base casino expansion:
 - casino patrons and staff react to rank and sustained losses;
 - old saves lazily receive a versioned campaign record while existing game,
   pawn, case, party, and currency state stays intact.
-- the current headless suite covers 816 assertions, with Red and Blue native
+- a Rocket loan shark in the Celadon Lounge offers larger fixed-fee loans as
+  the player climbs from Rookie to VIP;
+- only one loan can be active, with its principal, fees, due badge, and status
+  visible on demand;
+- debt can be repaid with casino coins or ordinary money, and missing a badge
+  deadline applies one fixed late fee instead of real-time interest;
+- the current headless suite covers 925 assertions, with Red and Blue native
   UI smoke runs layered on top.
 
 The implementation and release train are mapped in
@@ -560,6 +566,7 @@ luajit mods/blackjack_corner/tests/pawn_test.lua
 luajit mods/blackjack_corner/tests/arcade_rules_test.lua
 luajit mods/blackjack_corner/tests/gamble_rules_test.lua
 luajit mods/blackjack_corner/tests/reputation_test.lua
+luajit mods/blackjack_corner/tests/credit_test.lua
 luajit mods/blackjack_corner/tests/blackjack_mod_test.lua
 luajit mods/blackjack_corner/tests/shiny_fallback_test.lua
 ```

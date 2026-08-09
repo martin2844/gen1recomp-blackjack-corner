@@ -31,6 +31,9 @@ return function(ctx)
     self.settled = true
     self.game.save.coins = math.min(coinCap,
       ctx.coins(self.game) + self.round.payout)
+    local result = (self.round.result == "win" or self.round.result == "blackjack")
+      and "win" or self.round.result == "push" and "draw" or "loss"
+    ctx.settleRound(self.game, self.reputationRound, result, self.round.payout)
     mod.save:set("hands_played", mod.save:get("hands_played", 0) + 1)
     if self.round.result == "win" or self.round.result == "blackjack" then
       mod.save:set("hands_won", mod.save:get("hands_won", 0) + 1)
@@ -53,6 +56,7 @@ return function(ctx)
     self.notice = nil
     ctx.play(self.game, "Slots_New_Spin")
     self.game.save.coins = ctx.coins(self.game) - bet
+    self.reputationRound = ctx.beginRound("blackjack", bet)
     self.round = Rules.newRound(bet, Rules.newDeck(function(n)
       return love.math.random(1, n)
     end))
@@ -79,6 +83,7 @@ return function(ctx)
       Rules.stand(self.round)
     elseif self.actionIndex == 3 and self:canDouble() then
       self.game.save.coins = ctx.coins(self.game) - self.round.bet
+      ctx.increaseStake(self.reputationRound, self.round.bet)
       Rules.double(self.round)
       self.cardAnim = 0.18
     else

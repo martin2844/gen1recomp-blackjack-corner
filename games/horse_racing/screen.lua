@@ -21,6 +21,7 @@ return function(ctx)
     local bet = Rules.BETS[self.betIndex]
     if ctx.coins(self.game) < bet then self.notice = "NOT ENOUGH COINS"; return end
     self.game.save.coins = ctx.coins(self.game) - bet
+    self.reputationRound = ctx.beginRound("horse_racing", bet)
     self.bet = bet
     self.race = Rules.new(function(maximum) return love.math.random(1, maximum) end)
     self.phase, self.notice, self.payout = "racing", nil, nil
@@ -32,6 +33,8 @@ return function(ctx)
     self.payout = math.min(ctx.coinCap - ctx.coins(self.game),
       Rules.payout(self.bet, self.horseIndex, self.race.winner))
     self.game.save.coins = ctx.coins(self.game) + self.payout
+    ctx.settleRound(self.game, self.reputationRound,
+      self.payout > 0 and "win" or "loss", self.payout)
     self.phase = "result"
     if self.payout > 0 then
       mod.save:set("horse_wins", mod.save:get("horse_wins", 0) + 1)

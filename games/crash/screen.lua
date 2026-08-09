@@ -21,6 +21,7 @@ return function(ctx)
     local bet = Rules.BETS[self.betIndex]
     if ctx.coins(self.game) < bet then self.notice = "NOT ENOUGH COINS"; return end
     self.game.save.coins = ctx.coins(self.game) - bet
+    self.reputationRound = ctx.beginRound("crash", bet)
     self.bet = bet
     self.crashPoint = Rules.crashPoint(love.math.random())
     self.elapsed, self.multiplier, self.payout = 0, 1, nil
@@ -34,6 +35,7 @@ return function(ctx)
     self.payout = math.min(ctx.coinCap - ctx.coins(self.game),
       Rules.payout(self.bet, self.multiplier))
     self.game.save.coins = ctx.coins(self.game) + self.payout
+    ctx.settleRound(self.game, self.reputationRound, "win", self.payout)
     self.phase = "cashed"
     mod.save:set("crash_wins", mod.save:get("crash_wins", 0) + 1)
     mod.save:set("crash_best_x100", math.max(
@@ -59,6 +61,7 @@ return function(ctx)
       self.multiplier = Rules.multiplier(self.elapsed)
       if self.multiplier >= self.crashPoint then
         self.multiplier, self.phase = self.crashPoint, "crashed"
+        ctx.settleRound(self.game, self.reputationRound, "loss", 0)
         ctx.play(self.game, "Slots_Stop_Wheel")
       elseif input:wasPressed("a") then self:cashOut() end
     elseif input:wasPressed("a") then

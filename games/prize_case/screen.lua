@@ -34,6 +34,12 @@ return function(ctx)
     if ctx.onChosen then ctx.onChosen(self.caseData, self.winner) end
     self.strip = Rules.strip(pool, self.winner, random)
     self.game.save.coins = ctx.coins(self.game) - self.cost
+    if self.cost > 0 then
+      self.reputationRound = ctx.beginRound("prize_case", self.cost)
+      -- The campaign settles on the paid reel's immutable choice. Delivery
+      -- retries must never duplicate reputation.
+      ctx.settleRound(self.game, self.reputationRound, "win", self.cost)
+    end
     self.elapsed, self.reelOffset = 0, 0
     self.phase, self.notice, self.message, self.refunded = "spinning", nil, nil, false
     mod.save:set(ctx.counterKey or "cases_opened",

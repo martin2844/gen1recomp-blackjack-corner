@@ -38,6 +38,10 @@ return function(mod)
   local Lounge = loadLocal(mod, "other/lounge.lua")
   local GambleMode = loadLocal(mod, "other/gamble/mode.lua")
   local GymCases = loadLocal(mod, "other/gamble/gym_cases.lua")
+  local CampaignState = loadLocal(mod, "other/gamble/state.lua")
+  local ReputationRules = loadLocal(mod, "other/gamble/reputation/rules.lua")
+  local ReputationService = loadLocal(mod, "other/gamble/reputation/service.lua")
+  local ReputationScreen = loadLocal(mod, "other/gamble/reputation/screen.lua")
   local PalletCasino = loadLocal(mod, "other/pallet_casino.lua")
   local Sound = require("src.core.Sound")
 
@@ -53,6 +57,7 @@ return function(mod)
     plinko = "BlackjackCornerPlinko",
     roulette = "BlackjackCornerStarterRoulette",
     gymCase = "BlackjackCornerGymCase",
+    highRoller = "BlackjackCornerHighRoller",
     lounge = "BLACKJACK_LOUNGE",
     pallet = "PALLET_CASINO",
   }
@@ -71,10 +76,20 @@ return function(mod)
 
   local Service = Services(mod, Catalog, Pawn, config)
   local UI = UIFactory(mod, Service, Catalog, Pawn, config)
+  local Progress
   local function play(game, name) Sound.play(game.data, name) end
   local common = {
     mod = mod, coins = Service.coins, coinCap = config.coinCap,
     close = UI.close, play = play,
+    beginRound = function(gameId, stake)
+      return Progress and Progress.beginRound(gameId, stake) or nil
+    end,
+    increaseStake = function(token, stake)
+      return Progress and Progress.increaseStake(token, stake) or false
+    end,
+    settleRound = function(game, token, result, returned)
+      return Progress and Progress.settleRound(game, token, result, returned) or false
+    end,
   }
   local function context(extra)
     local out = {}
@@ -112,6 +127,14 @@ return function(mod)
     rules = RouletteRules, service = Service, screenId = ids.roulette,
     text = UI.text,
   })
+  Progress = ReputationService(mod, {
+    state = CampaignState, rules = ReputationRules,
+    active = Gamble.active, coinCap = config.coinCap,
+  })
+  local HighRoller = ReputationScreen({
+    mod = mod, ui = ArcadeUI, rules = ReputationRules,
+    progress = Progress, close = UI.close,
+  })
   local StarterRoulette = loadLocal(mod, paths.roulette .. "screen.lua")({
     mod = mod, rules = RouletteRules, view = RouletteView,
     close = UI.close, play = play, complete = Gamble.complete,
@@ -130,9 +153,23 @@ return function(mod)
     [ids.crash] = Crash, [ids.tube] = TubeFlyer, [ids.case] = PrizeCase,
     [ids.horse] = HorseRacing, [ids.plinko] = Plinko,
     [ids.roulette] = StarterRoulette, [ids.gymCase] = GymCase,
+    [ids.highRoller] = HighRoller,
   }) do mod.content.screens:register(screen, { new = class.new }) end
   mod.content.screens:register(ids.pokemon, { new = UI.pokemonMenu })
   mod.content.screens:register(ids.item, { new = UI.itemMenu })
+
+  mod.events:on("intro.oak_speech.answered", function(ev)
+    if ev.saveKey == "gamble_mode" and ev.value == true then Progress.ensure() end
+  end)
+  mod.hooks:wrap("ui.start_menu.items", function(next, game, items)
+    local out = next(game, items)
+    if type(out) ~= "table" or not Gamble.active() then return out end
+    Progress.ensure()
+    return mod.ui.insertBefore(out, "SAVE", {
+      label = "HIGH ROLLER",
+      onSelect = function() mod.ui.push(game, ids.highRoller) end,
+    })
+  end)
 
   for _, tableDef in ipairs({
     { id = "BLACKJACK", file = "blackjack" },
@@ -184,6 +221,19 @@ return function(mod)
   local function open(game, message, screen, done)
     UI.openAfterMessage(game, message, screen, done)
   end
+  local function reactiveText(game, ordinary, regular, vip, cold)
+    local state = Progress.snapshot(game)
+    if not state then return ordinary end
+    if cold and state.currentLossStreak >= 5 then return cold end
+    if vip and (state.rank == "VIP" or state.rank == "HIGH_ROLLER") then return vip end
+    if regular and state.rank == "REGULAR" then return regular end
+    return ordinary
+  end
+  local function reactiveTalk(ordinary, regular, vip, cold)
+    return function(game, _, _, done)
+      UI.text(game, reactiveText(game, ordinary, regular, vip, cold), done)
+    end
+  end
   mod.content.map_scripts:register(ids.lounge, { talk = {
     TEXT_BLACKJACK_TABLE = function(game, _, _, done)
       open(game, "Welcome to the\nBLACKJACK table!\fPlace your bet and\nplay to 21.",
@@ -200,12 +250,16 @@ return function(mod)
       open(game, "Bet before FLOP,\nafter FLOP,\fand at RIVER.\fBest five-card hand\nwins.",
         ids.holdem, done)
     end,
-    TEXT_CASINO_HOSTESS = function(game, _, _, done)
-      UI.text(game, "Welcome to the\nCASINO LOUNGE!\fTables up front.\nArcade in back.", done)
-    end,
-    TEXT_BLACKJACK_PATRON = function(game, _, _, done)
-      UI.text(game, "I always double\ndown on eleven!", done)
-    end,
+    TEXT_CASINO_HOSTESS = reactiveTalk(
+      "Welcome to the\nCASINO LOUNGE!\fTables up front.\nArcade in back.",
+      "Back again?\fThe dealers know\nyour face now.",
+      "Welcome, HIGH\nROLLER.\fYour favorite table\nis waiting.",
+      "Rough streak?\fThe house always\nremembers a return."),
+    TEXT_BLACKJACK_PATRON = reactiveTalk(
+      "I always double\ndown on eleven!",
+      "A REGULAR, huh?\fDon't start giving\nme advice.",
+      "They polish your\nseat before you sit.",
+      "Five losses?\fMaybe double down\non going home."),
     TEXT_HOLDEM_PATRON = function(game, _, _, done)
       UI.text(game, "Four times before\nthe FLOP is bold!\fWait too long and\nyou can only bet 1x.", done)
     end,
@@ -224,9 +278,11 @@ return function(mod)
     TEXT_PLINKO = function(game, _, _, done)
       open(game, "PLINKO!\fDrop the ball.\nTrust the pegs.", ids.plinko, done)
     end,
-    TEXT_LOUNGE_COLD_STREAK = function(game, _, _, done)
-      UI.text(game, "Seven cold hands.\fThe eighth has to\nturn around... right?", done)
-    end,
+    TEXT_LOUNGE_COLD_STREAK = reactiveTalk(
+      "Seven cold hands.\fThe eighth has to\nturn around... right?",
+      "They call you a\nREGULAR now.\fCareful. That's how\nit starts.",
+      "A VIP!\fTell the house I\nnever complained.",
+      "That look...\fYou know the cold\nstreak too."),
     TEXT_LOUNGE_CARD_COUNTER = function(game, _, _, done)
       UI.text(game, "I count every card.\fThen panic and bet\nthe wrong table.", done)
     end,
@@ -258,12 +314,16 @@ return function(mod)
     end,
     TEXT_PALLET_CASINO_PAWN = UI.pawnBroker,
     TEXT_PALLET_CASINO_CLERK = UI.coinClerk,
-    TEXT_PALLET_CASINO_GRANNY = function(game, _, _, done)
-      UI.text(game, "I came for milk.\fThat was six hours\nago.", done)
-    end,
-    TEXT_PALLET_CASINO_GAMBLER = function(game, _, _, done)
-      UI.text(game, "COMET is safe.\fSafe bets are how\nthey get you.", done)
-    end,
+    TEXT_PALLET_CASINO_GRANNY = reactiveTalk(
+      "I came for milk.\fThat was six hours\nago.",
+      "Oh, they know you\nhere already.",
+      "A big player from\nour little town!",
+      "Dear, take a walk.\fLuck needs room\nto find you."),
+    TEXT_PALLET_CASINO_GAMBLER = reactiveTalk(
+      "COMET is safe.\fSafe bets are how\nthey get you.",
+      "REGULAR already?\fPallet raises them\nfast.",
+      "VIP odds are still\nhouse odds, friend.",
+      "Cold tables spread.\fMaybe don't stand\nso close."),
     TEXT_PALLET_CASINO_YOUNGSTER = function(game, _, _, done)
       UI.text(game, "Mom thinks I'm at\nPROF.OAK's lab.\fDon't tell her.", done)
     end,
@@ -321,4 +381,7 @@ return function(mod)
   mod.exports.roulette_rules, mod.exports.roulette_view = RouletteRules, RouletteView
   mod.exports.gamble = Gamble
   mod.exports.gym_cases = Gym
+  mod.exports.campaign_state = CampaignState
+  mod.exports.reputation_rules = ReputationRules
+  mod.exports.reputation = Progress
 end

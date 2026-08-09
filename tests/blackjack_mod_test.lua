@@ -71,7 +71,8 @@ T.check(api and api.rules and api.holdem_rules and api.holdem_view and api.catal
     and api.flappy_rules and api.case_rules and api.giveCaseReward
     and api.horse_rules and api.plinko_rules and api.roulette_rules
     and api.roulette_view
-    and api.gamble and api.gym_cases,
+    and api.gamble and api.gym_cases and api.campaign_state
+    and api.reputation_rules and api.reputation,
   "games, prizes, coin exchange, pawning, and arcade rules are exported")
 T.check(api.roulette_view.RESULT_BUTTON_Y
     + api.roulette_view.RESULT_BUTTON_HEIGHT <= api.roulette_view.FRAME_CONTENT_BOTTOM,
@@ -302,6 +303,8 @@ T.check(run.data.screens.BlackjackCornerStarterRoulette ~= nil,
   "starter roulette screen is registered")
 T.check(run.data.screens.BlackjackCornerGymCase ~= nil,
   "Gym Case screen is registered")
+T.check(run.data.screens.BlackjackCornerHighRoller ~= nil,
+  "Gamble Mode registers its High Roller status screen")
 T.check(run.data.maps.BLACKJACK_LOUNGE ~= nil,
   "blackjack has a dedicated lounge map")
 T.check(run.data.maps.PALLET_CASINO ~= nil,
@@ -1055,6 +1058,84 @@ do
   T.eq(screen.phase, "result", "the river bet advances to showdown")
   screen:draw()
   T.check(true, "holdem showdown view draws without an engine error")
+end
+
+do
+  local bucket = run.loader.modSave.blackjack_corner
+  bucket.gamble_mode = true
+  api.reputation.resetForQA()
+  local function prepared(coins)
+    local game = gameWith(coins or 5000)
+    game.input = noInput
+    game.save.inventory.COIN_CASE = 1
+    return game
+  end
+
+  local game = prepared()
+  local blackjack = run.data.screens.BlackjackCornerTable.new(game, {})
+  blackjack:deal()
+  if not blackjack.settled then
+    blackjack.round.state, blackjack.round.result = "done", "win"
+    blackjack.round.payout = blackjack.round.bet * 2
+    blackjack:recordRound()
+  end
+
+  game = prepared()
+  local holdem = run.data.screens.BlackjackCornerHoldemTable.new(game, {})
+  holdem:deal()
+  holdem.round.state, holdem.round.result, holdem.round.payout = "done", "loss", 0
+  holdem:recordRound()
+
+  game = prepared()
+  local crash = run.data.screens.BlackjackCornerCrash.new(game, {})
+  crash:launch(); crash.multiplier = 1.5; crash:cashOut()
+
+  game = prepared()
+  local tube = run.data.screens.BlackjackCornerTubeFlyer.new(game, {})
+  tube:start(); tube:finish()
+
+  game = prepared()
+  local case = run.data.screens.BlackjackCornerPrizeCase.new(game, {})
+  case:open()
+
+  game = prepared()
+  local horse = run.data.screens.BlackjackCornerHorseRacing.new(game, {})
+  horse:start(); horse.race.winner = horse.horseIndex; horse:finish()
+
+  game = prepared()
+  local plinko = run.data.screens.BlackjackCornerPlinko.new(game, {})
+  plinko:dropBall(); plinko.drop.slot = 5; plinko:finish()
+
+  local snapshot = api.reputation.snapshot(game)
+  for gameId in pairs(api.reputation_rules.GAMES) do
+    T.eq(snapshot.byGame[gameId].played, 1,
+      gameId .. " screen settles one real campaign round")
+  end
+  T.eq(snapshot.completedGames, 7,
+    "the seven casino screens share one exactly-once campaign ledger")
+  case:settle()
+  T.eq(api.reputation.snapshot(game).completedGames, 7,
+    "Prize Case delivery cannot duplicate its reel settlement")
+
+  local menu = Runtime.call("ui.start_menu.items", function(_, rows) return rows end,
+    game, { { label = "POKéMON" }, { label = "SAVE" }, { label = "EXIT" } })
+  local highRoller
+  for _, item in ipairs(menu) do
+    if item.label == "HIGH ROLLER" then highRoller = item end
+  end
+  T.check(highRoller and type(highRoller.onSelect) == "function",
+    "Gamble Mode exposes High Roller progress from the Start menu")
+  local status = run.data.screens.BlackjackCornerHighRoller.new(game, {})
+  status:draw()
+  T.check(true, "the High Roller status panel renders without an engine error")
+
+  bucket.gamble_mode = false
+  menu = Runtime.call("ui.start_menu.items", function(_, rows) return rows end,
+    game, { { label = "SAVE" }, { label = "EXIT" } })
+  for _, item in ipairs(menu) do
+    T.check(item.label ~= "HIGH ROLLER",
+      "base mode keeps campaign progression out of the Start menu")
+  end
 end
 
 do

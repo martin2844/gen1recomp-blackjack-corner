@@ -91,7 +91,11 @@ return function(mod)
       return Progress and Progress.increaseStake(token, stake) or false
     end,
     settleRound = function(game, token, result, returned)
-      return Progress and Progress.settleRound(game, token, result, returned) or false
+      if not Progress then return false end
+      return Progress.settleRound(game, token, result, returned)
+    end,
+    showRankUp = function(game)
+      mod.ui.push(game, ids.highRoller)
     end,
   }
   local function context(extra)

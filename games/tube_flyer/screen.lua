@@ -32,9 +32,10 @@ return function(ctx)
     if self.phase ~= "playing" then return end
     self.phase = "result"
     local earned = self.run.earned or 0
-    ctx.settleRound(self.game, self.reputationRound,
+    local _, progress = ctx.settleRound(self.game, self.reputationRound,
       earned > Rules.COST and "win" or earned == Rules.COST and "draw" or "loss",
       earned)
+    self.rankUpPending = progress and progress.rankUp
     mod.save:set("flappy_best", math.max(mod.save:get("flappy_best", 0), self.run.score))
     ctx.play(self.game, "Slots_Stop_Wheel")
   end
@@ -63,9 +64,17 @@ return function(ctx)
       end
       if not self.run.alive then self:finish() end
     elseif input:wasPressed("a") then
-      self.phase, self.notice = "ready", nil
-      ctx.play(self.game, "Press_AB")
-    elseif input:wasPressed("b") then self:close() end
+      if self.rankUpPending and ctx.showRankUp then
+        self.rankUpPending = false; ctx.showRankUp(self.game)
+      else
+        self.phase, self.notice = "ready", nil
+        ctx.play(self.game, "Press_AB")
+      end
+    elseif input:wasPressed("b") then
+      if self.rankUpPending and ctx.showRankUp then
+        self.rankUpPending = false; ctx.showRankUp(self.game)
+      else self:close() end
+    end
   end
 
   function Screen:draw()

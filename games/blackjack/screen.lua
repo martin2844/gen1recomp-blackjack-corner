@@ -33,7 +33,9 @@ return function(ctx)
       ctx.coins(self.game) + self.round.payout)
     local result = (self.round.result == "win" or self.round.result == "blackjack")
       and "win" or self.round.result == "push" and "draw" or "loss"
-    ctx.settleRound(self.game, self.reputationRound, result, self.round.payout)
+    local _, progress = ctx.settleRound(
+      self.game, self.reputationRound, result, self.round.payout)
+    self.rankUpPending = progress and progress.rankUp
     mod.save:set("hands_played", mod.save:get("hands_played", 0) + 1)
     if self.round.result == "win" or self.round.result == "blackjack" then
       mod.save:set("hands_won", mod.save:get("hands_won", 0) + 1)
@@ -117,9 +119,17 @@ return function(ctx)
       elseif input:wasPressed("b") then Rules.stand(self.round); self:recordRound() end
     elseif self.phase == "result" then
       if input:wasPressed("a") then
-        self.phase, self.round, self.notice, self.resultAge = "bet", nil, nil, 0
-        ctx.play(self.game, "Press_AB")
-      elseif input:wasPressed("b") then self:close() end
+        if self.rankUpPending and ctx.showRankUp then
+          self.rankUpPending = false; ctx.showRankUp(self.game)
+        else
+          self.phase, self.round, self.notice, self.resultAge = "bet", nil, nil, 0
+          ctx.play(self.game, "Press_AB")
+        end
+      elseif input:wasPressed("b") then
+        if self.rankUpPending and ctx.showRankUp then
+          self.rankUpPending = false; ctx.showRankUp(self.game)
+        else self:close() end
+      end
     end
   end
 

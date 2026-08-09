@@ -3,6 +3,11 @@ local State = {}
 State.KEY = "gamble_campaign"
 State.SCHEMA = 1
 
+local VALID_RANKS = {
+  ROOKIE = true, REGULAR = true, HIGH_ROLLER = true,
+  VIP = true, KINGPIN = true,
+}
+
 local function number(value, fallback, minimum)
   value = tonumber(value)
   if not value or value ~= value or value == math.huge or value == -math.huge then
@@ -16,18 +21,35 @@ local function tableOrEmpty(value)
   return type(value) == "table" and value or {}
 end
 
+local function deepCopy(value, seen)
+  if type(value) ~= "table" then return value end
+  seen = seen or {}
+  if seen[value] then return seen[value] end
+  local out = {}
+  seen[value] = out
+  for key, item in pairs(value) do
+    out[deepCopy(key, seen)] = deepCopy(item, seen)
+  end
+  return out
+end
+
+local function ensureTable(parent, key)
+  if type(parent[key]) ~= "table" then parent[key] = {} end
+  return parent[key]
+end
+
 local function sanitizeGameRows(value)
   local out = {}
   for gameId, row in pairs(tableOrEmpty(value)) do
     if type(gameId) == "string" and type(row) == "table" then
-      out[gameId] = {
-        played = number(row.played, 0),
-        wins = number(row.wins, 0),
-        losses = number(row.losses, 0),
-        draws = number(row.draws, 0),
-        wagered = number(row.wagered, 0),
-        returned = number(row.returned, 0),
-      }
+      local clean = deepCopy(row)
+      clean.played = number(row.played, 0)
+      clean.wins = number(row.wins, 0)
+      clean.losses = number(row.losses, 0)
+      clean.draws = number(row.draws, 0)
+      clean.wagered = number(row.wagered, 0)
+      clean.returned = number(row.returned, 0)
+      out[gameId] = clean
     end
   end
   return out
@@ -38,18 +60,51 @@ local function sanitizePending(value)
   for token, row in pairs(tableOrEmpty(value)) do
     if type(token) == "string" and type(row) == "table"
         and type(row.gameId) == "string" then
-      out[token] = { gameId = row.gameId, stake = number(row.stake, 0) }
+      local clean = deepCopy(row)
+      clean.gameId = row.gameId
+      clean.stake = number(row.stake, 0)
+      clean.rankAtStart = VALID_RANKS[row.rankAtStart] and row.rankAtStart or nil
+      out[token] = clean
     end
   end
   return out
 end
 
-local function sanitizeStrings(value, limit)
+local function sanitizeStrings(value, limit, valid)
   local out = {}
   for _, item in ipairs(tableOrEmpty(value)) do
-    if type(item) == "string" and #out < (limit or 128) then
+    if type(item) == "string" and (not valid or valid[item])
+        and #out < (limit or 128) then
       out[#out + 1] = item
     end
+  end
+  return out
+end
+
+local function sanitizeBooleanMap(value, valid)
+  local out = {}
+  for key, item in pairs(tableOrEmpty(value)) do
+    if type(key) == "string" and item == true and (not valid or valid[key]) then
+      out[key] = true
+    end
+  end
+  return out
+end
+
+local function sanitizeDiscoveries(value)
+  local out, legacy = {}, {}
+  for key, item in pairs(tableOrEmpty(value)) do
+    if VALID_RANKS[key] and type(item) == "table" then
+      out[key] = sanitizeBooleanMap(item)
+    elseif type(key) == "string" and item == true then
+      -- Early v0.5 development saves used one flat discovery map. Treat those
+      -- entries as ROOKIE discoveries so later ranks receive their own bonus.
+      legacy[key] = true
+    end
+  end
+  if next(legacy) then
+    out.ROOKIE = out.ROOKIE or {}
+    for gameId in pairs(legacy) do out.ROOKIE[gameId] = true end
   end
   return out
 end
@@ -70,6 +125,7 @@ function State.defaults()
       byGame = {},
       discoveredGames = {},
       rankRewardsClaimed = {},
+      pendingRewardCoins = 0,
       pendingRankUps = {},
       pendingRounds = {},
       settledRounds = {},
@@ -82,35 +138,64 @@ function State.defaults()
   }
 end
 
+State.MIGRATIONS = {
+  [1] = function(value)
+    ensureTable(value, "reputation")
+    ensureTable(value, "debt")
+    ensureTable(value, "house")
+    ensureTable(value, "arena")
+  end,
+}
+
+function State.migrate(value)
+  local out = deepCopy(tableOrEmpty(value))
+  local schema = number(out.schema, 0)
+  if schema > State.SCHEMA then
+    -- A newer build owns this schema. Preserve it and every unknown field;
+    -- sanitation below only repairs fields this build understands.
+    return out, false, "FUTURE SCHEMA"
+  end
+  for target = schema + 1, State.SCHEMA do
+    local migration = assert(State.MIGRATIONS[target],
+      "missing Gamble campaign migration " .. tostring(target))
+    migration(out)
+    out.schema = target
+  end
+  return out, schema < State.SCHEMA
+end
+
 function State.sanitize(value)
-  value = tableOrEmpty(value)
-  local rep = tableOrEmpty(value.reputation)
-  local debt = tableOrEmpty(value.debt)
-  local house = tableOrEmpty(value.house)
-  local arena = tableOrEmpty(value.arena)
-  local out = State.defaults()
-  out.reputation.points = number(rep.points, 0)
-  out.reputation.rank = type(rep.rank) == "string" and rep.rank or "ROOKIE"
-  out.reputation.lifetimeWagered = number(rep.lifetimeWagered, 0)
-  out.reputation.completedGames = number(rep.completedGames, 0)
-  out.reputation.wins = number(rep.wins, 0)
-  out.reputation.losses = number(rep.losses, 0)
-  out.reputation.draws = number(rep.draws, 0)
-  out.reputation.currentLossStreak = number(rep.currentLossStreak, 0)
-  out.reputation.bestLossStreak = number(rep.bestLossStreak, 0)
-  out.reputation.byGame = sanitizeGameRows(rep.byGame)
-  out.reputation.discoveredGames = tableOrEmpty(rep.discoveredGames)
-  out.reputation.rankRewardsClaimed = tableOrEmpty(rep.rankRewardsClaimed)
-  out.reputation.pendingRankUps = sanitizeStrings(rep.pendingRankUps, 8)
-  out.reputation.pendingRounds = sanitizePending(rep.pendingRounds)
-  out.reputation.settledRounds = sanitizeStrings(rep.settledRounds, 128)
-  out.reputation.nextRoundId = number(rep.nextRoundId, 0)
-  out.debt.balance = number(debt.balance, 0)
-  out.debt.defaults = number(debt.defaults, 0)
-  out.house.repossessed = house.repossessed == true
-  out.house.boughtBack = house.boughtBack == true
-  out.arena.unlocked = arena.unlocked == true
-  out.arena.reputation = number(arena.reputation, 0)
+  local out = State.migrate(value)
+  local savedSchema = number(out.schema, State.SCHEMA)
+  local rep = ensureTable(out, "reputation")
+  local debt = ensureTable(out, "debt")
+  local house = ensureTable(out, "house")
+  local arena = ensureTable(out, "arena")
+
+  out.schema = savedSchema > State.SCHEMA and savedSchema or State.SCHEMA
+  rep.points = number(rep.points, 0)
+  rep.rank = VALID_RANKS[rep.rank] and rep.rank or "ROOKIE"
+  rep.lifetimeWagered = number(rep.lifetimeWagered, 0)
+  rep.completedGames = number(rep.completedGames, 0)
+  rep.wins = number(rep.wins, 0)
+  rep.losses = number(rep.losses, 0)
+  rep.draws = number(rep.draws, 0)
+  rep.currentLossStreak = number(rep.currentLossStreak, 0)
+  rep.bestLossStreak = number(rep.bestLossStreak, 0)
+  rep.byGame = sanitizeGameRows(rep.byGame)
+  rep.discoveredGames = sanitizeDiscoveries(rep.discoveredGames)
+  rep.rankRewardsClaimed = sanitizeBooleanMap(rep.rankRewardsClaimed, VALID_RANKS)
+  rep.pendingRewardCoins = number(rep.pendingRewardCoins, 0)
+  rep.pendingRankUps = sanitizeStrings(rep.pendingRankUps, 8, VALID_RANKS)
+  rep.pendingRounds = sanitizePending(rep.pendingRounds)
+  rep.settledRounds = sanitizeStrings(rep.settledRounds, 128)
+  rep.nextRoundId = number(rep.nextRoundId, 0)
+  debt.balance = number(debt.balance, 0)
+  debt.defaults = number(debt.defaults, 0)
+  house.repossessed = house.repossessed == true
+  house.boughtBack = house.boughtBack == true
+  arena.unlocked = arena.unlocked == true
+  arena.reputation = number(arena.reputation, 0)
   return out
 end
 

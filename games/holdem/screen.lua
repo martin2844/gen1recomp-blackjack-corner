@@ -64,10 +64,11 @@ return function(ctx)
     self.settled = true
     self.game.save.coins = math.min(coinCap,
       ctx.coins(self.game) + self.round.payout)
-    ctx.settleRound(self.game, self.reputationRound,
+    local _, progress = ctx.settleRound(self.game, self.reputationRound,
       self.round.result == "win" and "win"
         or self.round.result == "push" and "draw" or "loss",
       self.round.payout)
+    self.rankUpPending = progress and progress.rankUp
     mod.save:set("holdem_hands_played", mod.save:get("holdem_hands_played", 0) + 1)
     if self.round.result == "win" then
       mod.save:set("holdem_hands_won", mod.save:get("holdem_hands_won", 0) + 1)
@@ -132,9 +133,17 @@ return function(ctx)
       elseif input:wasPressed("b") then self:chooseAction(1) end
     elseif self.phase == "result" then
       if input:wasPressed("a") then
-        self.phase, self.round, self.notice, self.actionIndex = "bet", nil, nil, 1
-        ctx.play(self.game, "Press_AB")
-      elseif input:wasPressed("b") then self:close() end
+        if self.rankUpPending and ctx.showRankUp then
+          self.rankUpPending = false; ctx.showRankUp(self.game)
+        else
+          self.phase, self.round, self.notice, self.actionIndex = "bet", nil, nil, 1
+          ctx.play(self.game, "Press_AB")
+        end
+      elseif input:wasPressed("b") then
+        if self.rankUpPending and ctx.showRankUp then
+          self.rankUpPending = false; ctx.showRankUp(self.game)
+        else self:close() end
+      end
     end
   end
 

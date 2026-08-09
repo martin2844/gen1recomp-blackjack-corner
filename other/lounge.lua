@@ -51,16 +51,18 @@ function Lounge.register(mod, mapId)
       sprite = "SPRITE_GENTLEMAN", text = "TEXT_HOLDEM_PATRON", x = 18, y = 8 },
   }
   for _, machine in ipairs({
-    { id = "CRASH", x = 8, text = "TEXT_CRASH_MACHINE" },
-    { id = "FLAPPY", x = 10, text = "TEXT_FLAPPY_MACHINE" },
-    { id = "CASE", x = 12, text = "TEXT_CASE_MACHINE" },
+    { id = "CRASH", x = 8, y = 2, text = "TEXT_CRASH_MACHINE" },
+    { id = "FLAPPY", x = 10, y = 2, text = "TEXT_FLAPPY_MACHINE" },
+    { id = "CASE", x = 12, y = 2, text = "TEXT_CASE_MACHINE" },
+    { id = "HORSE", x = 6, y = 10, text = "TEXT_HORSE_RACING" },
+    { id = "PLINKO", x = 13, y = 10, text = "TEXT_PLINKO" },
   }) do
     for piece = 1, 2 do loungeObjects[#loungeObjects + 1] = {
       index = #loungeObjects + 1,
       name = ("%s_MACHINE_%02d"):format(machine.id, piece),
       movement = "STAY", range = "DOWN",
       sprite = ("SPRITE_ARCADE_%s_%02d"):format(machine.id, piece),
-      x = machine.x, y = 2 + piece,
+      x = machine.x, y = machine.y + piece,
       text = piece == 2 and machine.text or nil,
     } end
   end
@@ -81,22 +83,22 @@ function Lounge.register(mod, mapId)
     end
   end
 
+  local loungeBlocks = { 63, 64, 64, 64, 64, 64, 64, 64, 64, 63 }
+  for _ = 2, 8 do
+    for _ = 1, 10 do loungeBlocks[#loungeBlocks + 1] = 32 end
+  end
+  for _, block in ipairs({ 27, 27, 27, 27, 61, 27, 27, 27, 27, 27 }) do
+    loungeBlocks[#loungeBlocks + 1] = block
+  end
+
   mod.content.maps:register(mapId, {
     id = mapId, label = "CasinoLounge", index = 1100,
-    tileset = "LOBBY", width = 10, height = 6,
-    blocks = {
-      63, 64, 64, 64, 64, 64, 64, 64, 64, 63,
-      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
-      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
-      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
-      32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
-      27, 27, 27, 27, 61, 27, 27, 27, 27, 27,
-    },
+    tileset = "LOBBY", width = 10, height = 9, blocks = loungeBlocks,
     borderBlock = 15, palette = "SLOTS1", connections = {}, signs = {},
     objects = loungeObjects,
     warps = {
-      { x = 8, y = 11, destMap = "GAME_CORNER", destWarp = entryWarp },
-      { x = 9, y = 11, destMap = "GAME_CORNER", destWarp = entryWarp + 1 },
+      { x = 8, y = 17, destMap = "GAME_CORNER", destWarp = entryWarp },
+      { x = 9, y = 17, destMap = "GAME_CORNER", destWarp = entryWarp + 1 },
     },
   })
 end

@@ -180,7 +180,7 @@ return function(mod)
       UI.text(game, "The floor hides\ncoins sometimes.\fPeople stare at\nscreens, not down.", done)
     end,
     TEXT_BLACKJACK_LOUNGE_SIGN = function(game, _, _, done)
-      UI.text(game, "CASINO LOUNGE\nTwo tables open!", done)
+      UI.text(game, "CASINO LOUNGE\nTables up front.\fLive arcade in\nthe back!", done)
     end,
   } })
 
@@ -204,7 +204,7 @@ return function(mod)
         ids.holdem, done)
     end,
     TEXT_CASINO_HOSTESS = function(game, _, _, done)
-      UI.text(game, "Welcome to the\nCASINO LOUNGE!\fBLACKJACK left,\nHOLD'EM right.", done)
+      UI.text(game, "Welcome to the\nCASINO LOUNGE!\fTables up front.\nArcade in back.", done)
     end,
     TEXT_BLACKJACK_PATRON = function(game, _, _, done)
       UI.text(game, "I always double\ndown on eleven!", done)
@@ -220,6 +220,12 @@ return function(mod)
     end,
     TEXT_CASE_MACHINE = function(game, _, _, done)
       open(game, "PRIZE CASE!\f500 coins opens\none mystery prize.", ids.case, done)
+    end,
+    TEXT_HORSE_RACING = function(game, _, _, done)
+      open(game, "LIVE RACE TV!\fPick a runner and\nback it with coins.", ids.horse, done)
+    end,
+    TEXT_PLINKO = function(game, _, _, done)
+      open(game, "PLINKO!\fDrop the ball.\nTrust the pegs.", ids.plinko, done)
     end,
     TEXT_LOUNGE_COLD_STREAK = function(game, _, _, done)
       UI.text(game, "Seven cold hands.\fThe eighth has to\nturn around... right?", done)
@@ -238,6 +244,12 @@ return function(mod)
     end,
   } })
   mod.content.map_scripts:register(ids.pallet, { talk = {
+    TEXT_PALLET_BLACKJACK_TABLE = function(game, _, _, done)
+      open(game, "PALLET BLACKJACK!\fGet closer to 21\nthan the dealer.", ids.blackjack, done)
+    end,
+    TEXT_PALLET_HOLDEM_TABLE = function(game, _, _, done)
+      open(game, "PALLET HOLD'EM!\fBeat the house with\nyour best five cards.", ids.holdem, done)
+    end,
     TEXT_HORSE_RACING = function(game, _, _, done)
       open(game, "LIVE RACE TV!\fPick a runner and\nback it with coins.", ids.horse, done)
     end,
@@ -323,6 +335,7 @@ return function(mod)
   mod.exports.crash_rules, mod.exports.flappy_rules = CrashRules, FlappyRules
   mod.exports.case_rules, mod.exports.giveCaseReward = CaseRules, Service.giveCaseReward
   mod.exports.horse_rules, mod.exports.plinko_rules = HorseRules, PlinkoRules
-  mod.exports.roulette_rules, mod.exports.gamble = RouletteRules, Gamble
+  mod.exports.roulette_rules, mod.exports.roulette_view = RouletteRules, RouletteView
+  mod.exports.gamble = Gamble
   mod.exports.gym_cases = Gym
 end

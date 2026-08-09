@@ -33,6 +33,10 @@ data.maps.GAME_CORNER = {
 }
 local palletBlocks = {}
 for i = 1, 90 do palletBlocks[i] = 1 end
+palletBlocks[73] = 0x1d -- the real Pallet pond directly below the new facade
+palletBlocks[74] = 0x1e
+palletBlocks[83] = 0x65
+palletBlocks[84] = 0x64
 data.maps.PALLET_TOWN = {
   id = "PALLET_TOWN", label = "PalletTown", index = 0,
   tileset = "OVERWORLD", width = 10, height = 9,
@@ -66,8 +70,12 @@ T.check(api and api.rules and api.holdem_rules and api.holdem_view and api.catal
     and api.redeemPokemon and api.pawnLedger and api.crash_rules
     and api.flappy_rules and api.case_rules and api.giveCaseReward
     and api.horse_rules and api.plinko_rules and api.roulette_rules
+    and api.roulette_view
     and api.gamble and api.gym_cases,
   "games, prizes, coin exchange, pawning, and arcade rules are exported")
+T.check(api.roulette_view.RESULT_BUTTON_Y
+    + api.roulette_view.RESULT_BUTTON_HEIGHT <= api.roulette_view.FRAME_CONTENT_BOTTOM,
+  "the starter result button stays fully inside the visible frame")
 
 do
   local steps = { { id = "oak_welcome", kind = "say" } }
@@ -78,6 +86,12 @@ do
   T.eq(built[2].kind, "yesno", "Gamble Mode is an explicit yes-or-no choice")
   T.check(built[2].defaultNo, "ordinary rules remain the safe default")
 
+  run.data.text._OaksLabOakChooseMonText =
+    "OAK: There are 3\nPOKEMON here!"
+  run.data.text._OaksLabOakBePatientText =
+    "OAK: Be patient!\nYou can have one too!"
+  local originalOakChoice = run.data.text._OaksLabOakChooseMonText
+  local originalOakRival = run.data.text._OaksLabOakBePatientText
   local introGame = { data = run.data, save = { inventory = {}, coins = 0 } }
   Runtime.emit("intro.oak_speech.answered", {
     saveKey = "gamble_mode", value = true, speech = { game = introGame },
@@ -86,6 +100,12 @@ do
     "Gamble Mode starts the player with a Coin Case")
   T.eq(introGame.save.coins, 100,
     "Gamble Mode supplies a small starting stake")
+  T.check(not run.data.text._OaksLabOakChooseMonText:find("3\nPOK", 1, true),
+    "Gamble Mode removes Oak's three-Pokemon choice speech")
+  T.check(run.data.text._OaksLabOakChooseMonText:find("Gamble", 1, true) ~= nil,
+    "Gamble Mode makes Oak pitch the starter roulette")
+  T.check(run.data.text._OaksLabOakBePatientText:find("gamble", 1, true) ~= nil,
+    "Oak explicitly encourages the rival to gamble too")
   for index, object in ipairs(run.data.maps.OAKS_LAB.objects) do
     T.eq(object.sprite, ("SPRITE_STARTER_ROULETTE_%02d"):format(index),
       "Oak's three gift balls become one roulette cabinet")
@@ -97,6 +117,10 @@ do
     T.eq(object.sprite, "SPRITE_POKE_BALL",
       "declining Gamble Mode restores Oak's ordinary gift-ball art")
   end
+  T.eq(run.data.text._OaksLabOakChooseMonText, originalOakChoice,
+    "declining Gamble Mode restores Oak's ordinary starter speech")
+  T.eq(run.data.text._OaksLabOakBePatientText, originalOakRival,
+    "declining Gamble Mode restores Oak's ordinary rival speech")
 end
 
 do
@@ -112,6 +136,10 @@ do
   }
   Game.stack = { pushed = {}, push = function(self, screen)
     self.pushed[#self.pushed + 1] = screen
+  end, pop = function(self)
+    return table.remove(self.pushed)
+  end, top = function(self)
+    return self.pushed[#self.pushed]
   end }
   Runtime.emit("intro.oak_speech.answered", {
     saveKey = "gamble_mode", value = true, speech = { game = Game },
@@ -138,8 +166,15 @@ do
   T.check(victoryDone, "the ordinary post-victory script still runs")
   T.eq(#api.gym_cases.queue(), 1,
     "the suppressed gym TM becomes one persistent prize case")
+  local leaderSpeech = Game.stack.pushed[1]
+  T.check(leaderSpeech and leaderSpeech.pages and not leaderSpeech.screenId,
+    "the leader speaks over the gym scene before the Gym Case opens")
+  T.eq(#Game.stack.pushed, 1,
+    "the opaque Gym Case does not sit behind the leader's dialogue")
+  Game.stack:pop()
+  leaderSpeech.onDone()
   T.eq(Game.stack.pushed[1].screenId, "BlackjackCornerGymCase",
-    "the gym case opens after a leader victory")
+    "finishing the leader's speech opens the Gym Case")
   for index = 1, 19 do Game.save.inventory["GYM_FILLER_" .. index] = 1 end
   local gymCase = Game.stack.pushed[1]
   gymCase:update(0)
@@ -167,6 +202,10 @@ do
   }
   Game.stack = { pushed = {}, push = function(self, screen)
     self.pushed[#self.pushed + 1] = screen
+  end, pop = function(self)
+    return table.remove(self.pushed)
+  end, top = function(self)
+    return self.pushed[#self.pushed]
   end }
   victoryDone = false
   Overworld.checkVictoryRewards(overworld, "OPP_MISTY", 1)
@@ -178,6 +217,29 @@ do
   debug.setupvalue(vanilla, gameUpvalue, oldOverworldGame)
   Game.data.items.TM_BUBBLEBEAM = oldBubblebeam
   Game.data, Game.save, Game.stack = oldData, oldSave, oldStack
+end
+
+do
+  local voices = {
+    BOULDERBADGE = { leader = "BROCK", marker = "lesson" },
+    CASCADEBADGE = { leader = "MISTY", marker = "splash" },
+    THUNDERBADGE = { leader = "SURGE", marker = "order" },
+    RAINBOWBADGE = { leader = "ERIKA", marker = "bloom" },
+    SOULBADGE = { leader = "KOGA", marker = "discipline" },
+    MARSHBADGE = { leader = "SABRINA", marker = "foresee" },
+    VOLCANOBADGE = { leader = "BLAINE", marker = "question" },
+    EARTHBADGE = { leader = "GIOVANNI", marker = "power" },
+  }
+  for badge, expected in pairs(voices) do
+    local speech = api.gym_cases.leaderDialogue(badge)
+    T.check(speech and speech:find(expected.marker, 1, true),
+      expected.leader .. " gives the Gym Case pitch in character")
+    T.check(not speech:find("TM", 1, true),
+      expected.leader .. " no longer explains a direct TM reward")
+    T.check(speech:find("GYM CASE", 1, true)
+        and speech:lower():find("spin", 1, true),
+      expected.leader .. " clearly tells the player to spin a Gym Case")
+  end
 end
 
 do
@@ -248,16 +310,110 @@ T.eq(run.data.maps.PALLET_TOWN.warps[4].destMap, "PALLET_CASINO",
   "the new Pallet casino facade has a working entrance")
 T.eq(run.data.maps.PALLET_TOWN.blocks[63], 0x3a,
   "the Pallet casino facade uses a visible door block")
+T.eq(run.data.maps.PALLET_TOWN.blocks[73], 0x01,
+  "the Pallet casino door has a dry walkable landing below it")
+T.eq(run.data.maps.PALLET_TOWN.blocks[74], 0x01,
+  "the Pallet casino forecourt clears the complete old pond edge")
+T.eq(run.data.maps.PALLET_TOWN.blocks[83], 0x1d,
+  "the Pallet pond moves its bordered upper-left corner down one row")
+T.eq(run.data.maps.PALLET_TOWN.blocks[84], 0x1e,
+  "the Pallet pond moves its bordered upper-right corner down one row")
 T.eq(#run.data.field.hiddenCoins.PALLET_CASINO, 3,
   "the Pallet casino hides three one-time coin pickups")
 
 do
+  local palletCasino = run.data.maps.PALLET_CASINO
+  T.eq(palletCasino.width, 10, "Pallet Casino keeps its twenty-cell width")
+  T.eq(palletCasino.height, 9, "Pallet Casino expands for two card tables")
+  T.eq(#palletCasino.blocks, 90, "the expanded Pallet Casino block grid is complete")
+  T.eq(palletCasino.warps[1].y, 17, "the Pallet Casino exit moves to its new bottom wall")
+  local objects, indices = {}, {}
+  for _, object in ipairs(palletCasino.objects) do
+    objects[object.name] = object
+    T.check(not indices[object.index], "Pallet Casino object indices remain unique")
+    indices[object.index] = true
+    T.check(object.x >= 0 and object.x < palletCasino.width * 2
+        and object.y >= 0 and object.y < palletCasino.height * 2,
+      object.name .. " stays inside Pallet Casino")
+  end
+  T.check(objects.PALLET_BLACKJACK_DEALER ~= nil,
+    "Pallet Casino has a dedicated blackjack dealer")
+  T.check(objects.PALLET_HOLDEM_DEALER ~= nil,
+    "Pallet Casino has a dedicated Hold'em dealer")
+  for _, tableId in ipairs({ "BLACKJACK", "HOLDEM" }) do
+    for piece = 1, 8 do
+      local name = ("PALLET_%s_TABLE_%02d"):format(tableId, piece)
+      T.check(objects[name] ~= nil, name .. " is present in Pallet Casino")
+      if piece > 4 then
+        T.eq(objects[name].text, "TEXT_PALLET_" .. tableId .. "_TABLE",
+          name .. " opens its card game from the front rail")
+      end
+    end
+  end
+  local function contributedTalk(textId)
+    for _, contribution in ipairs(
+        run.loader.content.map_scripts:chain("PALLET_CASINO")) do
+      if contribution.talk and contribution.talk[textId] then return true end
+    end
+    return false
+  end
+  T.check(contributedTalk("TEXT_PALLET_BLACKJACK_TABLE"),
+    "the Pallet blackjack table opens the blackjack screen")
+  T.check(contributedTalk("TEXT_PALLET_HOLDEM_TABLE"),
+    "the Pallet Hold'em table opens the poker screen")
+end
+
+do
+  local lounge = run.data.maps.BLACKJACK_LOUNGE
+  T.eq(lounge.width, 10, "the expanded Lounge keeps its twenty-cell width")
+  T.eq(lounge.height, 9, "the Lounge gains a full lower arcade floor")
+  T.eq(#lounge.blocks, 90, "the expanded Lounge has one block for every map cell")
+  T.eq(lounge.warps[1].y, 17, "the Lounge exit moves to the new bottom wall")
+  local objects, indices = {}, {}
+  for _, object in ipairs(lounge.objects) do
+    objects[object.name] = object
+    T.check(not indices[object.index], "Lounge object indices remain unique")
+    indices[object.index] = true
+    T.check(object.x >= 0 and object.x < lounge.width * 2
+        and object.y >= 0 and object.y < lounge.height * 2,
+      object.name .. " stays inside the expanded Lounge")
+  end
+  T.eq(objects.HORSE_MACHINE_02.text, "TEXT_HORSE_RACING",
+    "the Lounge includes an interactive Horse Racing terminal")
+  T.eq(objects.PLINKO_MACHINE_02.text, "TEXT_PLINKO",
+    "the Lounge includes an interactive Plinko terminal")
+  local function contributedTalk(textId)
+    for _, contribution in ipairs(
+        run.loader.content.map_scripts:chain("BLACKJACK_LOUNGE")) do
+      if contribution.talk and contribution.talk[textId] then return true end
+    end
+    return false
+  end
+  T.check(contributedTalk("TEXT_HORSE_RACING"),
+    "the Lounge can open Horse Racing from its new terminal")
+  T.check(contributedTalk("TEXT_PLINKO"),
+    "the Lounge can open Plinko from its new terminal")
+end
+
+do
   local oldBide, oldBubble = run.data.items.TM_BIDE, run.data.items.TM_BUBBLEBEAM
-  local oldNidoran, oldPikachu = run.data.pokemon.NIDORAN_M, run.data.pokemon.PIKACHU
+  local oldNidoranM, oldNidoranF = run.data.pokemon.NIDORAN_M,
+    run.data.pokemon.NIDORAN_F
+  local oldPikachu = run.data.pokemon.PIKACHU
   run.data.items.TM_BIDE = { name = "TM BIDE" }
   run.data.items.TM_BUBBLEBEAM = { name = "TM BUBBLEBEAM" }
   run.data.pokemon.NIDORAN_M = { name = "NIDORAN M" }
+  run.data.pokemon.NIDORAN_F = { name = "NIDORAN F" }
   run.data.pokemon.PIKACHU = { name = "PIKACHU" }
+  local brockRows = api.gym_cases.pool({ data = run.data },
+    { order = 1, tm = "TM_BIDE" })
+  local brockTotal, brockBide = 0, nil
+  for _, row in ipairs(brockRows) do
+    brockTotal = brockTotal + row.weight
+    if row.id == "TM_BIDE" then brockBide = row end
+  end
+  T.check(brockBide and brockBide.weight / brockTotal <= 0.16,
+    "Bide stays below sixteen percent of Brock's Gym Case pool")
   local rows = api.gym_cases.pool({ data = run.data },
     { order = 2, tm = "TM_BUBBLEBEAM" })
   local byId, bySpecies = {}, {}
@@ -266,16 +422,18 @@ do
   end
   T.eq(byId.TM_BUBBLEBEAM.tier, "gold",
     "the current leader's TM is the Gym Case headline reward")
-  T.eq(byId.TM_BUBBLEBEAM.weight, 420,
-    "the current leader's TM has the strongest individual case weight")
-  T.eq(byId.TM_BIDE.weight, 90,
-    "an earlier Gym TM remains in the progressive reward pool")
+  T.eq(byId.TM_BUBBLEBEAM.weight, 100,
+    "the current leader's TM is featured without dominating the case")
+  T.eq(byId.TM_BIDE.weight, 50,
+    "an earlier Gym TM remains possible at a reduced weight")
   T.check(bySpecies.NIDORAN_M and bySpecies.PIKACHU,
     "early Gym Cases include their unlocked basic Pokemon")
   T.eq(bySpecies.BULBASAUR, nil,
     "later starter rewards remain locked at the second badge")
   run.data.items.TM_BIDE, run.data.items.TM_BUBBLEBEAM = oldBide, oldBubble
-  run.data.pokemon.NIDORAN_M, run.data.pokemon.PIKACHU = oldNidoran, oldPikachu
+  run.data.pokemon.NIDORAN_M, run.data.pokemon.NIDORAN_F =
+    oldNidoranM, oldNidoranF
+  run.data.pokemon.PIKACHU = oldPikachu
 end
 T.eq(run.data.maps.GAME_CORNER.blocks[82], 61,
   "a double-door replaces one lower Game Corner floor block")
@@ -297,7 +455,7 @@ end
 do
   local lounge = run.data.maps.BLACKJACK_LOUNGE
   T.eq(lounge.width, 10, "the casino lounge is twenty walk cells wide")
-  T.eq(lounge.height, 6, "the casino lounge is twelve walk cells tall")
+  T.eq(lounge.height, 9, "the casino lounge is eighteen walk cells tall")
   T.eq(lounge.palette, "SLOTS1", "the lounge inherits the Game Corner palette")
   T.eq(lounge.warps[1].destWarp, 4, "the left exit returns to the left entrance tile")
   T.eq(lounge.warps[2].destWarp, 5, "the right exit returns to the right entrance tile")
@@ -317,20 +475,24 @@ do
   T.eq(broker.x, 8, "the broker stands behind the original counter")
   T.eq(broker.y, 6, "the broker stays in the counter row")
   for index, machine in ipairs({
-    { id = "CRASH", x = 8, text = "TEXT_CRASH_MACHINE" },
-    { id = "FLAPPY", x = 10, text = "TEXT_FLAPPY_MACHINE" },
-    { id = "CASE", x = 12, text = "TEXT_CASE_MACHINE" },
+    { id = "CRASH", x = 8, y = 2, text = "TEXT_CRASH_MACHINE" },
+    { id = "FLAPPY", x = 10, y = 2, text = "TEXT_FLAPPY_MACHINE" },
+    { id = "CASE", x = 12, y = 2, text = "TEXT_CASE_MACHINE" },
+    { id = "HORSE", x = 6, y = 10, text = "TEXT_HORSE_RACING" },
+    { id = "PLINKO", x = 13, y = 10, text = "TEXT_PLINKO" },
   }) do
     local top = objectNamed("BLACKJACK_LOUNGE", machine.id .. "_MACHINE_01")
     local controls = objectNamed("BLACKJACK_LOUNGE", machine.id .. "_MACHINE_02")
     T.check(top and controls, machine.id .. " has a two-tile arcade cabinet")
     T.eq(top.x, machine.x, machine.id .. " occupies its center-lounge column")
-    T.eq(top.y, 3, machine.id .. " cabinet starts on the dealer row")
-    T.eq(controls.y, 4, machine.id .. " controls face the player")
+    T.eq(top.y, machine.y + 1, machine.id .. " cabinet starts on its arcade row")
+    T.eq(controls.y, machine.y + 2, machine.id .. " controls face the player")
     T.eq(controls.text, machine.text, machine.id .. " opens its own minigame")
     T.check(run.data.sprites[("SPRITE_ARCADE_%s_01"):format(machine.id)] ~= nil,
       machine.id .. " has generated cabinet art")
-    T.eq(index * 2 + 6, machine.x, machine.id .. " machines are evenly spaced")
+    if index <= 3 then
+      T.eq(index * 2 + 6, machine.x, machine.id .. " machines are evenly spaced")
+    end
   end
   for _, tableId in ipairs({ "BLACKJACK", "HOLDEM" }) do
     for piece = 1, 8 do
@@ -712,7 +874,7 @@ do
 end
 
 do
-  local game = gameWith(100)
+  local game = gameWith(100, 3000)
   game.input = noInput
   local screen = run.data.screens.BlackjackCornerStarterRoulette.new(game, {})
   screen:start()
@@ -720,7 +882,14 @@ do
   T.eq(screen.strip[api.roulette_rules.WINNER_INDEX], screen.playerStarter,
     "the starter reel stops on the predetermined player roll")
   screen:settle()
-  T.eq(screen.phase, "result", "a starter spin settles successfully")
+  T.eq(screen.phase, "offer", "a starter spin pauses for a keep-or-reroll choice")
+  T.eq(#game.save.party, 0, "the rolled starter is not awarded before acceptance")
+  T.check(screen:respin(), "an affordable starter reroll begins")
+  T.eq(game.save.money, 2000, "a starter reroll charges exactly one thousand")
+  T.eq(screen.phase, "spinning", "a paid reroll restarts the animated reel")
+  screen:settle()
+  screen:accept()
+  T.eq(screen.phase, "result", "accepting the final roll settles successfully")
   T.eq(#game.save.party, 1, "the rolled starter reaches the player's party")
   T.check(game.save.flags.EVENT_GOT_STARTER,
     "settling the roulette unlocks Oak's Lab exit flow")
@@ -730,8 +899,18 @@ do
   local duplicate = run.data.screens.BlackjackCornerStarterRoulette.new(game, {})
   duplicate.playerStarter, duplicate.rivalStarter = "FIXMON_A", "FIXMON_B"
   duplicate:settle()
+  duplicate:accept()
   T.eq(duplicate.phase, "failed", "the roulette refuses a second starter")
   T.eq(#game.save.party, 1, "a refused second spin cannot duplicate the starter")
+
+  local poor = gameWith(100, 999)
+  poor.input = noInput
+  local unaffordable = run.data.screens.BlackjackCornerStarterRoulette.new(poor, {})
+  unaffordable:start()
+  unaffordable:settle()
+  T.check(not unaffordable:respin(), "an unaffordable starter reroll is refused")
+  T.eq(poor.save.money, 999, "a refused starter reroll takes no money")
+  T.eq(unaffordable.phase, "offer", "a refused reroll keeps the current offer")
 end
 
 do

@@ -16,19 +16,19 @@ The mod supports Pokemon Red, Blue, and Yellow. It contains no ROM or
 ROM-derived artwork; world and shiny graphics are generated locally from the
 player's imported game data.
 
-## Version 0.3 highlights
+## Version 0.4 highlights
 
 | Area | What the release adds |
 | --- | --- |
 | Adventure | Optional save-scoped Gamble Mode changes the starter, rival team, and all eight Gym Leader rewards |
-| Pallet Town | A new early-game mini-casino with horse racing, Plinko, Prize Cases, coin sales, pawning, gamblers, and hidden coins |
-| Celadon | A dedicated 20x12 lounge with separate blackjack and Hold'em tables plus three center-floor arcade cabinets |
+| Pallet Town | A new early-game casino with blackjack, Hold'em, horse racing, Plinko, Prize Cases, coin sales, pawning, gamblers, and hidden coins |
+| Celadon | A dedicated 20x18 lounge with two tables, three front cabinets, and a rear Horse Racing and Plinko arcade |
 | Seven games | Blackjack, Hold'em, Crash, Tube Flyer, Prize Case, animated horse racing, and Plinko |
 | Services | Bulk coin purchases and a pawn broker that stores up to five exact party Pokemon for later redemption |
 | Rewards | Version-exclusive Pokemon, starters, fossils, shiny upgrades, rare TMs, Surfing Pikachu, Dragonite, Mew, and Master Balls |
 | Economy | A 1,000,000-coin Coin Case used consistently by the new games, original slots, and hidden coin pickups |
 | Atmosphere | Ten new gamblers and staff plus eight new one-time floor pickups across three casino interiors |
-| Code quality | Small per-game modules under `games/`, supporting systems under `other/`, and 506 automated checks |
+| Code quality | Small per-game modules under `games/`, supporting systems under `other/`, and 734 automated checks |
 
 ## Screenshots
 
@@ -109,7 +109,7 @@ player's imported game data.
 
 ## Install
 
-1. Download the named `blackjack_corner-<version>.zip` asset from the
+1. Download `blackjack_corner-0.4.0.zip` from the
    [latest release](https://github.com/martin2844/gen1recomp-blackjack-corner/releases/latest).
    Use the named mod ZIP, not GitHub's automatic source-code archives.
 2. Open Gen1Recomp and choose **MODS > Import mod .zip**.
@@ -138,11 +138,15 @@ complete remix.
 - The player's starter is drawn from every base-stage, non-legendary Gen 1
   species. Unevolved species that never evolve are valid, so the result can
   range from Caterpie or Magikarp to Lapras, Snorlax, or Aerodactyl.
+- Every roll can be kept for free or rerolled for ¥1,000. A reroll spends
+  ordinary money rather than casino coins, and the current Pokemon remains
+  available until the player confirms KEEP.
 - Magikarp and Abra remain possible, but receive Tackle or Confusion at level 5
   so an unlucky spin cannot make the opening battle unwinnable.
 - The rival receives a separate roll and cannot receive the exact same result.
   Their starter follows its evolution line as later rival teams gain levels.
-- Oak and the rival use new dialogue that makes the no-choice rules explicit.
+- Oak becomes a witty gambling evangelist who replaces the three-Pokemon
+  choice speech and encourages both the player and rival to trust the wheel.
 - Every Gym Leader still awards the correct badge, but the direct TM is
   replaced by one animated Gym Case.
 
@@ -154,7 +158,12 @@ are never silently converted.
 Each of the eight badges unlocks one persistent, zero-cost Gym Case. Its reel
 contains exactly one final reward:
 
-- The defeated leader's original TM has the strongest individual weight.
+- The defeated leader's original TM remains a featured prize, but its weight
+  is capped so the case produces a varied mix of TMs and Pokemon. In Brock's
+  first case, Bide is roughly a 15% result instead of dominating the pool.
+- The leader delivers their badge dialogue in the Gym before the case opens,
+  then personally invites the player to spin with dialogue written for their
+  personality; no TM explanation is shown over the case screen.
 - TMs from earlier defeated Gyms remain possible, expanding the pool as the
   adventure continues.
 - Pokemon rewards begin with Nidoran, Pikachu, and Abra, then grow to Eevee,
@@ -172,6 +181,8 @@ early-game casino floor. It is available immediately in Gamble Mode and
 contains everything needed to enter the economy without waiting for Celadon:
 
 - A live race terminal, an animated Plinko board, and a 500-coin Prize Case.
+- Full blackjack and Texas Hold'em tables with dedicated dealers, using the
+  same rules, progressive wagering, and Coin Case balance as Celadon.
 - A bulk coin clerk using the original exchange rate.
 - A Rocket pawn broker who accepts party Pokemon under the same five-ticket,
   30%-redemption rules as Celadon.
@@ -210,8 +221,10 @@ pickups reward looking down while everyone else watches the machines.
 
 - A new double-door in the original Game Corner opens into a separate casino
   room instead of crowding the slot-machine floor.
-- The 20x12-cell lounge has separate blackjack and Texas Hold'em tables,
-  dedicated dealers, spectators, a central aisle, and a reciprocal exit.
+- The 20x18-cell lounge has separate blackjack and Texas Hold'em tables,
+  dedicated dealers, spectators, a long central aisle, and a reciprocal exit.
+- Crash, Tube Flyer, and Prize Case remain between the tables; a new rear
+  arcade adds animated Horse Racing and Plinko terminals inside Celadon too.
 - Both tables are compact four-tile-wide assemblies with distinct green and
   blue felt, betting marks, cards, chips, and fully interactive front rails.
 - Either table's dealer can explain the game and open its screen.
@@ -461,7 +474,9 @@ also rejected without charging coins when the Bag has no room.
 
 | Screen | Control | Action |
 | --- | --- | --- |
-| Starter Roulette | A or B after the result | Accept the rolled starter and return to Oak's Lab |
+| Starter Roulette | Left / Right or Up / Down | Choose KEEP or SPIN ¥1000 |
+| Starter Roulette | A | Confirm the highlighted option |
+| Starter Roulette | B | Safely keep the current roll |
 | Gym Case | A after the reel | Accept the reward and close the one-use case |
 | Saved Gym Case | Start menu > GYM CASE | Retry delivery of the exact saved reward |
 

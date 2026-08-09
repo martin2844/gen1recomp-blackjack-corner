@@ -72,6 +72,12 @@ T.eq(Roulette.FALLBACK_MOVES.MAGIKARP, "TACKLE",
   "a Magikarp starter cannot softlock the opening battle")
 T.eq(Roulette.FALLBACK_MOVES.ABRA, "CONFUSION",
   "an Abra starter cannot softlock the opening battle")
+T.eq(Roulette.RESPIN_COST, 1000,
+  "a starter reroll costs one thousand Pokedollars")
+T.check(Roulette.canRespin(1000),
+  "the starter roulette allows a reroll at the exact price")
+T.check(not Roulette.canRespin(999),
+  "the starter roulette refuses a reroll below the posted price")
 T.eq(Roulette.evolveForLevel(pokemon, "BULBASAUR", 15), "BULBASAUR",
   "the rival starter remains basic below its evolution level")
 T.eq(Roulette.evolveForLevel(pokemon, "BULBASAUR", 40), "VENUSAUR",

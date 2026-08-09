@@ -1,5 +1,38 @@
 # Changelog
 
+## Unreleased
+
+## [0.4.0] - 2026-08-09
+
+### Changed
+
+- Gym Case TM weights are rebalanced for variety. The current leader's TM is
+  still featured, but Brock's Bide chance falls from roughly 43% to 15%.
+- The starter roulette now pauses on each roll and lets the player either keep
+  that Pokemon or spend ¥1,000 for another spin. The Pokemon is not awarded
+  until KEEP is confirmed, and unaffordable rerolls are visibly disabled.
+- Gamble Mode rewrites Oak's complete laboratory introduction: he no longer
+  mentions three Pokemon, treats choosing as boring, and enthusiastically
+  encourages both the player and rival to gamble for their starters.
+- The Celadon Casino Lounge now spans 20x18 walk cells. Its original tables
+  and three cabinets remain up front, while Horse Racing and Plinko anchor a
+  new rear arcade with redistributed patrons and hidden coins.
+- Pallet Casino now spans 20x18 walk cells and adds dedicated blackjack and
+  Texas Hold'em tables, so all seven casino games are playable from Pallet.
+- All eight Gym Leaders now introduce their Gamble Mode case rewards in their
+  own voices before the reel opens, replacing the original direct-TM pitch.
+
+### Fixed
+
+- The starter confirmation screen now keeps its result text and CONTINUE
+  button fully inside the visible Game Boy frame.
+- Pallet Casino now has a dry, walkable landing between its door and the
+  original pond, making the exterior warp reachable without Surf.
+- Pallet Casino's complete pond bank now sits one block farther south, giving
+  the entrance a clean two-block forecourt and a continuous bordered shoreline.
+- Gym reward dialogue now finishes over the visible leader and Gym before the
+  opaque Gym Case opens, instead of rendering the text box on top of the reel.
+
 ## [0.3.0] - 2026-08-08
 
 ### Added

@@ -30,6 +30,29 @@ player's imported game data.
 | Atmosphere | Ten new gamblers and staff plus eight new one-time floor pickups across three casino interiors |
 | Code quality | Small per-game modules under `games/`, supporting systems under `other/`, and 734 automated checks |
 
+## v0.5 development preview
+
+The `feat/v0.5-high-roller` branch begins the progressive Gamble Mode campaign
+without changing the always-available base casino expansion:
+
+- all seven paid casino games feed one exactly-once High Roller reputation
+  ledger;
+- Rookie, Regular, High Roller, and VIP ranks combine reputation requirements
+  with story-safe badge ceilings;
+- excess reputation remains banked until the required badge is earned;
+- rank-ups grant one-time coin rewards and get a dedicated pixel presentation;
+- the Start menu exposes a compact High Roller panel with rank progress,
+  results, lifetime wagers, and cold streaks;
+- casino patrons and staff react to rank and sustained losses;
+- old saves lazily receive a versioned campaign record while existing game,
+  pawn, case, party, and currency state stays intact.
+- the current headless suite covers 789 assertions, with Red and Blue native
+  UI smoke runs layered on top.
+
+The implementation and release train are mapped in
+[docs/GAMBLE_MODE_ROADMAP.md](docs/GAMBLE_MODE_ROADMAP.md). Human UI/E2E signoff
+uses the supervised drivers and matrix in [`tests/manual`](tests/manual).
+
 ## Screenshots
 
 ### Expanded Casino Floor

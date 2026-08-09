@@ -20,6 +20,7 @@ return function(ctx)
   function Screen:start()
     if ctx.coins(self.game) < Rules.COST then self.notice = "NEED 10 COINS"; return end
     self.game.save.coins = ctx.coins(self.game) - Rules.COST
+    self.reputationRound = ctx.beginRound("tube_flyer", Rules.COST)
     self.run = Rules.new(function(maximum) return love.math.random(1, maximum) end)
     self.run.earned = 0
     self.phase, self.notice = "playing", nil
@@ -30,6 +31,10 @@ return function(ctx)
   function Screen:finish()
     if self.phase ~= "playing" then return end
     self.phase = "result"
+    local earned = self.run.earned or 0
+    ctx.settleRound(self.game, self.reputationRound,
+      earned > Rules.COST and "win" or earned == Rules.COST and "draw" or "loss",
+      earned)
     mod.save:set("flappy_best", math.max(mod.save:get("flappy_best", 0), self.run.score))
     ctx.play(self.game, "Slots_Stop_Wheel")
   end

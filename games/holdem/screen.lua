@@ -51,6 +51,7 @@ return function(ctx)
     end
     self.notice = nil
     self.game.save.coins = ctx.coins(self.game) - startingBet
+    self.reputationRound = ctx.beginRound("holdem", startingBet)
     self.round = Rules.newRound(startingBet, Rules.newDeck(function(n)
       return love.math.random(1, n)
     end))
@@ -63,6 +64,10 @@ return function(ctx)
     self.settled = true
     self.game.save.coins = math.min(coinCap,
       ctx.coins(self.game) + self.round.payout)
+    ctx.settleRound(self.game, self.reputationRound,
+      self.round.result == "win" and "win"
+        or self.round.result == "push" and "draw" or "loss",
+      self.round.payout)
     mod.save:set("holdem_hands_played", mod.save:get("holdem_hands_played", 0) + 1)
     if self.round.result == "win" then
       mod.save:set("holdem_hands_won", mod.save:get("holdem_hands_won", 0) + 1)
@@ -96,6 +101,7 @@ return function(ctx)
     else
       local wager = self.round.start * action.multiplier
       self.game.save.coins = ctx.coins(self.game) - wager
+      ctx.increaseStake(self.reputationRound, wager)
       Rules.bet(self.round, action.multiplier)
     end
     if self.round.state == "playing" then

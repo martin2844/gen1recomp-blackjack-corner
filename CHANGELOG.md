@@ -2,6 +2,39 @@
 
 ## Unreleased
 
+### Added
+
+- The first v0.5 Gamble Mode campaign slice: a schema-versioned persistent
+  state with additive placeholders for reputation, debt, house ownership, and
+  the future underground arena.
+- Shared High Roller reputation across Blackjack, Hold'em, Crash, Tube Flyer,
+  Prize Case, Horse Racing, and Plinko, including lifetime wager and per-game
+  win/loss/draw statistics.
+- Rookie, Regular, High Roller, and VIP progression with badge ceilings,
+  banked reputation, one-time coin rewards, and a deliberately deferred
+  Kingpin rank for the arena release.
+- A native-resolution High Roller status panel in the Start menu with rank,
+  progress, badge requirements, aggregate results, lifetime wagers, losing
+  streaks, and one-time rank-up presentations.
+- Rank- and losing-streak-aware dialogue for patrons and staff in both casino
+  destinations.
+- A supervised manual QA framework with isolated LOVE identities, scripted
+  save setup, screenshots, explicit keyboard handoff, a Red/Blue test matrix,
+  and a v0.5 release checklist.
+
+### Fixed
+
+- Every paid game now uses a persistent round token so retries and repeated
+  result callbacks cannot award reputation twice.
+- Progressive Blackjack and Hold'em bets add to the same campaign wager rather
+  than looking like separate rounds.
+- Paid Prize Cases settle reputation when the immutable reel prize is chosen;
+  delivery retries and Gym Cases cannot duplicate or incorrectly earn it.
+- Reputation banked behind a badge ceiling now ranks up immediately when a
+  newly earned badge removes that ceiling.
+- Native 160x144 review caught and removed clipped High Roller goal copy and
+  an unsupported plus glyph from the rank-up presentation.
+
 ## [0.4.0] - 2026-08-09
 
 ### Changed

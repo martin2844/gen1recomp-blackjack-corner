@@ -238,6 +238,15 @@ Ships:
 
 ## v0.5 implementation plan
 
+Implementation status on `feat/v0.5-high-roller`:
+
+- campaign schema, sanitation, and lazy v0.4 migration: implemented;
+- exactly-once settlement bridge across all seven games: implemented;
+- ranks, badge ceilings, banked progress, rewards, and statistics: implemented;
+- Start-menu High Roller panel and reactive casino dialogue: implemented;
+- automated coverage and supervised manual-test framework: implemented;
+- complete Red/Blue human release-matrix signoff: pending.
+
 ### Chunk 1: campaign state and migrations
 
 Planned modules:

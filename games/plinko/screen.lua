@@ -21,6 +21,7 @@ return function(ctx)
     local bet = Rules.BETS[self.betIndex]
     if ctx.coins(self.game) < bet then self.notice = "NOT ENOUGH COINS"; return end
     self.game.save.coins = ctx.coins(self.game) - bet
+    self.reputationRound = ctx.beginRound("plinko", bet)
     self.bet = bet
     self.drop = Rules.new(function(maximum) return love.math.random(1, maximum) end)
     self.phase, self.notice = "dropping", nil
@@ -32,6 +33,10 @@ return function(ctx)
     self.payout = math.min(ctx.coinCap - ctx.coins(self.game),
       Rules.payout(self.bet, self.drop.slot))
     self.game.save.coins = ctx.coins(self.game) + self.payout
+    ctx.settleRound(self.game, self.reputationRound,
+      self.payout > self.bet and "win"
+        or self.payout == self.bet and "draw" or "loss",
+      self.payout)
     self.phase = "result"
     mod.save:set("plinko_best", math.max(mod.save:get("plinko_best", 0), self.payout))
     ctx.play(self.game, self.payout >= self.bet and "Slots_Reward" or "Slots_Stop_Wheel")

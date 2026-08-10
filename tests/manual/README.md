@@ -45,6 +45,8 @@ For v0.7, `drivers/v07_arena_audit.lua` executes the deterministic Red/Blue
 Underground Arena gate and captures every required visual checkpoint. The
 complete human-readable matrix and launch commands live in
 [`V0.7_IN_GAME_TESTING.md`](V0.7_IN_GAME_TESTING.md).
+The executed Red/Blue results and review findings are recorded in
+[`releases/v0.7.0.md`](releases/v0.7.0.md).
 
 Before signing off a release:
 

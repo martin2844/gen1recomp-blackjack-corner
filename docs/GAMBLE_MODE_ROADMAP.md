@@ -278,7 +278,8 @@ Implementation status on `feat/v0.7-underground-arena`:
   settlement: implemented;
 - native fight board, sprites, HP animation, crowd, and results: implemented;
 - automated arena coverage and deterministic native audit driver: implemented;
-- complete Red/Blue release-matrix signoff: in progress.
+- complete Red/Blue release-matrix signoff: passed (35 arena cases and 49
+  legacy-regression cases per ROM).
 
 ### Chunk 1: campaign state and migrations
 

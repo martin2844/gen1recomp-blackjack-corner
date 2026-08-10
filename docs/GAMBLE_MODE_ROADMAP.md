@@ -3,7 +3,7 @@
 Status: APPROVED  
 Target branch: `feat/v0.6-rocket-credit`  
 Current target release: `v0.6.0`  
-Last updated: 2026-08-09
+Last updated: 2026-08-10
 
 ## Product shape
 
@@ -183,6 +183,9 @@ Does not ship:
 ### v0.6.0: Rocket Credit
 
 Goal: make losing create optional, visible, recoverable consequences.
+
+Implementation status: feature complete; automated validation is green and
+supervised Red/Blue in-game signoff remains the release gate.
 
 Ships:
 

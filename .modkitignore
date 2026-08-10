@@ -6,6 +6,7 @@ tests/arcade_rules_test.lua
 tests/gamble_rules_test.lua
 tests/reputation_test.lua
 tests/credit_test.lua
+tests/house_test.lua
 tests/shiny_fallback_test.lua
 tests/fixtures/crystal_animated_sprites_with_shiny_visuals/main.lua
 tests/fixtures/crystal_animated_sprites_with_shiny_visuals/manifest.json
@@ -19,6 +20,7 @@ tests/fixtures/shiny_visuals/main.lua
 tests/fixtures/shiny_visuals/manifest.json
 tests/manual/README.md
 tests/manual/MATRIX.md
+tests/manual/V0.6_IN_GAME_TESTING.md
 tests/manual/releases/v0.5.0.md
 tests/manual/releases/v0.6.0.md
 tests/manual/evidence/README.md
@@ -29,3 +31,6 @@ tests/manual/drivers/high_roller_migration.lua
 tests/manual/drivers/high_roller_mode_off.lua
 tests/manual/drivers/rocket_credit_fresh.lua
 tests/manual/drivers/rocket_credit_default.lua
+tests/manual/drivers/rocket_credit_bailout.lua
+tests/manual/drivers/rocket_house_repossessed.lua
+tests/manual/drivers/rocket_house_buyback.lua

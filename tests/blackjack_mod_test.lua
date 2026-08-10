@@ -64,6 +64,30 @@ data.maps.CELADON_CITY = {
       text = "TEXT_CELADONCITY_ROCKET1", x = 32, y = 29 },
   },
 }
+local houseBlocks = {}
+for i = 1, 16 do houseBlocks[i] = 15 end
+data.maps.REDS_HOUSE_1F = {
+  id = "REDS_HOUSE_1F", label = "RedsHouse1F", index = 37,
+  tileset = "LOBBY", width = 4, height = 4,
+  blocks = houseBlocks, borderBlock = 10, connections = {}, signs = {},
+  warps = {
+    { x = 2, y = 7, destMap = "PALLET_TOWN", destWarp = 1 },
+    { x = 3, y = 7, destMap = "PALLET_TOWN", destWarp = 1 },
+    { x = 7, y = 1, destMap = "REDS_HOUSE_2F", destWarp = 1 },
+  },
+  objects = {
+    { index = 1, name = "REDSHOUSE1F_MOM", movement = "STAY",
+      range = "LEFT", sprite = "SPRITE_MOM", text = "TEXT_REDSHOUSE1F_MOM",
+      x = 5, y = 4 },
+  },
+}
+data.maps.REDS_HOUSE_2F = {
+  id = "REDS_HOUSE_2F", label = "RedsHouse2F", index = 38,
+  tileset = "LOBBY", width = 4, height = 4,
+  blocks = houseBlocks, borderBlock = 10, connections = {}, signs = {},
+  warps = { { x = 7, y = 1, destMap = "REDS_HOUSE_1F", destWarp = 3 } },
+  objects = {},
+}
 data.maps.OAKS_LAB = {
   id = "OAKS_LAB", label = "OaksLab", index = 40,
   tileset = "LOBBY", width = 5, height = 5,
@@ -90,7 +114,8 @@ T.check(api and api.rules and api.holdem_rules and api.holdem_view and api.catal
     and api.roulette_view
     and api.gamble and api.gym_cases and api.campaign_state
     and api.reputation_rules and api.reputation
-    and api.credit_rules and api.credit and api.credit_world,
+    and api.credit_rules and api.credit and api.credit_world
+    and api.house and api.house_world,
   "games, prizes, coin exchange, pawning, and arcade rules are exported")
 T.check(api.roulette_view.RESULT_BUTTON_Y
     + api.roulette_view.RESULT_BUTTON_HEIGHT <= api.roulette_view.FRAME_CONTENT_BOTTOM,
@@ -140,6 +165,39 @@ do
     "declining Gamble Mode restores Oak's ordinary starter speech")
   T.eq(run.data.text._OaksLabOakBePatientText, originalOakRival,
     "declining Gamble Mode restores Oak's ordinary rival speech")
+end
+
+do
+  local function objectsByName(mapId)
+    local out, indices = {}, {}
+    for _, object in ipairs(run.data.maps[mapId].objects or {}) do
+      out[object.name] = object
+      T.check(not indices[object.index], mapId .. " house object indices stay unique")
+      indices[object.index] = true
+    end
+    return out
+  end
+  local downstairs = objectsByName("REDS_HOUSE_1F")
+  local upstairs = objectsByName("REDS_HOUSE_2F")
+  T.check(downstairs.REDSHOUSE1F_ROCKET_TENANT
+      and downstairs.REDSHOUSE1F_ROCKET_OBSERVER,
+    "the repossessed downstairs gains two Rocket occupants")
+  local challenger = downstairs.REDSHOUSE1F_ROCKET_CHALLENGE
+  T.check(challenger and challenger.trainerClass == "OPP_ROCKET"
+      and challenger.trainerParty == 8,
+    "the deed challenge uses a concrete, winnable Rocket party")
+  T.check(upstairs.REDSHOUSE2F_GAMBLE_MOM
+      and upstairs.REDSHOUSE2F_GAMBLE_MOM.hidden,
+    "the displaced Mom is staged upstairs without affecting normal saves")
+  for piece = 1, 3 do
+    local name = ("REDSHOUSE1F_ROCKET_FURNITURE_%02d"):format(piece)
+    T.check(downstairs[name] and downstairs[name].hidden,
+      name .. " is staged only for Rocket ownership")
+    T.check(run.data.sprites[("SPRITE_ROCKET_FURNITURE_%02d"):format(piece)],
+      name .. " has generated ROM-free hideout-style art")
+  end
+  T.eq(api.house_world.challengeSaveId(),
+    "REDS_HOUSE_1F_obj_4", "the restoration battle has a stable save identity")
 end
 
 do
@@ -802,6 +860,74 @@ do
 
   bucket.gamble_mode, bucket.gamble_campaign = previousMode, previousCampaign
   clearPawnLedger()
+end
+
+do
+  local bucket = run.loader.modSave.blackjack_corner
+  local previousMode, previousCampaign = bucket.gamble_mode, bucket.gamble_campaign
+  bucket.gamble_mode = true
+  bucket.gamble_campaign = api.campaign_state.defaults()
+  local game = gameWith(0, 0)
+  game.save.inventory.COIN_CASE = 1
+  local ok = api.house.claimBailout(game)
+  T.check(ok, "the integrated campaign can claim the zero-balance bailout")
+  T.eq(game.save.coins, 10000, "the integrated bailout pays exactly ten thousand")
+  api.house_world.sync(game, api.house)
+  local down = game.save.objectToggles.REDS_HOUSE_1F
+  local up = game.save.objectToggles.REDS_HOUSE_2F
+  T.check(not down.REDSHOUSE1F_MOM and up.REDSHOUSE2F_GAMBLE_MOM,
+    "repossession moves Mom from downstairs into Red's bedroom")
+  T.check(down.REDSHOUSE1F_ROCKET_TENANT
+      and down.REDSHOUSE1F_ROCKET_OBSERVER,
+    "repossession fills the family room with Rocket occupants")
+  T.check(not down.REDSHOUSE1F_ROCKET_CHALLENGE,
+    "the house battle stays hidden until the deed is paid")
+  for piece = 1, 3 do
+    T.check(down[("REDSHOUSE1F_ROCKET_FURNITURE_%02d"):format(piece)],
+      "repossession reveals Rocket furniture piece " .. piece)
+  end
+
+  game.save.coins = 30050
+  ok = api.house.buyBack(game)
+  T.check(ok, "the integrated campaign accepts the exact deed buyback")
+  T.eq(game.save.coins, 50, "the integrated buyback deducts thirty thousand")
+  api.house_world.sync(game, api.house)
+  down = game.save.objectToggles.REDS_HOUSE_1F
+  T.check(not down.REDSHOUSE1F_ROCKET_TENANT
+      and down.REDSHOUSE1F_ROCKET_CHALLENGE,
+    "deed payment swaps the tenant for the Rocket challenger")
+
+  ok = api.house.recordRocketVictory()
+  T.check(ok, "the integrated Rocket victory completes the house quest")
+  api.house_world.sync(game, api.house)
+  down, up = game.save.objectToggles.REDS_HOUSE_1F,
+    game.save.objectToggles.REDS_HOUSE_2F
+  T.check(down.REDSHOUSE1F_MOM and not up.REDSHOUSE2F_GAMBLE_MOM,
+    "restoration returns Mom downstairs")
+  T.check(not down.REDSHOUSE1F_ROCKET_OBSERVER
+      and not down.REDSHOUSE1F_ROCKET_CHALLENGE,
+    "restoration removes every Rocket occupant")
+  for piece = 1, 3 do
+    T.check(not down[("REDSHOUSE1F_ROCKET_FURNITURE_%02d"):format(piece)],
+      "restoration removes Rocket furniture piece " .. piece)
+  end
+
+  local function contribution(mapId, key)
+    for _, row in ipairs(run.loader.content.map_scripts:chain(mapId)) do
+      if row[key] then return row[key] end
+    end
+  end
+  T.check(contribution("REDS_HOUSE_1F", "onVictory"),
+    "the downstairs battle has a restoration victory hook")
+  local upstairsTalk
+  for _, row in ipairs(run.loader.content.map_scripts:chain("REDS_HOUSE_2F")) do
+    if row.talk and row.talk.TEXT_REDSHOUSE2F_GAMBLE_MOM then
+      upstairsTalk = row.talk.TEXT_REDSHOUSE2F_GAMBLE_MOM
+    end
+  end
+  T.check(upstairsTalk, "displaced Mom retains an upstairs healing interaction")
+
+  bucket.gamble_mode, bucket.gamble_campaign = previousMode, previousCampaign
 end
 
 do

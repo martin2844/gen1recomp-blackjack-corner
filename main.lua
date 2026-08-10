@@ -46,6 +46,8 @@ return function(mod)
   local CreditService = loadLocal(mod, "other/gamble/credit/service.lua")
   local CreditUIFactory = loadLocal(mod, "other/gamble/credit/ui.lua")
   local CreditWorld = loadLocal(mod, "other/gamble/credit/world.lua")
+  local HouseService = loadLocal(mod, "other/gamble/credit/house_service.lua")
+  local HouseWorld = loadLocal(mod, "other/gamble/credit/house_world.lua")
   local PalletCasino = loadLocal(mod, "other/pallet_casino.lua")
   local Sound = require("src.core.Sound")
 
@@ -150,15 +152,21 @@ return function(mod)
       return snapshot and snapshot.rank or "ROOKIE"
     end,
   })
+  local House = HouseService(mod, {
+    state = CampaignState, active = Gamble.active, coinCap = config.coinCap,
+  })
   config.luxuryAllowed = Credit.luxuryAllowed
-  local function syncCreditWorld(game)
-    return CreditWorld.sync(game, Credit)
+  local function syncCampaignWorld(game)
+    local collectors = CreditWorld.sync(game, Credit)
+    local occupied = HouseWorld.sync(game, House)
+    return collectors, occupied
   end
   local CreditUI = CreditUIFactory(mod, {
     credit = Credit, rules = CreditRules, text = UI.text,
+    house = House,
     pawnPokemon = Service.pawnPokemon, pawnQuote = Service.pawnQuote,
     pawnLedger = Service.pawnLedger, pawnLimit = Pawn.LIMIT,
-    syncWorld = syncCreditWorld,
+    syncWorld = syncCampaignWorld,
   })
   local HighRoller = ReputationScreen({
     mod = mod, ui = ArcadeUI, rules = ReputationRules,
@@ -195,7 +203,7 @@ return function(mod)
     if type(out) ~= "table" or not Gamble.active() then return out end
     Progress.ensure()
     Credit.syncMilestones(game)
-    syncCreditWorld(game)
+    syncCampaignWorld(game)
     return mod.ui.insertBefore(out, "SAVE", {
       label = "HIGH ROLLER",
       onSelect = function() mod.ui.push(game, ids.highRoller) end,
@@ -231,6 +239,7 @@ return function(mod)
   Lounge.register(mod, ids.lounge)
   PalletCasino.register(mod, ids)
   CreditWorld.register(mod)
+  HouseWorld.register(mod)
 
   mod.content.map_scripts:register("GAME_CORNER", { talk = {
     TEXT_GAMECORNER_CLERK1 = UI.coinClerk,
@@ -334,14 +343,50 @@ return function(mod)
       UI.text(game, "PALLET CASINO\nLuck starts here.\fRegret starts\ninside.", done)
     end,
     TEXT_PALLETTOWN_ROCKET_COLLECTOR = function(game, _, _, done)
+      Credit.noteCollector("PALLET_TOWN")
       UI.text(game, "Rocket credit.\fThe meter stopped.\nYour debt didn't.\fPay in Celadon.", done)
     end,
   } })
   mod.content.map_scripts:register("CELADON_CITY", { talk = {
     TEXT_CELADONCITY_ROCKET_COLLECTOR = function(game, _, _, done)
+      Credit.noteCollector("CELADON_CITY")
       UI.text(game, "The boss sent me.\fNo battles. No drama.\nJust pay downstairs.", done)
     end,
   } })
+  mod.content.map_scripts:register("REDS_HOUSE_1F", {
+    talk = {
+      TEXT_REDSHOUSE1F_ROCKET_TENANT = function(game, _, _, done)
+        UI.text(game, "Nice place.\fCheap deed. Good view\nof OAK's lab.", done)
+      end,
+      TEXT_REDSHOUSE1F_ROCKET_OBSERVER = function(game, _, _, done)
+        UI.text(game, "This spot is great\nto keep OAK under\nwatch.", done)
+      end,
+      TEXT_REDSHOUSE1F_ROCKET_CHALLENGE = function(game, _, _, done)
+        UI.text(game, "Fine. The deed is\nyours again.", done)
+      end,
+    },
+    onVictory = function(game)
+      local id = HouseWorld.challengeSaveId()
+      if id and game.save.defeatedTrainers and game.save.defeatedTrainers[id]
+          and House.recordRocketVictory() then
+        syncCampaignWorld(game)
+        UI.text(game, "TEAM ROCKET lost.\fYour family home\nis restored!")
+      end
+    end,
+  })
+  mod.content.map_scripts:register("REDS_HOUSE_2F", { talk = {
+    TEXT_REDSHOUSE2F_GAMBLE_MOM = {
+      { "face_player" },
+      { "show_text", "_BlackjackCornerDisplacedMomText" },
+      { "heal_party" },
+      { "play_once", "Music_PkmnHealed" },
+      { "show_text", "_BlackjackCornerDisplacedMomHealedText" },
+    },
+  } })
+  mod.content.text:register("_BlackjackCornerDisplacedMomText",
+    "TEAM ROCKET calls\nit collateral.\fI call it\ntrespassing.\fRest a moment, dear.")
+  mod.content.text:register("_BlackjackCornerDisplacedMomHealedText",
+    "All better.\fNow win our home\nback when you're ready.")
   mod.content.map_scripts:register(ids.pallet, { talk = {
     TEXT_PALLET_BLACKJACK_TABLE = function(game, _, _, done)
       open(game, "PALLET BLACKJACK!\fGet closer to 21\nthan the dealer.", ids.blackjack, done)
@@ -433,4 +478,6 @@ return function(mod)
   mod.exports.credit_rules = CreditRules
   mod.exports.credit = Credit
   mod.exports.credit_world = CreditWorld
+  mod.exports.house = House
+  mod.exports.house_world = HouseWorld
 end

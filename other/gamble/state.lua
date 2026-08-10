@@ -228,6 +228,17 @@ function State.sanitize(value)
   house.bailoutClaimed = house.bailoutClaimed == true
   house.buybackPaid = house.buybackPaid == true
   house.rocketBattleWon = house.rocketBattleWon == true
+  -- Repair relational state so a partially written or hand-edited campaign
+  -- can never expose a battle that cannot complete or a repeat bailout.
+  if house.rocketBattleWon or house.status == "RESTORED" then
+    house.status = "RESTORED"
+    house.bailoutClaimed, house.buybackPaid, house.rocketBattleWon = true, true, true
+  elseif house.buybackPaid or house.status == "BUYBACK_PAID" then
+    house.status = "BUYBACK_PAID"
+    house.bailoutClaimed, house.buybackPaid = true, true
+  elseif house.status == "ROCKET_OWNED" then
+    house.bailoutClaimed = true
+  end
   arena.unlocked = arena.unlocked == true
   arena.reputation = number(arena.reputation, 0)
   return out

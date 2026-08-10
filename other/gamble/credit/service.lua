@@ -32,6 +32,7 @@ return function(mod, opts)
       rank = rank,
       loansTaken = debt.loansTaken,
       totalRepaid = debt.totalRepaid,
+      collectorsTriggered = debt.collectorsTriggered,
     }
   end
 
@@ -129,6 +130,17 @@ return function(mod, opts)
     local state = Service.snapshot(game)
     if not state or state.status ~= "DEFAULT" then return true end
     return false, "ROCKET CREDIT has\nfrozen luxury prizes.\fRepay your debt in\nthe Celadon Lounge."
+  end
+
+  function Service.noteCollector(mapId)
+    local campaign, debt = load(false)
+    if not campaign or debt.status ~= "DEFAULT" or type(mapId) ~= "string" then
+      return false
+    end
+    if debt.collectorsTriggered[mapId] then return false end
+    debt.collectorsTriggered[mapId] = true
+    save(campaign)
+    return true
   end
 
   function Service.syncMilestones(game)

@@ -185,6 +185,48 @@ local function buildMachine(ctx, id, c)
   end
 end
 
+local function buildRocketFurniture(ctx, c)
+  local pieces = {}
+  for piece = 1, 3 do pieces[piece] = ctx.blank(16, 16, 0, 0, 0, 0) end
+
+  -- Surveillance terminal: a hideout-green monitor on a heavy purple desk.
+  local monitor = pieces[1]
+  fill(monitor, 1, 1, 14, 12, c.outline)
+  fill(monitor, 2, 2, 12, 9, c.bodyDark)
+  fill(monitor, 3, 3, 10, 6, c.screen)
+  for _, point in ipairs({ { 5, 5 }, { 8, 4 }, { 10, 7 }, { 6, 7 } }) do
+    pixel(monitor, point[1], point[2], c.green)
+  end
+  fill(monitor, 6, 10, 4, 2, c.trim)
+  fill(monitor, 2, 13, 12, 2, c.body)
+
+  -- Rocket filing cabinet with an unmistakable red R-like latch pattern.
+  local cabinet = pieces[2]
+  fill(cabinet, 2, 0, 12, 16, c.outline)
+  fill(cabinet, 3, 1, 10, 14, c.body)
+  for y = 2, 11, 5 do
+    fill(cabinet, 4, y, 8, 4, c.bodyDark)
+    fill(cabinet, 7, y + 1, 3, 1, c.paper)
+  end
+  fill(cabinet, 5, 12, 2, 2, c.red)
+  fill(cabinet, 7, 12, 4, 1, c.red)
+  pixel(cabinet, 9, 13, c.red)
+
+  -- Reinforced contraband crate, low enough to read as furniture in-world.
+  local crate = pieces[3]
+  fill(crate, 1, 3, 14, 12, c.outline)
+  fill(crate, 2, 4, 12, 10, c.bodyDark)
+  fill(crate, 3, 5, 10, 8, c.body)
+  fill(crate, 2, 7, 12, 2, c.trim)
+  fill(crate, 7, 4, 2, 10, c.outline)
+  fill(crate, 6, 8, 4, 3, c.red)
+  fill(crate, 7, 9, 2, 1, c.paper)
+
+  for piece, image in ipairs(pieces) do
+    ctx.writeImage(image, ("world/rocket_furniture_%02d.png"):format(piece))
+  end
+end
+
 return function(ctx)
   local shinyIndex = 0
   for stem in STEMS:gmatch("[^,]+") do
@@ -211,6 +253,7 @@ return function(ctx)
   for _, id in ipairs({ "crash", "flappy", "case", "horse", "plinko" }) do
     buildMachine(ctx, id, MACHINE_COLORS)
   end
+  buildRocketFurniture(ctx, MACHINE_COLORS)
 
   -- Three 16x16 pieces replace Oak's Poké Balls only in Gamble Mode.
   local roulette = ctx.blank(48, 16, 0, 0, 0, 0)

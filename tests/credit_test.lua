@@ -71,6 +71,12 @@ local changed, added, status = service.syncMilestones(game)
 T.check(changed and added == CreditRules.lateFee(1),
   "the due badge applies one fixed late fee")
 T.eq(status, "DEFAULT", "missing the badge deadline enters DEFAULT")
+T.check(service.noteCollector("PALLET_TOWN"),
+  "the first collector encounter is persisted during default")
+T.check(not service.noteCollector("PALLET_TOWN"),
+  "the same collector encounter is idempotent")
+T.check(service.snapshot(game).collectorsTriggered.PALLET_TOWN,
+  "credit statements retain the collector history")
 local luxuryAllowed, luxuryMessage = service.luxuryAllowed(game)
 T.check(not luxuryAllowed and luxuryMessage:find("frozen", 1, true),
   "default freezes only the campaign's luxury prize services")

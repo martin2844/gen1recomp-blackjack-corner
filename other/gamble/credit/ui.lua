@@ -1,5 +1,6 @@
 return function(mod, opts)
   local Credit, text = opts.credit, opts.text
+  local House = opts.house
   local UI = {}
 
   local function closeWith(game, message, done)
@@ -17,16 +18,26 @@ return function(mod, opts)
 
     local function statement(nextStep)
       local current = Credit.snapshot(game)
+      local home = House and House.snapshot(game)
+      local homePage = ""
+      if home and home.status ~= "FAMILY_HOME" then
+        local labels = {
+          ROCKET_OWNED = "ROCKET OWNED",
+          BUYBACK_PAID = "DEED PAID\nBATTLE PENDING",
+          RESTORED = "FAMILY HOME\nRESTORED",
+        }
+        homePage = "\fHOME: " .. (labels[home.status] or home.status)
+      end
       if current.total == 0 then
         text(game, ("You're clear.\f%s rank gets\n%d coins for %d.")
           :format(current.rank:gsub("_", " "), current.offer.coins,
-            current.offer.coins + current.offer.fee), nextStep)
+            current.offer.coins + current.offer.fee) .. homePage, nextStep)
       else
         local due = current.dueBadge > 8 and "FINAL NOTICE"
           or ("BEFORE BADGE %d"):format(current.dueBadge)
         text(game, ("%s\fPRINCIPAL %d\nFEES %d\fOWED %d\n%s")
           :format(current.status, current.principal, current.fees,
-            current.total, due), nextStep)
+            current.total, due) .. homePage, nextStep)
       end
     end
 
@@ -123,6 +134,31 @@ return function(mod, opts)
       game.stack:push(list)
     end
 
+    local function claimBailout(openMenu)
+      game.stack:push(mod.ui.TextBox.new(game,
+        "TEAM ROCKET pays\n10000 coins.\fThey take your Pallet\nfamily home.\fBuyback is 30000\nplus one battle.\fSell the family\nhome?", nil, {
+          choice = function(yes)
+            if not yes then openMenu(); return end
+            local _, message = House.claimBailout(game)
+            if opts.syncWorld then opts.syncWorld(game) end
+            closeWith(game, message, openMenu)
+          end,
+        }))
+    end
+
+    local function buyBackHome(openMenu)
+      game.stack:push(mod.ui.TextBox.new(game,
+        ("Pay %d coins for\nthe family deed?\fTEAM ROCKET still\ndemands one battle.")
+          :format(House.BUYBACK_COST), nil, {
+          choice = function(yes)
+            if not yes then openMenu(); return end
+            local _, message = House.buyBack(game)
+            if opts.syncWorld then opts.syncWorld(game) end
+            closeWith(game, message, openMenu)
+          end,
+        }))
+    end
+
     local openMenu
     function openMenu()
       local current = Credit.snapshot(game)
@@ -150,11 +186,27 @@ return function(mod, opts)
         rows[#rows + 1] = { label = "PAWN TO PAY",
           onSelect = function() pawnAndPay(openMenu) end }
       end
+      if House then
+        local home = House.snapshot(game)
+        local canBailout = House.canClaimBailout(game)
+        if canBailout then
+          rows[#rows + 1] = { label = "LAST RESORT",
+            onSelect = function() claimBailout(openMenu) end }
+        elseif home and home.status == "ROCKET_OWNED" then
+          rows[#rows + 1] = { label = "BUYBACK " .. House.BUYBACK_COST,
+            onSelect = function() buyBackHome(openMenu) end }
+        elseif home and home.status == "BUYBACK_PAID" then
+          rows[#rows + 1] = { label = "HOUSE BATTLE",
+            onSelect = function()
+              text(game, "The deed is paid.\fA Rocket waits in\nyour Pallet home.", openMenu)
+            end }
+        end
+      end
       rows[#rows + 1] = { label = "STATEMENT",
         onSelect = function() statement(openMenu) end }
       rows[#rows + 1] = { label = "LEAVE", onSelect = done }
       game.stack:push(mod.ui.Menu.new(game, rows, {
-        tx = 2, ty = 3, maxVisible = 5, onCancel = done,
+        tx = 2, ty = 3, maxVisible = 6, onCancel = done,
       }))
     end
 

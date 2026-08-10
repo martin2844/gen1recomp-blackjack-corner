@@ -57,12 +57,20 @@ without changing the always-available base casino expansion:
 - default brings Rocket collectors to Pallet and Celadon and freezes only paid
   Prize Cases and the luxury prize counters—games, travel, healing, story,
   clerks, and pawn redemption remain available;
-- the current headless suite covers 957 assertions, with Red and Blue native
+- a one-time last-resort bailout grants 10,000 coins only when both currencies
+  are empty, in exchange for Team Rocket taking the Pallet family home;
+- the occupied home gains Rocket tenants, surveillance dialogue, generated
+  hideout furniture, and a relocated Mom upstairs who still heals the party;
+- reclaiming the home requires an explicit 30,000-coin deed buyback and a
+  retryable Rocket battle, after which the original house is fully restored;
+- the current headless suite covers 1,029 assertions, with Red and Blue native
   UI smoke runs layered on top.
 
 The implementation and release train are mapped in
 [docs/GAMBLE_MODE_ROADMAP.md](docs/GAMBLE_MODE_ROADMAP.md). Human UI/E2E signoff
-uses the supervised drivers and matrix in [`tests/manual`](tests/manual).
+uses the supervised drivers and matrix in [`tests/manual`](tests/manual); the
+complete Rocket Credit release gate is
+[tests/manual/V0.6_IN_GAME_TESTING.md](tests/manual/V0.6_IN_GAME_TESTING.md).
 
 ## Screenshots
 
@@ -548,7 +556,9 @@ games/
   starter_roulette/ rules.lua  screen.lua  view.lua
   shared/       ui.lua
 other/
-  gamble/       mode.lua  gym_cases.lua
+  gamble/       mode.lua  gym_cases.lua  state.lua
+    reputation/ service.lua  screen.lua
+    credit/     service.lua  ui.lua  world.lua  house_service.lua  house_world.lua
   pawn/         rules.lua
   prizes/       catalog.lua
   shiny/        fallback.lua
@@ -572,6 +582,7 @@ luajit mods/blackjack_corner/tests/arcade_rules_test.lua
 luajit mods/blackjack_corner/tests/gamble_rules_test.lua
 luajit mods/blackjack_corner/tests/reputation_test.lua
 luajit mods/blackjack_corner/tests/credit_test.lua
+luajit mods/blackjack_corner/tests/house_test.lua
 luajit mods/blackjack_corner/tests/blackjack_mod_test.lua
 luajit mods/blackjack_corner/tests/shiny_fallback_test.lua
 ```

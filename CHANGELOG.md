@@ -4,6 +4,20 @@
 
 ### Added
 
+- A one-time last-resort bailout for Gamble Mode saves with exactly zero money
+  and zero coins. It grants 10,000 coins in exchange for the Pallet family
+  home, with the full consequence and 30,000-coin recovery cost confirmed
+  before anything changes.
+- A persistent Rocket occupation of Red's house: Mom moves upstairs without
+  losing her healing service, Rocket tenants discuss the deed and Oak
+  surveillance, and three ROM-free hideout furniture pieces replace the normal
+  downstairs atmosphere.
+- A recoverable family-home quest. Paying the 30,000-coin deed price reveals a
+  retryable Rocket trainer battle; winning restores the original home and Mom
+  while preserving any separate credit debt or default.
+- Dedicated supervised drivers for the bailout, occupied home, and house
+  battle, plus a full v0.6 Red/Blue in-game test plan covering navigation,
+  dialogue, economy boundaries, battle loss, save/reload, and restoration.
 - The first v0.6 Rocket Credit slice: a visible loan shark in the Celadon
   Lounge with rank-based offers, fixed fees, and one active loan at a time.
 - Repayment using either casino coins or ordinary money, with fees paid before

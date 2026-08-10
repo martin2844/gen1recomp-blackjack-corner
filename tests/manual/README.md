@@ -31,6 +31,16 @@ both currency repayment methods. Use
 `tests/manual/drivers/rocket_credit_default.lua` for the Pallet/Celadon
 collectors, luxury freeze, `PAWN & PAY`, and full recovery checks.
 
+The completed v0.6 campaign also provides focused setup drivers:
+
+- `rocket_credit_bailout.lua` opens the zero-balance `LAST RESORT` flow;
+- `rocket_house_repossessed.lua` prepares the occupied house and displaced Mom;
+- `rocket_house_buyback.lua` prepares the paid-deed Rocket battle.
+
+Run the full case list in
+[`V0.6_IN_GAME_TESTING.md`](V0.6_IN_GAME_TESTING.md) before marking the release
+checklist complete.
+
 Before signing off a release:
 
 1. Record the host SHA and mod SHA in the release checklist.

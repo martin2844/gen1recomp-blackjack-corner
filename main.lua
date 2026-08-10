@@ -22,6 +22,7 @@ return function(mod)
   local HorseRules = loadLocal(mod, paths.horse .. "rules.lua")
   local PlinkoRules = loadLocal(mod, paths.plinko .. "rules.lua")
   local RouletteRules = loadLocal(mod, paths.roulette .. "rules.lua")
+  local ShinyFallback = loadLocal(mod, "other/shiny/fallback.lua")
   local ArcadeUI = loadLocal(mod, "games/shared/ui.lua")
   local CrashView = loadLocal(mod, paths.crash .. "view.lua")(ArcadeUI)
   local TubeView = loadLocal(mod, paths.tube .. "view.lua")(ArcadeUI)
@@ -38,7 +39,6 @@ return function(mod)
   local GambleMode = loadLocal(mod, "other/gamble/mode.lua")
   local GymCases = loadLocal(mod, "other/gamble/gym_cases.lua")
   local PalletCasino = loadLocal(mod, "other/pallet_casino.lua")
-  local Stats = require("src.pokemon.Stats")
   local Sound = require("src.core.Sound")
 
   local ids = {
@@ -65,9 +65,6 @@ return function(mod)
   }
   local blackjackBets, holdemBets = { 10, 50, 100, 500 }, { 10, 50, 100, 500 }
 
-  mod.options:define({
-    { key = "shiny_sparkles", label = "SHINY SPARKLES", type = "toggle", default = true },
-  })
   mod.content.constants:patch("coinCap", config.coinCap)
   CoinCase.installSlotCompatibility(config.coinCap)
   CoinCase.installHiddenCoinCompatibility(config.coinCap)
@@ -287,42 +284,28 @@ return function(mod)
     end,
   } })
 
-  local shinyArt = {}
-  for name in ([=[
-    ABRA KADABRA ALAKAZAM CLEFAIRY WIGGLYTUFF NIDORINA NIDOQUEEN NIDORINO NIDOKING
-    DRATINI DRAGONAIR DRAGONITE PORYGON BULBASAUR IVYSAUR VENUSAUR
-    CHARMANDER CHARMELEON CHARIZARD SQUIRTLE WARTORTLE BLASTOISE
-    OMANYTE OMASTAR KABUTO KABUTOPS AERODACTYL SANDSHREW SANDSLASH
-    VULPIX NINETALES MEOWTH PERSIAN BELLSPROUT WEEPINBELL VICTREEBEL
-    PINSIR MAGMAR EKANS ARBOK ODDISH GLOOM VILEPLUME MANKEY PRIMEAPE
-    GROWLITHE ARCANINE SCYTHER ELECTABUZZ
-  ]=]):gmatch("%S+") do shinyArt[name] = true end
-  mod.hooks:wrap("pokemon.sprite", function(next, path, ctx)
-    path = next(path, ctx)
-    if not (ctx and ctx.mon and shinyArt[ctx.species] and Stats.isShiny(ctx.mon.dvs)) then
-      return path
-    end
-    local filename = type(path) == "string" and path:match("([^/]+)$")
-    if not filename then return path end
-    ctx.trueColor = true
-    return ("save/mod-derived/blackjack_corner/shiny/battle/%s/%s")
-      :format(ctx.side, filename)
-  end)
-  mod.hooks:wrap("battle.overlay", function(next, battle)
-    next(battle)
-    if not mod.options:get("shiny_sparkles") or not (love and love.graphics) then return end
-    local function sparkle(mon, x, y)
-      if not (mon and Stats.isShiny(mon.dvs)) then return end
-      love.graphics.setColor(1, 1, 1, 1)
-      love.graphics.polygon("fill", x, y - 4, x + 2, y - 1, x + 5, y,
-        x + 2, y + 1, x, y + 4, x - 2, y + 1, x - 5, y, x - 2, y - 1)
-      love.graphics.setColor(0, 0, 0, 1)
-      love.graphics.rectangle("line", x - 2, y - 2, 4, 4)
-      love.graphics.setColor(1, 1, 1, 1)
-    end
-    sparkle(battle.enemy and battle.enemy.mon, 145, 16)
-    sparkle(battle.player and battle.player.mon, 15, 80)
-  end)
+  -- Optional dependencies run first when installed. Let a dedicated shiny
+  -- renderer own every hook; otherwise install the bundled Gen II fallback.
+  local shinyProvider
+  for _, providerId in ipairs({
+    "shiny_indicators",
+    "SHINY_POKEMON",
+    "crystal_animated_sprites_with_shiny_visuals",
+    "gen2_shiny_visuals",
+    "shiny_visuals",
+  }) do
+    shinyProvider = mod:find(providerId)
+    if shinyProvider then break end
+  end
+  if shinyProvider then
+    ShinyFallback.disable()
+    mod.exports.shiny_fallback = false
+    mod.log:info("using external shiny provider %s", shinyProvider.id)
+  else
+    ShinyFallback.install(mod)
+    mod.log:info("using bundled Gen II shiny indicator fallback")
+  end
+  mod.exports.shiny_provider = shinyProvider and shinyProvider.id or mod.id
 
   mod.exports.rules, mod.exports.view = Rules, BlackjackView
   mod.exports.holdem_rules, mod.exports.holdem_view = HoldemRules, HoldemView

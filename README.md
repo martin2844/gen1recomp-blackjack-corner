@@ -28,7 +28,7 @@ player's imported game data.
 | Rewards | Version-exclusive Pokemon, starters, fossils, shiny upgrades, rare TMs, Surfing Pikachu, Dragonite, Mew, and Master Balls |
 | Economy | A 1,000,000-coin Coin Case used consistently by the new games, original slots, and hidden coin pickups |
 | Atmosphere | Ten new gamblers and staff plus eight new one-time floor pickups across three casino interiors |
-| Code quality | Small per-game modules under `games/`, supporting systems under `other/`, and 734 automated checks |
+| Code quality | Small per-game modules under `games/`, supporting systems under `other/`, and 805 automated checks |
 
 ## Screenshots
 
@@ -109,7 +109,7 @@ player's imported game data.
 
 ## Install
 
-1. Download `blackjack_corner-0.4.0.zip` from the
+1. Download `blackjack_corner-0.4.1.zip` from the
    [latest release](https://github.com/martin2844/gen1recomp-blackjack-corner/releases/latest).
    Use the named mod ZIP, not GitHub's automatic source-code archives.
 2. Open Gen1Recomp and choose **MODS > Import mod .zip**.
@@ -401,13 +401,18 @@ is refused and no coins are taken.
 - Every Pokemon prize offers **NORMAL** and **SHINY** purchase choices.
 - Purchased shinies receive canonical Gen II-compatible shiny DVs rather than
   a temporary cosmetic flag, so their status persists in the save.
-- Supported prize families receive locally derived casino-gold battle art.
-- Optional battle sparkles can be enabled or disabled with the mod's
-  **SHINY SPARKLES** setting.
+- With no dedicated shiny mod installed, all 151 Generation I species receive
+  locally derived Pokemon Crystal palettes, an entrance animation and chime,
+  a clear battle marker, and a Crystal-style status-screen icon.
+- The fallback exposes separate **SHINY ANIMATION**, **SHINY CHIME**,
+  **BATTLE MARKERS**, and **SHINY COLORS** settings. The existing sparkle
+  preference is preserved as the animation setting.
 - Ordinary members of the same species retain their normal artwork.
 
-The first release uses a shared casino-gold treatment instead of each
-species' canonical Gen II shiny palette.
+Blackjack Corner dynamically defers to a supported dedicated renderer when
+one is installed, including **Gen II Shiny Indicators**, **SHINY_POKEMON**,
+and the Crystal/Gen II shiny visual packs. This prevents duplicate sprite
+hooks, markers, animations, and chimes.
 
 ### Item Prize Corner
 
@@ -512,6 +517,7 @@ other/
   gamble/       mode.lua  gym_cases.lua
   pawn/         rules.lua
   prizes/       catalog.lua
+  shiny/        fallback.lua
   coin_case.lua lounge.lua pallet_casino.lua services.lua ui.lua
 main.lua        composition, registration, and hooks only
 ```
@@ -531,6 +537,7 @@ luajit mods/blackjack_corner/tests/pawn_test.lua
 luajit mods/blackjack_corner/tests/arcade_rules_test.lua
 luajit mods/blackjack_corner/tests/gamble_rules_test.lua
 luajit mods/blackjack_corner/tests/blackjack_mod_test.lua
+luajit mods/blackjack_corner/tests/shiny_fallback_test.lua
 ```
 
 The release workflow publishes an installable ZIP and SHA-256 checksum on
@@ -542,6 +549,9 @@ each release commit to `main`. Version numbers are sourced from
 - Built for the [Pokemon Gen 1 Recompilation Project](https://github.com/bryanthaboi/gen1recomp).
 - Original Pokemon Red disassembly and research by
   [pret/pokered](https://github.com/pret/pokered) contributors.
+- Bundled fallback palette and presentation logic is adapted from
+  [Gen II Shiny Indicators](https://github.com/Deftones565/gen1recomp-mod-shiny-indicators)
+  by Deftones565; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 - Blackjack Corner is maintained by [martin2844](https://github.com/martin2844).
 
 Released under the [MIT License](LICENSE). Pokemon and related names are

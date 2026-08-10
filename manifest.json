@@ -1,7 +1,7 @@
 {
   "id": "blackjack_corner",
   "name": "Blackjack Corner",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "api": 2,
   "entry": "main.lua",
   "profile": "content",
@@ -10,10 +10,17 @@
   "priority": 100,
   "assets_transforms": "transforms.lua",
   "permissions": [
-    "engine_internals"
+    "engine_internals",
+    "filesystem"
   ],
   "dependencies": [],
-  "optional_dependencies": [],
+  "optional_dependencies": [
+    "shiny_indicators",
+    "SHINY_POKEMON",
+    "crystal_animated_sprites_with_shiny_visuals",
+    "gen2_shiny_visuals",
+    "shiny_visuals"
+  ],
   "conflicts": [],
   "description": "Adds an optional game-wide Gamble Mode, two live casinos, random starters, gym cases, horse racing, Plinko, table games, pawning, shinies, and rare prizes.",
   "github": "martin2844/gen1recomp-blackjack-corner"

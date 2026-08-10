@@ -258,8 +258,9 @@ Implementation status on `feat/v0.6-rocket-credit`:
 - rank-based fixed-fee Rocket loans: implemented;
 - repayment with coins or ordinary money: implemented;
 - badge-milestone default and idempotent late fees: implemented;
-- voluntary pawn-to-debt flow and luxury restrictions: pending;
-- collectors, zero-balance bailout, repossession, buyback, and restoration: pending.
+- voluntary pawn-to-debt flow and default-only luxury restrictions: implemented;
+- recoverable Pallet/Celadon collector presence: implemented;
+- zero-balance bailout, repossession, buyback, and restoration: pending.
 
 ### Chunk 1: campaign state and migrations
 
@@ -425,6 +426,8 @@ tests/manual/
     high_roller_badge_ceiling.lua
     high_roller_migration.lua
     high_roller_mode_off.lua
+    rocket_credit_fresh.lua
+    rocket_credit_default.lua
   evidence/
     README.md
 ```

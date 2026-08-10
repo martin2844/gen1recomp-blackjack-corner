@@ -10,6 +10,9 @@
 | Rocket credit | On | Prepared | Rookie offer is clear; borrow once; statement shows principal, fee, due badge |
 | Credit repayment | On | Prepared | Coins and money reduce one ledger; fees clear first; full repayment restores CLEAR |
 | Credit default | On | Prepared | Due badge applies one late fee once; repeated visits cannot grow debt |
+| Pawn and pay | On | Prepared debt | Appraisal pays debt, surplus stays in Coin Case, ticket remains redeemable, FIFO warning still appears |
+| Default consequences | On | Defaulted | Pallet/Celadon collectors appear; Prize Case and prize counters freeze; games, clerk, travel, healing, story and pawn redemption remain available |
+| Default recovery | On | Defaulted | Full repayment restores luxury prizes and collectors disappear on the next map entry |
 
 Run each row against both supported ROMs. Exercise at least one win and one
 loss in every casino game before release: Blackjack, Hold'em, Crash, Tube

@@ -71,6 +71,9 @@ local changed, added, status = service.syncMilestones(game)
 T.check(changed and added == CreditRules.lateFee(1),
   "the due badge applies one fixed late fee")
 T.eq(status, "DEFAULT", "missing the badge deadline enters DEFAULT")
+local luxuryAllowed, luxuryMessage = service.luxuryAllowed(game)
+T.check(not luxuryAllowed and luxuryMessage:find("frozen", 1, true),
+  "default freezes only the campaign's luxury prize services")
 local afterDefault = service.snapshot(game)
 service.syncMilestones(game)
 T.eq(service.snapshot(game).total, afterDefault.total,
@@ -82,6 +85,27 @@ T.check(ok, "a default remains fully recoverable")
 snapshot = service.snapshot(game)
 T.eq(snapshot.total, 0, "full repayment clears every debt component")
 T.eq(snapshot.status, "CLEAR", "full repayment exits DEFAULT")
+T.check(service.luxuryAllowed(game), "clearing debt immediately restores luxury services")
+
+game.save.coins = 0
+ok = service.borrow(game)
+T.check(ok, "a cleared account can take a later loan")
+local pawnCalled = false
+ok, message, entry, sold, paid = service.pawnAndRepay(game, 2,
+  function(pawnGame, partyIndex, reserved)
+    pawnCalled = partyIndex == 2
+    local ticket = { name = "SHELLY", value = 700, redeem = 910 }
+    local routed = math.min(ticket.value, reserved)
+    pawnGame.save.coins = pawnGame.save.coins + ticket.value - routed
+    return true, ticket, nil, routed
+  end)
+T.check(ok and pawnCalled, "a party appraisal can be routed into Rocket Credit")
+T.eq(paid, 600, "pawn repayment never pays beyond the live debt")
+T.eq(game.save.coins, 600,
+  "pawn value above the debt leaves the existing coins plus surplus in the Coin Case")
+T.eq(service.snapshot(game).total, 0, "pawn-and-pay can clear the full ledger")
+T.check(message:find("SHELLY", 1, true) ~= nil,
+  "pawn repayment confirms the exact Pokemon ticket")
 
 currentRank = "VIP"
 game.save.coins = 999500
@@ -92,6 +116,7 @@ T.eq(service.snapshot(game).total, 0,
 
 enabled = false
 T.eq(service.snapshot(game), nil, "base mode never exposes Rocket Credit")
+T.check(service.luxuryAllowed(game), "base mode never inherits campaign restrictions")
 ok = service.borrow(game)
 T.check(not ok, "base mode cannot create campaign debt")
 

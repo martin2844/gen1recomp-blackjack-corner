@@ -28,6 +28,13 @@ return function(ctx)
 
   function Screen:open()
     local savedClaim = self.cost > 0 and mod.save:get(self.claimKey) or nil
+    if not savedClaim and self.cost > 0 and ctx.canOpen then
+      local allowed, message = ctx.canOpen(self.game)
+      if not allowed then
+        self.notice = message or "ROCKET CREDIT HOLD"
+        return
+      end
+    end
     if not savedClaim and ctx.coins(self.game) < self.cost then
       self.notice = "NEED " .. tostring(self.cost) .. " COINS"
       return

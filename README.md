@@ -52,7 +52,12 @@ without changing the always-available base casino expansion:
   visible on demand;
 - debt can be repaid with casino coins or ordinary money, and missing a badge
   deadline applies one fixed late fee instead of real-time interest;
-- the current headless suite covers 925 assertions, with Red and Blue native
+- party Pokemon can be pawned directly toward debt without changing the exact
+  five-ticket redemption ledger; appraisal surplus remains in the Coin Case;
+- default brings Rocket collectors to Pallet and Celadon and freezes only paid
+  Prize Cases and the luxury prize counters—games, travel, healing, story,
+  clerks, and pawn redemption remain available;
+- the current headless suite covers 957 assertions, with Red and Blue native
   UI smoke runs layered on top.
 
 The implementation and release train are mapped in

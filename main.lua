@@ -45,6 +45,7 @@ return function(mod)
   local CreditRules = loadLocal(mod, "other/gamble/credit/rules.lua")
   local CreditService = loadLocal(mod, "other/gamble/credit/service.lua")
   local CreditUIFactory = loadLocal(mod, "other/gamble/credit/ui.lua")
+  local CreditWorld = loadLocal(mod, "other/gamble/credit/world.lua")
   local PalletCasino = loadLocal(mod, "other/pallet_casino.lua")
   local Sound = require("src.core.Sound")
 
@@ -79,7 +80,7 @@ return function(mod)
 
   local Service = Services(mod, Catalog, Pawn, config)
   local UI = UIFactory(mod, Service, Catalog, Pawn, config)
-  local Progress
+  local Progress, Credit
   local function play(game, name) Sound.play(game.data, name) end
   local common = {
     mod = mod, coins = Service.coins, coinCap = config.coinCap,
@@ -122,6 +123,9 @@ return function(mod)
     rules = CaseRules, view = CaseView,
     rewardPool = function(game) return Service.caseRewardPool(game, CaseRules) end,
     giveReward = Service.giveCaseReward,
+    canOpen = function(game)
+      return not Credit or Credit.luxuryAllowed(game)
+    end,
   }))
   local HorseRacing = loadLocal(mod, paths.horse .. "screen.lua")(context({
     rules = HorseRules, view = HorseView,
@@ -138,7 +142,7 @@ return function(mod)
     state = CampaignState, rules = ReputationRules,
     active = Gamble.active, coinCap = config.coinCap,
   })
-  local Credit = CreditService(mod, {
+  Credit = CreditService(mod, {
     state = CampaignState, rules = CreditRules, active = Gamble.active,
     coinCap = config.coinCap, badgeCount = ReputationRules.badgeCount,
     rank = function(game)
@@ -146,8 +150,15 @@ return function(mod)
       return snapshot and snapshot.rank or "ROOKIE"
     end,
   })
+  config.luxuryAllowed = Credit.luxuryAllowed
+  local function syncCreditWorld(game)
+    return CreditWorld.sync(game, Credit)
+  end
   local CreditUI = CreditUIFactory(mod, {
     credit = Credit, rules = CreditRules, text = UI.text,
+    pawnPokemon = Service.pawnPokemon, pawnQuote = Service.pawnQuote,
+    pawnLedger = Service.pawnLedger, pawnLimit = Pawn.LIMIT,
+    syncWorld = syncCreditWorld,
   })
   local HighRoller = ReputationScreen({
     mod = mod, ui = ArcadeUI, rules = ReputationRules,
@@ -184,6 +195,7 @@ return function(mod)
     if type(out) ~= "table" or not Gamble.active() then return out end
     Progress.ensure()
     Credit.syncMilestones(game)
+    syncCreditWorld(game)
     return mod.ui.insertBefore(out, "SAVE", {
       label = "HIGH ROLLER",
       onSelect = function() mod.ui.push(game, ids.highRoller) end,
@@ -218,6 +230,7 @@ return function(mod)
   end
   Lounge.register(mod, ids.lounge)
   PalletCasino.register(mod, ids)
+  CreditWorld.register(mod)
 
   mod.content.map_scripts:register("GAME_CORNER", { talk = {
     TEXT_GAMECORNER_CLERK1 = UI.coinClerk,
@@ -239,6 +252,11 @@ return function(mod)
 
   local function open(game, message, screen, done)
     UI.openAfterMessage(game, message, screen, done)
+  end
+  local function openLuxury(game, message, screen, done)
+    local allowed, frozen = Credit.luxuryAllowed(game)
+    if not allowed then UI.text(game, frozen, done); return end
+    open(game, message, screen, done)
   end
   local function reactiveText(game, ordinary, regular, vip, cold)
     local state = Progress.snapshot(game)
@@ -290,7 +308,7 @@ return function(mod)
       open(game, "TUBE FLYER!\f10 coins to play.\nEach tube pays 1.", ids.tube, done)
     end,
     TEXT_CASE_MACHINE = function(game, _, _, done)
-      open(game, "PRIZE CASE!\f500 coins opens\none mystery prize.", ids.case, done)
+      openLuxury(game, "PRIZE CASE!\f500 coins opens\none mystery prize.", ids.case, done)
     end,
     TEXT_HORSE_RACING = function(game, _, _, done)
       open(game, "LIVE RACE TV!\fPick a runner and\nback it with coins.", ids.horse, done)
@@ -315,6 +333,14 @@ return function(mod)
     TEXT_PALLET_CASINO_SIGN = function(game, _, _, done)
       UI.text(game, "PALLET CASINO\nLuck starts here.\fRegret starts\ninside.", done)
     end,
+    TEXT_PALLETTOWN_ROCKET_COLLECTOR = function(game, _, _, done)
+      UI.text(game, "Rocket credit.\fThe meter stopped.\nYour debt didn't.\fPay in Celadon.", done)
+    end,
+  } })
+  mod.content.map_scripts:register("CELADON_CITY", { talk = {
+    TEXT_CELADONCITY_ROCKET_COLLECTOR = function(game, _, _, done)
+      UI.text(game, "The boss sent me.\fNo battles. No drama.\nJust pay downstairs.", done)
+    end,
   } })
   mod.content.map_scripts:register(ids.pallet, { talk = {
     TEXT_PALLET_BLACKJACK_TABLE = function(game, _, _, done)
@@ -330,7 +356,7 @@ return function(mod)
       open(game, "PLINKO!\fDrop the ball.\nTrust the pegs.", ids.plinko, done)
     end,
     TEXT_CASE_MACHINE = function(game, _, _, done)
-      open(game, "PRIZE CASE!\f500 coins opens\none mystery prize.", ids.case, done)
+      openLuxury(game, "PRIZE CASE!\f500 coins opens\none mystery prize.", ids.case, done)
     end,
     TEXT_PALLET_CASINO_PAWN = UI.pawnBroker,
     TEXT_PALLET_CASINO_CLERK = UI.coinClerk,
@@ -354,13 +380,13 @@ return function(mod)
 
   mod.content.map_scripts:register("GAME_CORNER_PRIZE_ROOM", { talk = {
     TEXT_GAMECORNERPRIZEROOM_PRIZE_VENDOR_1 = function(game, _, _, done)
-      open(game, "Exchange coins for\nPOKEMON prizes?", ids.pokemon, done)
+      openLuxury(game, "Exchange coins for\nPOKEMON prizes?", ids.pokemon, done)
     end,
     TEXT_GAMECORNERPRIZEROOM_PRIZE_VENDOR_2 = function(game, _, _, done)
-      open(game, "Normal or SHINY?\nYou choose!", ids.pokemon, done)
+      openLuxury(game, "Normal or SHINY?\nYou choose!", ids.pokemon, done)
     end,
     TEXT_GAMECORNERPRIZEROOM_PRIZE_VENDOR_3 = function(game, _, _, done)
-      open(game, "Rare items for\nGame Corner coins!", ids.item, done)
+      openLuxury(game, "Rare items for\nGame Corner coins!", ids.item, done)
     end,
   } })
 
@@ -393,8 +419,8 @@ return function(mod)
   mod.exports.buyPokemon, mod.exports.buyItem = Service.buyPokemon, Service.buyItem
   mod.exports.buyCoins, mod.exports.coinOffers = Service.buyCoins, Service.coinOffers
   mod.exports.pawn, mod.exports.pawnLedger = Pawn, Service.pawnLedger
-  mod.exports.pawnPokemon, mod.exports.redeemPokemon =
-    Service.pawnPokemon, Service.redeemPokemon
+  mod.exports.pawnPokemon, mod.exports.pawnQuote, mod.exports.redeemPokemon =
+    Service.pawnPokemon, Service.pawnQuote, Service.redeemPokemon
   mod.exports.crash_rules, mod.exports.flappy_rules = CrashRules, FlappyRules
   mod.exports.case_rules, mod.exports.giveCaseReward = CaseRules, Service.giveCaseReward
   mod.exports.horse_rules, mod.exports.plinko_rules = HorseRules, PlinkoRules
@@ -406,4 +432,5 @@ return function(mod)
   mod.exports.reputation = Progress
   mod.exports.credit_rules = CreditRules
   mod.exports.credit = Credit
+  mod.exports.credit_world = CreditWorld
 end

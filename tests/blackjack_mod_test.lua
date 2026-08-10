@@ -46,7 +46,23 @@ data.maps.PALLET_TOWN = {
     { x = 13, y = 5, destMap = "FIXTURE_MAP", destWarp = 1 },
     { x = 12, y = 11, destMap = "FIXTURE_MAP", destWarp = 1 },
   },
-  objects = {},
+  objects = {
+    { index = 3, name = "PALLETTOWN_FISHER", movement = "WALK",
+      range = "ANY_DIR", sprite = "SPRITE_FISHER",
+      text = "TEXT_PALLETTOWN_FISHER", x = 11, y = 14 },
+  },
+}
+local celadonBlocks = {}
+for i = 1, 450 do celadonBlocks[i] = 1 end
+data.maps.CELADON_CITY = {
+  id = "CELADON_CITY", label = "CeladonCity", index = 6,
+  tileset = "OVERWORLD", width = 25, height = 18,
+  blocks = celadonBlocks, borderBlock = 11, connections = {}, signs = {},
+  warps = {}, objects = {
+    { index = 8, name = "CELADONCITY_ROCKET1", movement = "WALK",
+      range = "LEFT_RIGHT", sprite = "SPRITE_ROCKET",
+      text = "TEXT_CELADONCITY_ROCKET1", x = 32, y = 29 },
+  },
 }
 data.maps.OAKS_LAB = {
   id = "OAKS_LAB", label = "OaksLab", index = 40,
@@ -67,13 +83,14 @@ T.eq(run.data.constants.coinCap, 1000000,
 local api = run.loader.exports.blackjack_corner
 T.check(api and api.rules and api.holdem_rules and api.holdem_view and api.catalog and api.view
     and api.buyCoins and api.coinOffers and api.pawn and api.pawnPokemon
+    and api.pawnQuote
     and api.redeemPokemon and api.pawnLedger and api.crash_rules
     and api.flappy_rules and api.case_rules and api.giveCaseReward
     and api.horse_rules and api.plinko_rules and api.roulette_rules
     and api.roulette_view
     and api.gamble and api.gym_cases and api.campaign_state
     and api.reputation_rules and api.reputation
-    and api.credit_rules and api.credit,
+    and api.credit_rules and api.credit and api.credit_world,
   "games, prizes, coin exchange, pawning, and arcade rules are exported")
 T.check(api.roulette_view.RESULT_BUTTON_Y
     + api.roulette_view.RESULT_BUTTON_HEIGHT <= api.roulette_view.FRAME_CONTENT_BOTTOM,
@@ -405,6 +422,22 @@ do
 end
 
 do
+  local function collector(mapId, name)
+    for _, object in ipairs(run.data.maps[mapId].objects or {}) do
+      if object.name == name then return object end
+    end
+  end
+  local palletCollector = collector("PALLET_TOWN", "PALLETTOWN_ROCKET_COLLECTOR")
+  local celadonCollector = collector("CELADON_CITY", "CELADONCITY_ROCKET_COLLECTOR")
+  T.check(palletCollector and palletCollector.hidden,
+    "Pallet's Rocket collector remains hidden until a default")
+  T.check(celadonCollector and celadonCollector.hidden,
+    "Celadon's Rocket collector remains hidden until a default")
+  T.check(palletCollector.index > 3 and celadonCollector.index > 8,
+    "collector additions preserve existing map object indices")
+end
+
+do
   local oldBide, oldBubble = run.data.items.TM_BIDE, run.data.items.TM_BUBBLEBEAM
   local oldNidoranM, oldNidoranF = run.data.pokemon.NIDORAN_M,
     run.data.pokemon.NIDORAN_F
@@ -687,6 +720,88 @@ do
   T.eq(game.save.party[2], collateral, "redemption restores the exact Pokemon")
   T.eq(game.save.coins, 25, "redemption deducts only the ticket price")
   T.eq(#api.pawnLedger(), 0, "a redeemed ticket leaves the ledger")
+end
+
+do
+  clearPawnLedger()
+  local bucket = run.loader.modSave.blackjack_corner
+  local previousMode, previousCampaign = bucket.gamble_mode, bucket.gamble_campaign
+  bucket.gamble_mode = true
+  bucket.gamble_campaign = api.campaign_state.defaults()
+  local game = gameWith(0)
+  game.save.inventory.COIN_CASE = 1
+  game.save.party = { fixtureMon("FIXMON_A", 10), fixtureMon("FIXMON_C", 30) }
+  local ok = api.credit.borrow(game)
+  T.check(ok, "the integration fixture opens a Rocket Credit account")
+  local quote = api.pawnQuote(game, 2)
+  local beforeDebt = api.credit.snapshot(game).total
+  game.save.coins = 1000000 - math.max(0, quote.value - beforeDebt)
+  local beforeCoins = game.save.coins
+  T.check(beforeCoins + quote.value > 1000000,
+    "the integration appraisal would overflow without direct debt routing")
+  local paid
+  ok, _, _, _, paid = api.credit.pawnAndRepay(game, 2, api.pawnPokemon)
+  T.check(ok, "Rocket Credit can pawn a real party Pokemon into repayment")
+  T.eq(paid, math.min(quote.value, beforeDebt),
+    "the real pawn appraisal pays no more than the outstanding ledger")
+  T.eq(game.save.coins, beforeCoins + quote.value - paid,
+    "the real pawn flow leaves only appraisal surplus in the Coin Case")
+  T.eq(#api.pawnLedger(), 1,
+    "pawn-to-debt repayment keeps the exact Pokemon redeemable")
+  T.eq(#game.save.party, 1, "pawn-to-debt removes only the chosen party member")
+
+  local campaign = bucket.gamble_campaign
+  campaign.debt.status = "DEFAULT"
+  campaign.debt.principal, campaign.debt.fees = 500, 100
+  campaign.debt.dueBadge = 1
+  local allowed = api.credit.luxuryAllowed(game)
+  T.check(not allowed, "a default activates the narrow luxury freeze")
+  api.credit_world.sync(game, api.credit)
+  T.check(game.save.objectToggles.PALLET_TOWN.PALLETTOWN_ROCKET_COLLECTOR,
+    "a default arms Pallet's Rocket collector for the next map entry")
+  T.check(game.save.objectToggles.CELADON_CITY.CELADONCITY_ROCKET_COLLECTOR,
+    "a default arms Celadon's Rocket collector for the next map entry")
+
+  game.save.coins = 100000
+  local item = api.catalog.ITEMS[1]
+  local coinsBefore = game.save.coins
+  local message
+  ok, message = api.buyItem(game, item)
+  T.check(not ok and message:find("frozen", 1, true),
+    "default blocks rare item redemption at the service boundary")
+  T.eq(game.save.coins, coinsBefore, "a frozen luxury purchase charges nothing")
+  bucket.paid_case_claim = nil
+  game.input = noInput
+  local case = run.data.screens.BlackjackCornerPrizeCase.new(game, {})
+  case:open()
+  T.eq(case.phase, "ready", "default blocks opening a new paid Prize Case")
+  T.eq(game.save.coins, coinsBefore, "a frozen Prize Case charges nothing")
+  bucket.paid_case_claim = {
+    kind = "item", id = "NEW_CASE_ITEM", quantity = 1,
+    label = "PENDING ITEM", tier = "rare",
+  }
+  local pending = run.data.screens.BlackjackCornerPrizeCase.new(game, {})
+  pending:open()
+  T.eq(pending.phase, "spinning",
+    "default still permits delivery of a Prize Case paid for earlier")
+  T.eq(game.save.coins, coinsBefore,
+    "resuming an existing claim during default never charges twice")
+  bucket.paid_case_claim = nil
+
+  game.save.coins = 1000
+  ok = api.credit.repayCoins(game, 1000)
+  T.check(ok and api.credit.snapshot(game).status == "CLEAR",
+    "the luxury freeze is fully recoverable through repayment")
+  api.credit_world.sync(game, api.credit)
+  T.check(not game.save.objectToggles.PALLET_TOWN.PALLETTOWN_ROCKET_COLLECTOR,
+    "clearing debt hides Pallet's collector again")
+  T.check(not game.save.objectToggles.CELADON_CITY.CELADONCITY_ROCKET_COLLECTOR,
+    "clearing debt hides Celadon's collector again")
+  T.check(api.credit.luxuryAllowed(game),
+    "clearing debt restores paid Prize Cases and prize counters")
+
+  bucket.gamble_mode, bucket.gamble_campaign = previousMode, previousCampaign
+  clearPawnLedger()
 end
 
 do

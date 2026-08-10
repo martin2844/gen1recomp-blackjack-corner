@@ -100,6 +100,37 @@ return function(mod, opts)
         :format(paid * Rules.MONEY_PER_COIN, remaining)
   end
 
+  function Service.pawnAndRepay(game, partyIndex, pawnPokemon)
+    local campaign, debt = load(false)
+    if not campaign or Rules.total(debt) == 0 then return false, "You owe nothing." end
+    if type(pawnPokemon) ~= "function" then
+      return false, "Pawn service is\nunavailable."
+    end
+    local requested = Rules.total(debt)
+    local ok, entry, sold, routed = pawnPokemon(game, partyIndex, requested)
+    if not ok then return false, entry end
+
+    -- The pawn ledger stays authoritative for the exact ticket/FIFO behavior.
+    -- Its optional routed amount bypasses Coin Case capacity only for coins
+    -- that move directly into this debt; appraisal surplus is paid normally.
+    local amount = math.min(math.max(0, math.floor(tonumber(routed) or 0)),
+      Rules.total(debt), entry.value)
+    local paid, remaining = applyPayment(campaign, debt, amount)
+    local message = ("%s pawned.\f%d coins paid.\nOwe %d.")
+      :format(entry.name or "POKEMON", paid, remaining)
+    if sold then
+      message = message .. ("\f%s was sold off.")
+        :format(sold.name or "The oldest POKEMON")
+    end
+    return true, message, entry, sold, paid
+  end
+
+  function Service.luxuryAllowed(game)
+    local state = Service.snapshot(game)
+    if not state or state.status ~= "DEFAULT" then return true end
+    return false, "ROCKET CREDIT has\nfrozen luxury prizes.\fRepay your debt in\nthe Celadon Lounge."
+  end
+
   function Service.syncMilestones(game)
     local campaign, debt = load(false)
     if not campaign or Rules.total(debt) == 0 then return false end

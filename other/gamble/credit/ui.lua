@@ -8,6 +8,7 @@ return function(mod, opts)
 
   function UI.broker(game, _, _, done)
     Credit.syncMilestones(game)
+    if opts.syncWorld then opts.syncWorld(game) end
     local state = Credit.snapshot(game)
     if not state then
       text(game, "No campaign,\nno credit.", done)
@@ -49,6 +50,7 @@ return function(mod, opts)
         onChoose = function(item)
           list:close()
           local _, message = Credit.repayCoins(game, item.value)
+          if opts.syncWorld then opts.syncWorld(game) end
           closeWith(game, message, openMenu)
         end,
         onCancel = openMenu,
@@ -71,9 +73,54 @@ return function(mod, opts)
           choice = function(yes)
             if not yes then openMenu(); return end
             local _, message = Credit.repayMoney(game, amount)
+            if opts.syncWorld then opts.syncWorld(game) end
             closeWith(game, message, openMenu)
           end,
         }))
+    end
+
+    local function pawnAndPay(openMenu)
+      local party = game.save.party or {}
+      if #party <= 1 then
+        text(game, "You must keep one\nPOKEMON with you.", openMenu)
+        return
+      end
+      local rows = {}
+      for index = 1, #party do
+        local quote = opts.pawnQuote and opts.pawnQuote(game, index)
+        if quote then rows[#rows + 1] = {
+          label = quote.name, right = tostring(quote.value), value = quote,
+        } end
+      end
+      if #rows == 0 then text(game, "Nothing here can\nbe appraised.", openMenu); return end
+      local list
+      list = mod.ui.ListMenu.new(game, "PAWN TO PAY", rows, {
+        pageJump = true,
+        footer = ("OWE %d  HELD %d/%d"):format(
+          Credit.snapshot(game).total, #opts.pawnLedger(), opts.pawnLimit),
+        onChoose = function(item)
+          local quote = item.value
+          local prompt = ("Pawn %s for\n%d coins toward debt?")
+            :format(quote.name, quote.value)
+          if #opts.pawnLedger() >= opts.pawnLimit then
+            local oldest = opts.pawnLedger()[1]
+            prompt = prompt .. ("\fWARNING! %s will\nbe sold off.")
+              :format(oldest.name or "The oldest POKEMON")
+          end
+          list:close()
+          game.stack:push(mod.ui.TextBox.new(game, prompt, nil, {
+            choice = function(yes)
+              if not yes then openMenu(); return end
+              local _, message = Credit.pawnAndRepay(
+                game, quote.index, opts.pawnPokemon)
+              if opts.syncWorld then opts.syncWorld(game) end
+              closeWith(game, message, openMenu)
+            end,
+          }))
+        end,
+        onCancel = openMenu,
+      })
+      game.stack:push(list)
     end
 
     local openMenu
@@ -90,6 +137,7 @@ return function(mod, opts)
                 choice = function(yes)
                   if not yes then openMenu(); return end
                   local _, message = Credit.borrow(game)
+                  if opts.syncWorld then opts.syncWorld(game) end
                   closeWith(game, message, openMenu)
                 end,
               }))
@@ -99,12 +147,14 @@ return function(mod, opts)
           onSelect = function() payCoins(openMenu) end }
         rows[#rows + 1] = { label = "PAY MONEY",
           onSelect = function() payMoney(openMenu) end }
+        rows[#rows + 1] = { label = "PAWN TO PAY",
+          onSelect = function() pawnAndPay(openMenu) end }
       end
       rows[#rows + 1] = { label = "STATEMENT",
         onSelect = function() statement(openMenu) end }
       rows[#rows + 1] = { label = "LEAVE", onSelect = done }
       game.stack:push(mod.ui.Menu.new(game, rows, {
-        tx = 2, ty = 3, maxVisible = 4, onCancel = done,
+        tx = 2, ty = 3, maxVisible = 5, onCancel = done,
       }))
     end
 

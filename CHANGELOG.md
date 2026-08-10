@@ -10,6 +10,14 @@
   principal and every default remaining fully recoverable.
 - Badge-milestone deadlines and one-time late fees. Debt never grows with
   real time, repeated menu opens, or repeated milestone checks.
+- A voluntary `PAWN & PAY` route at the Rocket broker. The appraisal pays the
+  live debt first, any surplus remains in the Coin Case, and the exact Pokemon
+  stays on the existing redeemable pawn ticket.
+- Recoverable Rocket collector appearances in Pallet and Celadon after a
+  default, with dialogue directing the player back to the loan shark.
+- Default-only luxury restrictions for new paid Prize Cases and Celadon's
+  Pokemon/item counters. Casino games, travel, healing, story progress, coin
+  sales, ordinary pawning, and redemption remain available.
 - A schema-two migration that carries legacy campaign, debt, and family-home
   state forward without discarding fields owned by later versions.
 - The first v0.5 Gamble Mode campaign slice: a schema-versioned persistent

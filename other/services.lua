@@ -91,6 +91,10 @@ return function(mod, Catalog, Pawn, config)
   end
 
   function Service.buyPokemon(game, prize, shiny)
+    if config.luxuryAllowed then
+      local allowed, message = config.luxuryAllowed(game)
+      if not allowed then return false, message end
+    end
     local cost = prize.cost + (shiny and Catalog.SHINY_SURCHARGE or 0)
     if Service.coins(game) < cost then return false, "Sorry, you need\nmore coins." end
     local ok, destination = Service.givePokemon(game, prize, shiny)
@@ -102,6 +106,10 @@ return function(mod, Catalog, Pawn, config)
   end
 
   function Service.buyItem(game, prize)
+    if config.luxuryAllowed then
+      local allowed, message = config.luxuryAllowed(game)
+      if not allowed then return false, message end
+    end
     if prize.once and mod.save:get(config.masterBallKey, false) then
       return false, "The MASTER BALL\nprize is sold out."
     end
@@ -126,28 +134,45 @@ return function(mod, Catalog, Pawn, config)
       or (mon and mon.species) or "POKEMON"
   end
 
-  function Service.pawnPokemon(game, partyIndex)
-    local party, mon = game.save.party or {}, (game.save.party or {})[partyIndex]
+  function Service.pawnQuote(game, partyIndex)
+    local party = game.save.party or {}
+    local mon = party[partyIndex]
+    if #party <= 1 then return nil, "You must keep one\nPOKEMON with you." end
+    if not mon then return nil, "That POKEMON is\nno longer here." end
+    local def = game.data.pokemon[mon.species]
+    if not def then return nil, "I can't value\nthat POKEMON." end
+    local value = Pawn.value(mon, def)
+    return {
+      index = partyIndex,
+      mon = mon,
+      name = Service.monName(game, mon),
+      value = value,
+      redeem = Pawn.redeemCost(value),
+    }
+  end
+
+  function Service.pawnPokemon(game, partyIndex, reservedCoins)
+    local party = game.save.party or {}
     if not (game.save.inventory and game.save.inventory.COIN_CASE) then
       return false, "You need a\nCOIN CASE."
     end
-    if #party <= 1 then return false, "You must keep one\nPOKEMON with you." end
-    if not mon then return false, "That POKEMON is\nno longer here." end
-    local def = game.data.pokemon[mon.species]
-    if not def then return false, "I can't value\nthat POKEMON." end
-    local value = Pawn.value(mon, def)
-    if Service.coins(game) + value > coinCap then
+    local quote, message = Service.pawnQuote(game, partyIndex)
+    if not quote then return false, message end
+    local routed = math.min(quote.value,
+      math.max(0, math.floor(tonumber(reservedCoins) or 0)))
+    local payout = quote.value - routed
+    if Service.coins(game) + payout > coinCap then
       return false, "Your COIN CASE\nneeds more room."
     end
     local ledger, sold = Service.pawnLedger()
     while #ledger >= Pawn.LIMIT do sold = table.remove(ledger, 1) end
     table.remove(party, partyIndex)
-    local entry = { mon = mon, value = value, redeem = Pawn.redeemCost(value),
-      name = Service.monName(game, mon) }
+    local entry = { mon = quote.mon, value = quote.value, redeem = quote.redeem,
+      name = quote.name }
     ledger[#ledger + 1] = entry
     mod.save:set(config.pawnLedgerKey, ledger)
-    game.save.coins = Service.coins(game) + value
-    return true, entry, sold
+    game.save.coins = Service.coins(game) + payout
+    return true, entry, sold, routed
   end
 
   function Service.redeemPokemon(game, ledgerIndex)

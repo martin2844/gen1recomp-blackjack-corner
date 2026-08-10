@@ -26,9 +26,10 @@ identity and screenshot directory for every matrix row so save state and
 evidence cannot leak between scenarios.
 
 For the v0.6 Rocket Credit slice, substitute
-`tests/manual/drivers/rocket_credit_fresh.lua`. The driver positions the player
-at the Celadon loan shark and opens the credit menu; continue manually through
-borrowing, statements, both repayment methods, and the default scenario.
+`tests/manual/drivers/rocket_credit_fresh.lua` for borrowing, statements, and
+both currency repayment methods. Use
+`tests/manual/drivers/rocket_credit_default.lua` for the Pallet/Celadon
+collectors, luxury freeze, `PAWN & PAY`, and full recovery checks.
 
 Before signing off a release:
 

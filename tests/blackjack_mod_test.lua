@@ -189,12 +189,12 @@ do
   T.check(upstairs.REDSHOUSE2F_GAMBLE_MOM
       and upstairs.REDSHOUSE2F_GAMBLE_MOM.hidden,
     "the displaced Mom is staged upstairs without affecting normal saves")
-  for piece = 1, 3 do
-    local name = ("REDSHOUSE1F_ROCKET_FURNITURE_%02d"):format(piece)
+  for piece = 1, 5 do
+    local name = ("REDSHOUSE1F_ROCKET_EQUIPMENT_%02d"):format(piece)
     T.check(downstairs[name] and downstairs[name].hidden,
       name .. " is staged only for Rocket ownership")
-    T.check(run.data.sprites[("SPRITE_ROCKET_FURNITURE_%02d"):format(piece)],
-      name .. " has generated ROM-free hideout-style art")
+    T.check(run.data.sprites[("SPRITE_ROCKET_EQUIPMENT_%02d"):format(piece)],
+      name .. " derives from imported Rocket Hideout or Silph Co art")
   end
   T.eq(api.house_world.challengeSaveId(),
     "REDS_HOUSE_1F_obj_4", "the restoration battle has a stable save identity")
@@ -882,9 +882,9 @@ do
     "repossession fills the family room with Rocket occupants")
   T.check(not down.REDSHOUSE1F_ROCKET_CHALLENGE,
     "the house battle stays hidden until the deed is paid")
-  for piece = 1, 3 do
-    T.check(down[("REDSHOUSE1F_ROCKET_FURNITURE_%02d"):format(piece)],
-      "repossession reveals Rocket furniture piece " .. piece)
+  for piece = 1, 5 do
+    T.check(down[("REDSHOUSE1F_ROCKET_EQUIPMENT_%02d"):format(piece)],
+      "repossession reveals Rocket equipment piece " .. piece)
   end
 
   game.save.coins = 30050
@@ -907,9 +907,9 @@ do
   T.check(not down.REDSHOUSE1F_ROCKET_OBSERVER
       and not down.REDSHOUSE1F_ROCKET_CHALLENGE,
     "restoration removes every Rocket occupant")
-  for piece = 1, 3 do
-    T.check(not down[("REDSHOUSE1F_ROCKET_FURNITURE_%02d"):format(piece)],
-      "restoration removes Rocket furniture piece " .. piece)
+  for piece = 1, 5 do
+    T.check(not down[("REDSHOUSE1F_ROCKET_EQUIPMENT_%02d"):format(piece)],
+      "restoration removes Rocket equipment piece " .. piece)
   end
 
   local function contribution(mapId, key)

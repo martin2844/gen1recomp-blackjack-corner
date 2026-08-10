@@ -10,8 +10,9 @@
   before anything changes.
 - A persistent Rocket occupation of Red's house: Mom moves upstairs without
   losing her healing service, Rocket tenants discuss the deed and Oak
-  surveillance, and three ROM-free hideout furniture pieces replace the normal
-  downstairs atmosphere.
+  surveillance, and authentic Rocket Hideout/Silph Co equipment is derived at
+  install time from the player's imported game to change the downstairs
+  atmosphere without shipping ROM pixels.
 - A recoverable family-home quest. Paying the 30,000-coin deed price reveals a
   retryable Rocket trainer battle; winning restores the original home and Mom
   while preserving any separate credit debt or default.

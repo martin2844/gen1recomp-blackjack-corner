@@ -6,10 +6,12 @@ local HouseWorld = {
   TENANT = "REDSHOUSE1F_ROCKET_TENANT",
   OBSERVER = "REDSHOUSE1F_ROCKET_OBSERVER",
   CHALLENGE = "REDSHOUSE1F_ROCKET_CHALLENGE",
-  FURNITURE = {
-    "REDSHOUSE1F_ROCKET_FURNITURE_01",
-    "REDSHOUSE1F_ROCKET_FURNITURE_02",
-    "REDSHOUSE1F_ROCKET_FURNITURE_03",
+  EQUIPMENT = {
+    "REDSHOUSE1F_ROCKET_EQUIPMENT_01",
+    "REDSHOUSE1F_ROCKET_EQUIPMENT_02",
+    "REDSHOUSE1F_ROCKET_EQUIPMENT_03",
+    "REDSHOUSE1F_ROCKET_EQUIPMENT_04",
+    "REDSHOUSE1F_ROCKET_EQUIPMENT_05",
   },
 }
 
@@ -46,10 +48,15 @@ function HouseWorld.register(mod)
       text = "TEXT_REDSHOUSE1F_ROCKET_CHALLENGE", x = 5, y = 4,
       range = "LEFT", trainerClass = "OPP_ROCKET", trainerParty = 8,
     })
-    for piece, position in ipairs({ { 1, 2 }, { 6, 2 }, { 1, 5 } }) do
+    -- Pieces 1-4 reconstruct a real two-cabinet Rocket Hideout machine bank;
+    -- piece 5 is a separate Silph Co console. They stay on the perimeter so
+    -- the door, stairs, Mom, PC path, and battle approach remain clear.
+    for piece, position in ipairs({
+      { 1, 1 }, { 2, 1 }, { 1, 2 }, { 2, 2 }, { 6, 2 },
+    }) do
       index = append(rows, index, {
-        name = HouseWorld.FURNITURE[piece],
-        sprite = ("SPRITE_ROCKET_FURNITURE_%02d"):format(piece),
+        name = HouseWorld.EQUIPMENT[piece],
+        sprite = ("SPRITE_ROCKET_EQUIPMENT_%02d"):format(piece),
         x = position[1], y = position[2],
       })
     end
@@ -77,10 +84,10 @@ function HouseWorld.register(mod)
     },
   })
 
-  for piece = 1, 3 do
-    mod.content.sprites:register(("SPRITE_ROCKET_FURNITURE_%02d"):format(piece), {
-      image = ("save/mod-derived/blackjack_corner/world/rocket_furniture_%02d.png")
-        :format(piece), frames = 1, trueColor = true,
+  for piece = 1, #HouseWorld.EQUIPMENT do
+    mod.content.sprites:register(("SPRITE_ROCKET_EQUIPMENT_%02d"):format(piece), {
+      image = ("save/mod-derived/blackjack_corner/world/rocket_equipment_%02d.png")
+        :format(piece), frames = 1,
     })
   end
 end
@@ -106,7 +113,7 @@ function HouseWorld.sync(game, house)
     HouseWorld.OBSERVER, occupied)
   setToggle(game.save, HouseWorld.MAP_DOWNSTAIRS,
     HouseWorld.CHALLENGE, state.status == "BUYBACK_PAID")
-  for _, name in ipairs(HouseWorld.FURNITURE) do
+  for _, name in ipairs(HouseWorld.EQUIPMENT) do
     setToggle(game.save, HouseWorld.MAP_DOWNSTAIRS, name, occupied)
   end
   return occupied

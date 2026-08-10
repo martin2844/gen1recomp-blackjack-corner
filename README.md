@@ -59,11 +59,12 @@ without changing the always-available base casino expansion:
   clerks, and pawn redemption remain available;
 - a one-time last-resort bailout grants 10,000 coins only when both currencies
   are empty, in exchange for Team Rocket taking the Pallet family home;
-- the occupied home gains Rocket tenants, surveillance dialogue, generated
-  hideout furniture, and a relocated Mom upstairs who still heals the party;
+- the occupied home gains Rocket tenants, surveillance dialogue, authentic
+  Rocket Hideout/Silph Co equipment derived from the imported game, and a
+  relocated Mom upstairs who still heals the party;
 - reclaiming the home requires an explicit 30,000-coin deed buyback and a
   retryable Rocket battle, after which the original house is fully restored;
-- the current headless suite covers 1,029 assertions, with Red and Blue native
+- the current headless suite covers 1,039 assertions, with Red and Blue native
   UI smoke runs layered on top.
 
 The implementation and release train are mapped in

@@ -11,6 +11,7 @@ return function(mod)
     crash = "games/crash/", tube = "games/tube_flyer/",
     case = "games/prize_case/", horse = "games/horse_racing/",
     plinko = "games/plinko/", roulette = "games/starter_roulette/",
+    arena = "games/battle_arena/",
   }
   local Rules = loadLocal(mod, paths.blackjack .. "rules.lua")
   local BlackjackView = loadLocal(mod, paths.blackjack .. "view.lua")
@@ -22,6 +23,7 @@ return function(mod)
   local HorseRules = loadLocal(mod, paths.horse .. "rules.lua")
   local PlinkoRules = loadLocal(mod, paths.plinko .. "rules.lua")
   local RouletteRules = loadLocal(mod, paths.roulette .. "rules.lua")
+  local ArenaRules = loadLocal(mod, paths.arena .. "rules.lua")
   local ShinyFallback = loadLocal(mod, "other/shiny/fallback.lua")
   local ArcadeUI = loadLocal(mod, "games/shared/ui.lua")
   local CrashView = loadLocal(mod, paths.crash .. "view.lua")(ArcadeUI)
@@ -30,15 +32,29 @@ return function(mod)
   local HorseView = loadLocal(mod, paths.horse .. "view.lua")(ArcadeUI)
   local PlinkoView = loadLocal(mod, paths.plinko .. "view.lua")(ArcadeUI)
   local RouletteView = loadLocal(mod, paths.roulette .. "view.lua")(ArcadeUI)
+  local ArenaView = loadLocal(mod, paths.arena .. "view.lua")(ArcadeUI)
   local Catalog = loadLocal(mod, "other/prizes/catalog.lua")
   local Pawn = loadLocal(mod, "other/pawn/rules.lua")
   local Services = loadLocal(mod, "other/services.lua")
   local UIFactory = loadLocal(mod, "other/ui.lua")
   local CoinCase = loadLocal(mod, "other/coin_case.lua")
-  local Lounge = loadLocal(mod, "other/lounge.lua")
+  local WorldHelpers = loadLocal(mod, "other/world_helpers.lua")
+  local Lounge = loadLocal(mod, "other/lounge.lua")(WorldHelpers)
   local GambleMode = loadLocal(mod, "other/gamble/mode.lua")
   local GymCases = loadLocal(mod, "other/gamble/gym_cases.lua")
-  local PalletCasino = loadLocal(mod, "other/pallet_casino.lua")
+  local CampaignState = loadLocal(mod, "other/gamble/state.lua")
+  local ReputationRules = loadLocal(mod, "other/gamble/reputation/rules.lua")
+  local ReputationService = loadLocal(mod, "other/gamble/reputation/service.lua")
+  local ReputationScreen = loadLocal(mod, "other/gamble/reputation/screen.lua")
+  local CreditRules = loadLocal(mod, "other/gamble/credit/rules.lua")
+  local CreditService = loadLocal(mod, "other/gamble/credit/service.lua")
+  local CreditUIFactory = loadLocal(mod, "other/gamble/credit/ui.lua")
+  local CreditWorld = loadLocal(mod, "other/gamble/credit/world.lua")(WorldHelpers)
+  local HouseService = loadLocal(mod, "other/gamble/credit/house_service.lua")
+  local HouseWorld = loadLocal(mod, "other/gamble/credit/house_world.lua")(WorldHelpers)
+  local ArenaServiceFactory = loadLocal(mod, paths.arena .. "service.lua")
+  local ArenaWorld = loadLocal(mod, "other/gamble/arena_world.lua")(WorldHelpers)
+  local PalletCasino = loadLocal(mod, "other/pallet_casino.lua")(WorldHelpers)
   local Sound = require("src.core.Sound")
 
   local ids = {
@@ -53,8 +69,12 @@ return function(mod)
     plinko = "BlackjackCornerPlinko",
     roulette = "BlackjackCornerStarterRoulette",
     gymCase = "BlackjackCornerGymCase",
+    highRoller = "BlackjackCornerHighRoller",
     lounge = "BLACKJACK_LOUNGE",
     pallet = "PALLET_CASINO",
+    arena = "BlackjackCornerBattleArena",
+    arenaLobby = ArenaWorld.LOBBY,
+    arenaMap = ArenaWorld.ARENA,
   }
   local config = {
     coinCap = 1000000,
@@ -71,10 +91,25 @@ return function(mod)
 
   local Service = Services(mod, Catalog, Pawn, config)
   local UI = UIFactory(mod, Service, Catalog, Pawn, config)
+  local Progress, Credit, Arena
   local function play(game, name) Sound.play(game.data, name) end
   local common = {
     mod = mod, coins = Service.coins, coinCap = config.coinCap,
+    creditPayout = Service.creditCoins,
     close = UI.close, play = play,
+    beginRound = function(gameId, stake, durable)
+      return Progress and Progress.beginRound(gameId, stake, durable) or nil
+    end,
+    increaseStake = function(token, stake)
+      return Progress and Progress.increaseStake(token, stake) or false
+    end,
+    settleRound = function(game, token, result, returned)
+      if not Progress then return false end
+      return Progress.settleRound(game, token, result, returned)
+    end,
+    showRankUp = function(game)
+      mod.ui.push(game, ids.highRoller)
+    end,
   }
   local function context(extra)
     local out = {}
@@ -100,6 +135,9 @@ return function(mod)
     rules = CaseRules, view = CaseView,
     rewardPool = function(game) return Service.caseRewardPool(game, CaseRules) end,
     giveReward = Service.giveCaseReward,
+    canOpen = function(game)
+      return not Credit or Credit.luxuryAllowed(game)
+    end,
   }))
   local HorseRacing = loadLocal(mod, paths.horse .. "screen.lua")(context({
     rules = HorseRules, view = HorseView,
@@ -112,10 +150,55 @@ return function(mod)
     rules = RouletteRules, service = Service, screenId = ids.roulette,
     text = UI.text,
   })
+  Progress = ReputationService(mod, {
+    state = CampaignState, rules = ReputationRules,
+    active = Gamble.active, coinCap = config.coinCap,
+  })
+  Credit = CreditService(mod, {
+    state = CampaignState, rules = CreditRules, active = Gamble.active,
+    coinCap = config.coinCap, badgeCount = ReputationRules.badgeCount,
+    rank = function(game)
+      local snapshot = Progress.snapshot(game)
+      return snapshot and snapshot.rank or "ROOKIE"
+    end,
+  })
+  local House = HouseService(mod, {
+    state = CampaignState, active = Gamble.active, coinCap = config.coinCap,
+  })
+  Arena = ArenaServiceFactory(mod, {
+    state = CampaignState, rules = ArenaRules, active = Gamble.active,
+    coinCap = config.coinCap,
+    rank = function(game)
+      local snapshot = Progress.snapshot(game)
+      return snapshot and snapshot.rank or "ROOKIE"
+    end,
+    allowed = function(game) return Credit.luxuryAllowed(game) end,
+    beginRound = common.beginRound, settleRound = common.settleRound,
+  })
+  config.luxuryAllowed = Credit.luxuryAllowed
+  local function syncCampaignWorld(game)
+    local collectors = CreditWorld.sync(game, Credit)
+    local occupied = HouseWorld.sync(game, House)
+    return collectors, occupied
+  end
+  local CreditUI = CreditUIFactory(mod, {
+    credit = Credit, rules = CreditRules, text = UI.text,
+    house = House,
+    pawnPokemon = Service.pawnPokemon, pawnQuote = Service.pawnQuote,
+    pawnLedger = Service.pawnLedger, pawnLimit = Pawn.LIMIT,
+    syncWorld = syncCampaignWorld,
+  })
+  local HighRoller = ReputationScreen({
+    mod = mod, ui = ArcadeUI, rules = ReputationRules,
+    progress = Progress, close = UI.close,
+  })
   local StarterRoulette = loadLocal(mod, paths.roulette .. "screen.lua")({
     mod = mod, rules = RouletteRules, view = RouletteView,
     close = UI.close, play = play, complete = Gamble.complete,
   })
+  local BattleArena = loadLocal(mod, paths.arena .. "screen.lua")(context({
+    rules = ArenaRules, view = ArenaView, service = Arena,
+  }))
   local Gym = GymCases.install(mod, { active = Gamble.active, screenId = ids.gymCase })
   local GymCase = loadLocal(mod, paths.case .. "screen.lua")(context({
     rules = GymCases.rules(CaseRules), view = CaseView, cost = 0,
@@ -130,9 +213,30 @@ return function(mod)
     [ids.crash] = Crash, [ids.tube] = TubeFlyer, [ids.case] = PrizeCase,
     [ids.horse] = HorseRacing, [ids.plinko] = Plinko,
     [ids.roulette] = StarterRoulette, [ids.gymCase] = GymCase,
+    [ids.highRoller] = HighRoller,
+    [ids.arena] = BattleArena,
   }) do mod.content.screens:register(screen, { new = class.new }) end
   mod.content.screens:register(ids.pokemon, { new = UI.pokemonMenu })
   mod.content.screens:register(ids.item, { new = UI.itemMenu })
+
+  mod.events:on("intro.oak_speech.answered", function(ev)
+    if ev.saveKey == "gamble_mode" and ev.value == true then Progress.ensure() end
+  end)
+  mod.hooks:wrap("save.write", function(next, game)
+    if not Progress.canSave(game) then return false end
+    return next(game)
+  end)
+  mod.hooks:wrap("ui.start_menu.items", function(next, game, items)
+    local out = next(game, items)
+    if type(out) ~= "table" or not Gamble.active() then return out end
+    Progress.ensure()
+    Credit.syncMilestones(game)
+    syncCampaignWorld(game)
+    return mod.ui.insertBefore(out, "SAVE", {
+      label = "HIGH ROLLER",
+      onSelect = function() mod.ui.push(game, ids.highRoller) end,
+    })
+  end)
 
   for _, tableDef in ipairs({
     { id = "BLACKJACK", file = "blackjack" },
@@ -162,6 +266,9 @@ return function(mod)
   end
   Lounge.register(mod, ids.lounge)
   PalletCasino.register(mod, ids)
+  CreditWorld.register(mod)
+  HouseWorld.register(mod)
+  ArenaWorld.register(mod, ids.lounge)
 
   mod.content.map_scripts:register("GAME_CORNER", { talk = {
     TEXT_GAMECORNER_CLERK1 = UI.coinClerk,
@@ -184,6 +291,24 @@ return function(mod)
   local function open(game, message, screen, done)
     UI.openAfterMessage(game, message, screen, done)
   end
+  local function openLuxury(game, message, screen, done)
+    local allowed, frozen = Credit.luxuryAllowed(game)
+    if not allowed then UI.text(game, frozen, done); return end
+    open(game, message, screen, done)
+  end
+  local function reactiveText(game, ordinary, regular, vip, cold)
+    local state = Progress.snapshot(game)
+    if not state then return ordinary end
+    if cold and state.currentLossStreak >= 5 then return cold end
+    if vip and ReputationRules.atLeast(state.rank, "HIGH_ROLLER") then return vip end
+    if regular and state.rank == "REGULAR" then return regular end
+    return ordinary
+  end
+  local function reactiveTalk(ordinary, regular, vip, cold)
+    return function(game, _, _, done)
+      UI.text(game, reactiveText(game, ordinary, regular, vip, cold), done)
+    end
+  end
   mod.content.map_scripts:register(ids.lounge, { talk = {
     TEXT_BLACKJACK_TABLE = function(game, _, _, done)
       open(game, "Welcome to the\nBLACKJACK table!\fPlace your bet and\nplay to 21.",
@@ -200,15 +325,20 @@ return function(mod)
       open(game, "Bet before FLOP,\nafter FLOP,\fand at RIVER.\fBest five-card hand\nwins.",
         ids.holdem, done)
     end,
-    TEXT_CASINO_HOSTESS = function(game, _, _, done)
-      UI.text(game, "Welcome to the\nCASINO LOUNGE!\fTables up front.\nArcade in back.", done)
-    end,
-    TEXT_BLACKJACK_PATRON = function(game, _, _, done)
-      UI.text(game, "I always double\ndown on eleven!", done)
-    end,
+    TEXT_CASINO_HOSTESS = reactiveTalk(
+      "Welcome to the\nCASINO LOUNGE!\fTables up front.\nArcade in back.",
+      "Back again?\fThe dealers know\nyour face now.",
+      "Welcome, HIGH\nROLLER.\fYour favorite table\nis waiting.",
+      "Rough streak?\fThe house always\nremembers a return."),
+    TEXT_BLACKJACK_PATRON = reactiveTalk(
+      "I always double\ndown on eleven!",
+      "A REGULAR, huh?\fDon't start giving\nme advice.",
+      "They polish your\nseat before you sit.",
+      "Five losses?\fMaybe double down\non going home."),
     TEXT_HOLDEM_PATRON = function(game, _, _, done)
       UI.text(game, "Four times before\nthe FLOP is bold!\fWait too long and\nyou can only bet 1x.", done)
     end,
+    TEXT_ROCKET_CREDIT = CreditUI.broker,
     TEXT_CRASH_MACHINE = function(game, _, _, done)
       open(game, "CRASH!\fMultiplier climbs.\nCash out before it drops!", ids.crash, done)
     end,
@@ -216,7 +346,7 @@ return function(mod)
       open(game, "TUBE FLYER!\f10 coins to play.\nEach tube pays 1.", ids.tube, done)
     end,
     TEXT_CASE_MACHINE = function(game, _, _, done)
-      open(game, "PRIZE CASE!\f500 coins opens\none mystery prize.", ids.case, done)
+      openLuxury(game, "PRIZE CASE!\f500 coins opens\none mystery prize.", ids.case, done)
     end,
     TEXT_HORSE_RACING = function(game, _, _, done)
       open(game, "LIVE RACE TV!\fPick a runner and\nback it with coins.", ids.horse, done)
@@ -224,14 +354,99 @@ return function(mod)
     TEXT_PLINKO = function(game, _, _, done)
       open(game, "PLINKO!\fDrop the ball.\nTrust the pegs.", ids.plinko, done)
     end,
-    TEXT_LOUNGE_COLD_STREAK = function(game, _, _, done)
-      UI.text(game, "Seven cold hands.\fThe eighth has to\nturn around... right?", done)
-    end,
+    TEXT_LOUNGE_COLD_STREAK = reactiveTalk(
+      "Seven cold hands.\fThe eighth has to\nturn around... right?",
+      "They call you a\nREGULAR now.\fCareful. That's how\nit starts.",
+      "A VIP!\fTell the house I\nnever complained.",
+      "That look...\fYou know the cold\nstreak too."),
     TEXT_LOUNGE_CARD_COUNTER = function(game, _, _, done)
       UI.text(game, "I count every card.\fThen panic and bet\nthe wrong table.", done)
     end,
     TEXT_LOUNGE_LAST_CHIP = function(game, _, _, done)
       UI.text(game, "This is my last\nchip.\fI've said that\nthree times tonight.", done)
+    end,
+    TEXT_ARENA_LIFT = function(game, _, _, done)
+      local allowed, reason = Arena.access(game)
+      if not allowed then
+        UI.text(game, "The black panel\nflickers.\f" .. reason, done)
+        return
+      end
+      local function descend()
+        UI.text(game, "A hidden lock\nclicks open.\fThe lift descends\nbelow CELADON.", function()
+          if done then done() end
+          mod.world:warpTo(ids.arenaLobby, 9, 14, "up")
+        end)
+      end
+      local function presentRankUps()
+        local progress = Progress.snapshot(game)
+        if progress and #progress.pendingRankUps > 0 then
+          mod.ui.push(game, ids.highRoller, { onClose = presentRankUps })
+        else
+          descend()
+        end
+      end
+      -- A badge ceiling can make KINGPIN become reachable at this exact
+      -- interaction. Never let the lift silently consume that one-time rank
+      -- introduction before the player sees it.
+      local progress = Progress.snapshot(game)
+      if progress and #progress.pendingRankUps > 0 then
+        UI.text(game, "The black panel\nflashes gold.\fCLEARANCE UPDATE!", presentRankUps)
+      else
+        descend()
+      end
+    end,
+  } })
+
+  mod.content.map_scripts:register(ids.arenaLobby, { talk = {
+    TEXT_ARENA_DOORMAN = function(game, _, _, done)
+      UI.text(game, "KINGPIN confirmed.\fHouse fighters only.\nYour party stays out.", function()
+        if done then done() end
+        mod.world:warpTo(ids.arenaMap, 9, 14, "up")
+      end)
+    end,
+    TEXT_ARENA_CASHIER = function(game, _, _, done)
+      local state = Arena.snapshot(game)
+      UI.text(game, ("ARENA %s\fFIGHTS %d  WINS %d\nWAGER CAP %d")
+        :format(state.tier.label, state.matchesPlayed, state.wins,
+          state.wagerLimit), done)
+    end,
+    TEXT_ARENA_EXIT = function(game, _, _, done)
+      UI.text(game, "Back to the bright\npart of CELADON?", function()
+        if done then done() end
+        mod.world:warpTo(ids.lounge, 2, 12, "right")
+      end)
+    end,
+    TEXT_ARENA_NERVOUS = function(game, _, _, done)
+      UI.text(game, "They post the odds.\fThe POKEMON never\nsee the board.", done)
+    end,
+    TEXT_ARENA_VETERAN = function(game, _, _, done)
+      UI.text(game, "Favorites lose.\fThat's why odds are\nnot promises.", done)
+    end,
+  } })
+
+  mod.content.map_scripts:register(ids.arenaMap, { talk = {
+    TEXT_ARENA_BOOKIE = function(game, _, _, done)
+      local allowed, reason = Arena.access(game)
+      if not allowed then UI.text(game, reason, done); return end
+      open(game, "ROCKET ARENA!\fPick one house\nfighter. Watch live.", ids.arena, done)
+    end,
+    TEXT_ARENA_TO_LOBBY = function(game, _, _, done)
+      UI.text(game, "Leaving the pit?", function()
+        if done then done() end
+        mod.world:warpTo(ids.arenaLobby, 9, 14, "up")
+      end)
+    end,
+    TEXT_ARENA_FAN_1 = function(game, _, _, done)
+      UI.text(game, "I backed a RAT.\fIt fought like a\nDRAGON. Almost.", done)
+    end,
+    TEXT_ARENA_FAN_2 = function(game, _, _, done)
+      UI.text(game, "Stats set the line.\fLuck tears it up.", done)
+    end,
+    TEXT_ARENA_FAN_3 = function(game, _, _, done)
+      UI.text(game, "No party entries.\fRocket hates a\nfixed fight.", done)
+    end,
+    TEXT_ARENA_FAN_4 = function(game, _, _, done)
+      UI.text(game, "Rare card tonight.\fI heard wings in\nthe holding room.", done)
     end,
   } })
 
@@ -239,7 +454,48 @@ return function(mod)
     TEXT_PALLET_CASINO_SIGN = function(game, _, _, done)
       UI.text(game, "PALLET CASINO\nLuck starts here.\fRegret starts\ninside.", done)
     end,
+    TEXT_PALLETTOWN_ROCKET_COLLECTOR = function(game, _, _, done)
+      Credit.noteCollector("PALLET_TOWN")
+      UI.text(game, "Rocket credit.\fThe meter stopped.\nYour debt didn't.\fPay in Celadon.", done)
+    end,
   } })
+  mod.content.map_scripts:register("CELADON_CITY", { talk = {
+    TEXT_CELADONCITY_ROCKET_COLLECTOR = function(game, _, _, done)
+      Credit.noteCollector("CELADON_CITY")
+      UI.text(game, "The boss sent me.\fNo battles. No drama.\nJust pay downstairs.", done)
+    end,
+  } })
+  mod.content.map_scripts:register("REDS_HOUSE_1F", {
+    talk = {
+      TEXT_REDSHOUSE1F_ROCKET_TENANT = function(game, _, _, done)
+        UI.text(game, "Nice place.\fCheap deed. Good view\nof OAK's lab.", done)
+      end,
+      TEXT_REDSHOUSE1F_ROCKET_OBSERVER = function(game, _, _, done)
+        UI.text(game, "This spot is great\nto keep OAK under\nwatch.", done)
+      end,
+    },
+    onVictory = function(game)
+      local id = HouseWorld.challengeSaveId()
+      if id and game.save.defeatedTrainers and game.save.defeatedTrainers[id]
+          and House.recordRocketVictory() then
+        syncCampaignWorld(game)
+        UI.text(game, "TEAM ROCKET lost.\fYour family home\nis restored!")
+      end
+    end,
+  })
+  mod.content.map_scripts:register("REDS_HOUSE_2F", { talk = {
+    TEXT_REDSHOUSE2F_GAMBLE_MOM = {
+      { "face_player" },
+      { "show_text", "_BlackjackCornerDisplacedMomText" },
+      { "heal_party" },
+      { "play_once", "Music_PkmnHealed" },
+      { "show_text", "_BlackjackCornerDisplacedMomHealedText" },
+    },
+  } })
+  mod.content.text:register("_BlackjackCornerDisplacedMomText",
+    "TEAM ROCKET calls\nit collateral.\fI call it\ntrespassing.\fRest a moment, dear.")
+  mod.content.text:register("_BlackjackCornerDisplacedMomHealedText",
+    "All better.\fNow win our home\nback when you're ready.")
   mod.content.map_scripts:register(ids.pallet, { talk = {
     TEXT_PALLET_BLACKJACK_TABLE = function(game, _, _, done)
       open(game, "PALLET BLACKJACK!\fGet closer to 21\nthan the dealer.", ids.blackjack, done)
@@ -254,16 +510,20 @@ return function(mod)
       open(game, "PLINKO!\fDrop the ball.\nTrust the pegs.", ids.plinko, done)
     end,
     TEXT_CASE_MACHINE = function(game, _, _, done)
-      open(game, "PRIZE CASE!\f500 coins opens\none mystery prize.", ids.case, done)
+      openLuxury(game, "PRIZE CASE!\f500 coins opens\none mystery prize.", ids.case, done)
     end,
     TEXT_PALLET_CASINO_PAWN = UI.pawnBroker,
     TEXT_PALLET_CASINO_CLERK = UI.coinClerk,
-    TEXT_PALLET_CASINO_GRANNY = function(game, _, _, done)
-      UI.text(game, "I came for milk.\fThat was six hours\nago.", done)
-    end,
-    TEXT_PALLET_CASINO_GAMBLER = function(game, _, _, done)
-      UI.text(game, "COMET is safe.\fSafe bets are how\nthey get you.", done)
-    end,
+    TEXT_PALLET_CASINO_GRANNY = reactiveTalk(
+      "I came for milk.\fThat was six hours\nago.",
+      "Oh, they know you\nhere already.",
+      "A big player from\nour little town!",
+      "Dear, take a walk.\fLuck needs room\nto find you."),
+    TEXT_PALLET_CASINO_GAMBLER = reactiveTalk(
+      "COMET is safe.\fSafe bets are how\nthey get you.",
+      "REGULAR already?\fPallet raises them\nfast.",
+      "VIP odds are still\nhouse odds, friend.",
+      "Cold tables spread.\fMaybe don't stand\nso close."),
     TEXT_PALLET_CASINO_YOUNGSTER = function(game, _, _, done)
       UI.text(game, "Mom thinks I'm at\nPROF.OAK's lab.\fDon't tell her.", done)
     end,
@@ -274,13 +534,13 @@ return function(mod)
 
   mod.content.map_scripts:register("GAME_CORNER_PRIZE_ROOM", { talk = {
     TEXT_GAMECORNERPRIZEROOM_PRIZE_VENDOR_1 = function(game, _, _, done)
-      open(game, "Exchange coins for\nPOKEMON prizes?", ids.pokemon, done)
+      openLuxury(game, "Exchange coins for\nPOKEMON prizes?", ids.pokemon, done)
     end,
     TEXT_GAMECORNERPRIZEROOM_PRIZE_VENDOR_2 = function(game, _, _, done)
-      open(game, "Normal or SHINY?\nYou choose!", ids.pokemon, done)
+      openLuxury(game, "Normal or SHINY?\nYou choose!", ids.pokemon, done)
     end,
     TEXT_GAMECORNERPRIZEROOM_PRIZE_VENDOR_3 = function(game, _, _, done)
-      open(game, "Rare items for\nGame Corner coins!", ids.item, done)
+      openLuxury(game, "Rare items for\nGame Corner coins!", ids.item, done)
     end,
   } })
 
@@ -313,12 +573,23 @@ return function(mod)
   mod.exports.buyPokemon, mod.exports.buyItem = Service.buyPokemon, Service.buyItem
   mod.exports.buyCoins, mod.exports.coinOffers = Service.buyCoins, Service.coinOffers
   mod.exports.pawn, mod.exports.pawnLedger = Pawn, Service.pawnLedger
-  mod.exports.pawnPokemon, mod.exports.redeemPokemon =
-    Service.pawnPokemon, Service.redeemPokemon
+  mod.exports.pawnPokemon, mod.exports.pawnQuote, mod.exports.redeemPokemon =
+    Service.pawnPokemon, Service.pawnQuote, Service.redeemPokemon
   mod.exports.crash_rules, mod.exports.flappy_rules = CrashRules, FlappyRules
   mod.exports.case_rules, mod.exports.giveCaseReward = CaseRules, Service.giveCaseReward
   mod.exports.horse_rules, mod.exports.plinko_rules = HorseRules, PlinkoRules
   mod.exports.roulette_rules, mod.exports.roulette_view = RouletteRules, RouletteView
   mod.exports.gamble = Gamble
   mod.exports.gym_cases = Gym
+  mod.exports.campaign_state = CampaignState
+  mod.exports.reputation_rules = ReputationRules
+  mod.exports.reputation = Progress
+  mod.exports.credit_rules = CreditRules
+  mod.exports.credit = Credit
+  mod.exports.credit_world = CreditWorld
+  mod.exports.house = House
+  mod.exports.house_world = HouseWorld
+  mod.exports.arena_rules = ArenaRules
+  mod.exports.arena = Arena
+  mod.exports.arena_world = ArenaWorld
 end

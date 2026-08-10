@@ -131,7 +131,7 @@ function View.draw(state, Font, Rules, CardView, coinCount, stakes)
   if state.phase == "result" then
     local stake = Rules.totalStake(round)
     local delta = round.payout - stake
-    local deltaText = delta > 0 and ("+" .. delta) or tostring(delta)
+    local deltaText = tostring(delta)
     color(C.gold); rect("fill", 12, 110, 136, 22)
     color(C.ink); centered(Font, resultText(round) .. "  " .. deltaText, 113)
     local detail = round.playerEval and round.playerEval.name or "NO SHOWDOWN"

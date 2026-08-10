@@ -20,6 +20,7 @@ return function(ctx)
   function Screen:start()
     if ctx.coins(self.game) < Rules.COST then self.notice = "NEED 10 COINS"; return end
     self.game.save.coins = ctx.coins(self.game) - Rules.COST
+    self.reputationRound = ctx.beginRound("tube_flyer", Rules.COST)
     self.run = Rules.new(function(maximum) return love.math.random(1, maximum) end)
     self.run.earned = 0
     self.phase, self.notice = "playing", nil
@@ -30,6 +31,11 @@ return function(ctx)
   function Screen:finish()
     if self.phase ~= "playing" then return end
     self.phase = "result"
+    local earned = self.run.earned or 0
+    local _, progress = ctx.settleRound(self.game, self.reputationRound,
+      earned > Rules.COST and "win" or earned == Rules.COST and "draw" or "loss",
+      earned)
+    self.rankUpPending = progress and progress.rankUp
     mod.save:set("flappy_best", math.max(mod.save:get("flappy_best", 0), self.run.score))
     ctx.play(self.game, "Slots_Stop_Wheel")
   end
@@ -50,17 +56,24 @@ return function(ctx)
       local passed = Rules.update(self.run, dt or 1 / 60,
         function(maximum) return love.math.random(1, maximum) end)
       if passed > 0 then
-        local paid = math.min(passed, ctx.coinCap - ctx.coins(self.game))
-        self.game.save.coins = ctx.coins(self.game) + paid
+        local paid = ctx.creditPayout(self.game, passed)
         self.run.earned = self.run.earned + paid
         mod.save:set("flappy_coins", mod.save:get("flappy_coins", 0) + paid)
         ctx.play(self.game, "Slots_Reward")
       end
       if not self.run.alive then self:finish() end
     elseif input:wasPressed("a") then
-      self.phase, self.notice = "ready", nil
-      ctx.play(self.game, "Press_AB")
-    elseif input:wasPressed("b") then self:close() end
+      if self.rankUpPending and ctx.showRankUp then
+        self.rankUpPending = false; ctx.showRankUp(self.game)
+      else
+        self.phase, self.notice = "ready", nil
+        ctx.play(self.game, "Press_AB")
+      end
+    elseif input:wasPressed("b") then
+      if self.rankUpPending and ctx.showRankUp then
+        self.rankUpPending = false; ctx.showRankUp(self.game)
+      else self:close() end
+    end
   end
 
   function Screen:draw()

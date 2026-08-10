@@ -2,6 +2,120 @@
 
 ## Unreleased
 
+## [0.5.0] - 2026-08-10
+
+### Added
+
+- A concealed lift in the expanded Celadon Lounge for Gamble Mode players who
+  earn KINGPIN at 4,000 reputation with all eight badges.
+- A separate Rocket VIP lobby and underground spectator arena with a bookie,
+  animated crowd, dedicated exits, original dialogue, and a locally generated
+  eight-piece battle pit.
+- House-owned Pokemon battle betting with posted decimal odds derived from
+  imported species stats, levels, curated moves, accuracy, STAB, Gen I type
+  matchups, and the original physical/special split.
+- STREET, ELITE, and RARE fighter tiers driven by arena reputation, progressing
+  from ordinary opponents to Lapras, Snorlax, Aerodactyl, Gyarados, Dragonite,
+  and Alakazam.
+- Persistent arena tickets that commit fighters, odds, outcome, animation,
+  wager, and High Roller round before a fight; reload and repeated settlement
+  cannot reroll a loss or duplicate coins and reputation.
+- A purpose-built native-resolution fight board with sprites, HP bars, attack
+  lunges, misses, immunities, damage callouts, crowd reactions, and readable
+  win/loss results.
+- A Red/Blue manual Arena gate and deterministic 35-case native driver,
+  covering access, navigation, wagers, odds, persistence, results, defaults,
+  fighter tiers, schema migration, and existing casino regressions.
+- A one-time last-resort bailout for Gamble Mode saves with exactly zero money
+  and zero coins. It grants 10,000 coins in exchange for the Pallet family
+  home, with the full consequence and 30,000-coin recovery cost confirmed
+  before anything changes.
+- A persistent Rocket occupation of Red's house: Mom moves upstairs without
+  losing her healing service, Rocket tenants discuss the deed and Oak
+  surveillance, and authentic Rocket Hideout/Silph Co equipment is derived at
+  install time from the player's imported game to change the downstairs
+  atmosphere without shipping ROM pixels.
+- A recoverable family-home quest. Paying the 30,000-coin deed price reveals a
+  retryable Rocket trainer battle; winning restores the original home and Mom
+  while preserving any separate credit debt or default.
+- Dedicated supervised drivers for the bailout, occupied home, and house
+  battle, plus a full Red/Blue in-game test plan covering navigation,
+  dialogue, economy boundaries, battle loss, save/reload, and restoration.
+- A visible Rocket Credit loan shark in the Celadon
+  Lounge with rank-based offers, fixed fees, and one active loan at a time.
+- Repayment using either casino coins or ordinary money, with fees paid before
+  principal and every default remaining fully recoverable.
+- Badge-milestone deadlines and one-time late fees. Debt never grows with
+  real time, repeated menu opens, or repeated milestone checks.
+- A voluntary `PAWN & PAY` route at the Rocket broker. The appraisal pays the
+  live debt first, any surplus remains in the Coin Case, and the exact Pokemon
+  stays on the existing redeemable pawn ticket.
+- Recoverable Rocket collector appearances in Pallet and Celadon after a
+  default, with dialogue directing the player back to the loan shark.
+- Default-only luxury restrictions for new paid Prize Cases and Celadon's
+  Pokemon/item counters. Casino games, travel, healing, story progress, coin
+  sales, ordinary pawning, and redemption remain available.
+- Ordered save migrations that carry legacy campaign, debt, family-home, and
+  Arena state forward without discarding future-owned fields.
+- A schema-versioned persistent Gamble Mode campaign
+  state with additive placeholders for reputation, debt, house ownership, and
+  the underground arena.
+- Shared High Roller reputation across Blackjack, Hold'em, Crash, Tube Flyer,
+  Prize Case, Horse Racing, Plinko, and the Arena, including lifetime wager
+  and per-game win/loss/draw statistics.
+- Rookie, Regular, High Roller, VIP, and KINGPIN progression with badge
+  ceilings, banked reputation, and one-time coin rewards.
+- A native-resolution High Roller status panel in the Start menu with rank,
+  progress, badge requirements, aggregate results, lifetime wagers, losing
+  streaks, and one-time rank-up presentations.
+- Rank- and losing-streak-aware dialogue for patrons and staff in both casino
+  destinations.
+- A supervised manual QA framework with isolated LÖVE identities, scripted
+  save setup, screenshots, explicit keyboard handoff, a Red/Blue test matrix,
+  and a v0.5 release checklist.
+
+### Fixed
+
+- Arena results now use the same matchup probability as the posted odds, so
+  the advertised house margin survives real outcomes instead of making
+  favorites a reliable coin farm.
+- KINGPIN now retains top-tier Rocket Credit and casino dialogue, and a rank
+  unlocked at the Lounge lift is presented before the lift descends.
+- The native odds gate now uses a deterministic sample and requires both
+  favorite and underdog wins; bookie reopen checks use the real interaction.
+- Local mod packages now exclude tests, native drivers, release evidence, and
+  screenshot galleries just like the GitHub release archive.
+- Pull requests and releases now run ROM-free validation, lint, the complete
+  Lua suite, and a release-shaped package check before publication.
+- Casino payout credit now has one shared cap-aware path, so Blackjack and
+  Hold'em statistics report only coins actually delivered near the 1M limit.
+- Non-resumable game screens now use transient reputation rounds and veto F1
+  saves while a wager is live, preventing interrupted rounds from losing a bet
+  or leaking orphaned pending tokens into campaign saves.
+- Game Corner object IDs now allocate through shared world helpers, preventing
+  patrons from aliasing objects added by earlier content mods.
+- Luxury authorization synchronizes badge deadlines before admitting the
+  player, so a newly defaulted Rocket loan cannot use prizes or Arena wagers.
+- Paid Prize Case claims now persist until delivery, so full storage cannot
+  refund the wager while retaining free reputation; retries keep the exact
+  reward and never charge or settle twice.
+- Rank rewards that do not fit in the Coin Case remain banked and are delivered
+  automatically when space becomes available.
+- Per-game discovery bonuses now reset once per rank, Crash treats a 1.00x
+  cashout as a draw, and real game results carry rank-ups into acknowledgement.
+- Campaign sanitation now rejects invalid ranks and preserves unknown future
+  top-level and nested fields instead of destructively downgrading saves.
+- Every paid game now uses a persistent round token so retries and repeated
+  result callbacks cannot award reputation twice.
+- Progressive Blackjack and Hold'em bets add to the same campaign wager rather
+  than looking like separate rounds.
+- Paid Prize Cases settle reputation when the immutable reel prize is chosen;
+  delivery retries and Gym Cases cannot duplicate or incorrectly earn it.
+- Reputation banked behind a badge ceiling now ranks up immediately when a
+  newly earned badge removes that ceiling.
+- Native 160x144 review caught and removed clipped High Roller goal copy and
+  an unsupported plus glyph from the rank-up presentation.
+
 ## [0.4.1] - 2026-08-10
 
 ### Changed

@@ -296,7 +296,10 @@ function View.draw(state, Font, Rules, coinCount, bets)
       rect("fill", 13, 108, 134, 20)
       color(C.ink); Font.draw(RESULT[state.round.result] or "ROUND OVER", 20, 111)
       local delta = state.round.payout - state.round.stake
-      local deltaText = delta > 0 and ("+" .. delta) or tostring(delta)
+      -- The result headline already communicates win/loss, and the native
+      -- font has no ASCII plus glyph. Keep the signed-negative/positive
+      -- amount readable without producing a missing-character warning.
+      local deltaText = tostring(delta)
       Font.draw(deltaText .. "  " .. (REASON[state.round.reason] or ""), 20, 120)
       glyph("A AGAIN   B EXIT", 50, 130, C.paperShade)
     end

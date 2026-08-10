@@ -1,3 +1,4 @@
+return function(World)
 local Lounge = {}
 
 function Lounge.register(mod, mapId)
@@ -10,27 +11,16 @@ function Lounge.register(mod, mapId)
   for index, block in ipairs(gameCorner.blocks) do blocks[index] = block end
   blocks[82] = 61
 
-  local warps = {}
-  for _, original in ipairs(gameCorner.warps or {}) do
-    local warp = {}
-    for key, value in pairs(original) do warp[key] = value end
-    warps[#warps + 1] = warp
-  end
+  local warps = World.cloneList(gameCorner.warps)
   local entryWarp = #warps + 1
   warps[#warps + 1] = { x = 2, y = 17, destMap = mapId, destWarp = 1 }
   warps[#warps + 1] = { x = 3, y = 17, destMap = mapId, destWarp = 2 }
 
-  local signs = {}
-  for _, sign in ipairs(gameCorner.signs or {}) do signs[#signs + 1] = sign end
+  local signs = World.cloneList(gameCorner.signs)
   signs[#signs + 1] = { x = 2, y = 16, text = "TEXT_BLACKJACK_LOUNGE_SIGN" }
 
-  local objects, nextIndex = {}, 1
-  for _, original in ipairs(gameCorner.objects or {}) do
-    local object = {}
-    for key, value in pairs(original) do object[key] = value end
-    objects[#objects + 1] = object
-    nextIndex = math.max(nextIndex, (tonumber(object.index) or 0) + 1)
-  end
+  local objects = World.cloneList(gameCorner.objects)
+  local nextIndex = World.nextObjectIndex(objects)
   objects[#objects + 1] = { index = nextIndex, name = "GAMECORNER_PAWN_BROKER",
     movement = "STAY", range = "DOWN", sprite = "SPRITE_ROCKET",
     text = "TEXT_PAWN_BROKER", x = 8, y = 6 }
@@ -49,6 +39,8 @@ function Lounge.register(mod, mapId)
       sprite = "SPRITE_GENTLEMAN", text = "TEXT_BLACKJACK_PATRON", x = 8, y = 8 },
     { index = 5, name = "HOLDEM_PATRON", movement = "STAY", range = "RIGHT",
       sprite = "SPRITE_GENTLEMAN", text = "TEXT_HOLDEM_PATRON", x = 18, y = 8 },
+    { index = 6, name = "ROCKET_LOAN_SHARK", movement = "STAY", range = "LEFT",
+      sprite = "SPRITE_ROCKET", text = "TEXT_ROCKET_CREDIT", x = 18, y = 12 },
   }
   for _, machine in ipairs({
     { id = "CRASH", x = 8, y = 2, text = "TEXT_CRASH_MACHINE" },
@@ -83,17 +75,10 @@ function Lounge.register(mod, mapId)
     end
   end
 
-  local loungeBlocks = { 63, 64, 64, 64, 64, 64, 64, 64, 64, 63 }
-  for _ = 2, 8 do
-    for _ = 1, 10 do loungeBlocks[#loungeBlocks + 1] = 32 end
-  end
-  for _, block in ipairs({ 27, 27, 27, 27, 61, 27, 27, 27, 27, 27 }) do
-    loungeBlocks[#loungeBlocks + 1] = block
-  end
-
   mod.content.maps:register(mapId, {
     id = mapId, label = "CasinoLounge", index = 1100,
-    tileset = "LOBBY", width = 10, height = 9, blocks = loungeBlocks,
+    tileset = "LOBBY", width = 10, height = 9,
+    blocks = World.casinoFloorBlocks(),
     borderBlock = 15, palette = "SLOTS1", connections = {}, signs = {},
     objects = loungeObjects,
     warps = {
@@ -104,3 +89,4 @@ function Lounge.register(mod, mapId)
 end
 
 return Lounge
+end

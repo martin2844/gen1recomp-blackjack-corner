@@ -21,6 +21,7 @@ return function(ctx)
     local bet = Rules.BETS[self.betIndex]
     if ctx.coins(self.game) < bet then self.notice = "NOT ENOUGH COINS"; return end
     self.game.save.coins = ctx.coins(self.game) - bet
+    self.reputationRound = ctx.beginRound("crash", bet)
     self.bet = bet
     self.crashPoint = Rules.crashPoint(love.math.random())
     self.elapsed, self.multiplier, self.payout = 0, 1, nil
@@ -31,11 +32,17 @@ return function(ctx)
 
   function Screen:cashOut()
     if self.phase ~= "running" then return end
-    self.payout = math.min(ctx.coinCap - ctx.coins(self.game),
-      Rules.payout(self.bet, self.multiplier))
-    self.game.save.coins = ctx.coins(self.game) + self.payout
+    self.payout = ctx.creditPayout(
+      self.game, Rules.payout(self.bet, self.multiplier))
+    local result = self.payout > self.bet and "win"
+      or self.payout == self.bet and "draw" or "loss"
+    local _, progress = ctx.settleRound(
+      self.game, self.reputationRound, result, self.payout)
+    self.rankUpPending = progress and progress.rankUp
     self.phase = "cashed"
-    mod.save:set("crash_wins", mod.save:get("crash_wins", 0) + 1)
+    if result == "win" then
+      mod.save:set("crash_wins", mod.save:get("crash_wins", 0) + 1)
+    end
     mod.save:set("crash_best_x100", math.max(
       mod.save:get("crash_best_x100", 100), math.floor(self.multiplier * 100)))
     ctx.play(self.game, "Slots_Reward")
@@ -59,12 +66,23 @@ return function(ctx)
       self.multiplier = Rules.multiplier(self.elapsed)
       if self.multiplier >= self.crashPoint then
         self.multiplier, self.phase = self.crashPoint, "crashed"
+        local _, progress = ctx.settleRound(
+          self.game, self.reputationRound, "loss", 0)
+        self.rankUpPending = progress and progress.rankUp
         ctx.play(self.game, "Slots_Stop_Wheel")
       elseif input:wasPressed("a") then self:cashOut() end
     elseif input:wasPressed("a") then
-      self.phase, self.notice = "bet", nil
-      ctx.play(self.game, "Press_AB")
-    elseif input:wasPressed("b") then self:close() end
+      if self.rankUpPending and ctx.showRankUp then
+        self.rankUpPending = false; ctx.showRankUp(self.game)
+      else
+        self.phase, self.notice = "bet", nil
+        ctx.play(self.game, "Press_AB")
+      end
+    elseif input:wasPressed("b") then
+      if self.rankUpPending and ctx.showRankUp then
+        self.rankUpPending = false; ctx.showRankUp(self.game)
+      else self:close() end
+    end
   end
 
   function Screen:draw()

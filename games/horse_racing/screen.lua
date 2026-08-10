@@ -21,6 +21,7 @@ return function(ctx)
     local bet = Rules.BETS[self.betIndex]
     if ctx.coins(self.game) < bet then self.notice = "NOT ENOUGH COINS"; return end
     self.game.save.coins = ctx.coins(self.game) - bet
+    self.reputationRound = ctx.beginRound("horse_racing", bet)
     self.bet = bet
     self.race = Rules.new(function(maximum) return love.math.random(1, maximum) end)
     self.phase, self.notice, self.payout = "racing", nil, nil
@@ -29,9 +30,11 @@ return function(ctx)
   end
 
   function Screen:finish()
-    self.payout = math.min(ctx.coinCap - ctx.coins(self.game),
+    self.payout = ctx.creditPayout(self.game,
       Rules.payout(self.bet, self.horseIndex, self.race.winner))
-    self.game.save.coins = ctx.coins(self.game) + self.payout
+    local _, progress = ctx.settleRound(self.game, self.reputationRound,
+      self.payout > 0 and "win" or "loss", self.payout)
+    self.rankUpPending = progress and progress.rankUp
     self.phase = "result"
     if self.payout > 0 then
       mod.save:set("horse_wins", mod.save:get("horse_wins", 0) + 1)
@@ -61,8 +64,14 @@ return function(ctx)
     elseif self.phase == "racing" then
       if Rules.update(self.race, math.min(0.05, dt or 1 / 60)) then self:finish() end
     elseif input:wasPressed("a") then
-      self.phase, self.notice = "bet", nil
-    elseif input:wasPressed("b") then self:close() end
+      if self.rankUpPending and ctx.showRankUp then
+        self.rankUpPending = false; ctx.showRankUp(self.game)
+      else self.phase, self.notice = "bet", nil end
+    elseif input:wasPressed("b") then
+      if self.rankUpPending and ctx.showRankUp then
+        self.rankUpPending = false; ctx.showRankUp(self.game)
+      else self:close() end
+    end
   end
 
   function Screen:draw()

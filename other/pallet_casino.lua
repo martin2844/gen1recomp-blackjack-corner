@@ -1,31 +1,18 @@
+return function(World)
 local PalletCasino = {}
 
-local function cloneList(rows)
-  local out = {}
-  for index, original in ipairs(rows or {}) do
-    if type(original) == "table" then
-      local row = {}
-      for key, value in pairs(original) do row[key] = value end
-      out[index] = row
-    else
-      out[index] = original
-    end
-  end
-  return out
-end
-
 local function appendNpc(objects, name, sprite, text, x, y, movement, range)
-  objects[#objects + 1] = {
-    index = #objects + 1, name = name, sprite = sprite, text = text,
+  World.appendObject(objects, {
+    name = name, sprite = sprite, text = text,
     x = x, y = y, movement = movement or "STAY", range = range or "DOWN",
-  }
+  })
 end
 
 function PalletCasino.register(mod, ids)
   local pallet = mod.content.maps:get("PALLET_TOWN")
   if pallet and pallet.tileset == "OVERWORLD" and pallet.width == 10
       and pallet.height == 9 then
-    local blocks = cloneList(pallet.blocks)
+    local blocks = World.cloneList(pallet.blocks)
     -- A second small lab-style facade in Pallet's southwest clearing.
     blocks[52], blocks[53], blocks[54] = 0x0c, 0x0d, 0x0e
     blocks[62], blocks[63], blocks[64] = 0x10, 0x3a, 0x00
@@ -34,10 +21,10 @@ function PalletCasino.register(mod, ids)
     -- that continues into Route 21 below Pallet Town.
     blocks[73], blocks[74] = 0x01, 0x01
     blocks[83], blocks[84] = 0x1d, 0x1e
-    local warps = cloneList(pallet.warps)
+    local warps = World.cloneList(pallet.warps)
     local entryWarp = #warps + 1
     warps[#warps + 1] = { x = 4, y = 13, destMap = ids.pallet, destWarp = 1 }
-    local signs = cloneList(pallet.signs)
+    local signs = World.cloneList(pallet.signs)
     signs[#signs + 1] = { x = 3, y = 12, text = "TEXT_PALLET_CASINO_SIGN" }
     mod.content.maps:patch("PALLET_TOWN", {
       blocks = blocks, warps = warps, signs = signs,
@@ -89,17 +76,10 @@ function PalletCasino.register(mod, ids)
     appendNpc(objects, "PALLET_CASINO_LOSER", "SPRITE_GENTLEMAN",
       "TEXT_PALLET_CASINO_LOSER", 17, 14, "WALK", "UP_DOWN")
 
-    local palletBlocks = { 63, 64, 64, 64, 64, 64, 64, 64, 64, 63 }
-    for _ = 2, 8 do
-      for _ = 1, 10 do palletBlocks[#palletBlocks + 1] = 32 end
-    end
-    for _, block in ipairs({ 27, 27, 27, 27, 61, 27, 27, 27, 27, 27 }) do
-      palletBlocks[#palletBlocks + 1] = block
-    end
-
     mod.content.maps:register(ids.pallet, {
       id = ids.pallet, label = "PalletCasino", index = 1101,
-      tileset = "LOBBY", width = 10, height = 9, blocks = palletBlocks,
+      tileset = "LOBBY", width = 10, height = 9,
+      blocks = World.casinoFloorBlocks(),
       borderBlock = 15, palette = "SLOTS2", connections = {}, signs = {},
       objects = objects,
       warps = {
@@ -110,12 +90,14 @@ function PalletCasino.register(mod, ids)
   end
 
   -- Add more human stories without replacing any vanilla patrons.
+  local gameCorner = mod.content.maps:get("GAME_CORNER")
+  local nextGameCornerIndex = World.nextObjectIndex(gameCorner)
   mod.content.maps:patch("GAME_CORNER", { objects = { __append = {
-    { index = 13, name = "CASINO_DEBTOR", sprite = "SPRITE_GENTLEMAN",
+    { index = nextGameCornerIndex, name = "CASINO_DEBTOR", sprite = "SPRITE_GENTLEMAN",
       text = "TEXT_CASINO_DEBTOR", x = 4, y = 8, movement = "WALK", range = "LEFT_RIGHT" },
-    { index = 14, name = "CASINO_DREAMER", sprite = "SPRITE_YOUNGSTER",
+    { index = nextGameCornerIndex + 1, name = "CASINO_DREAMER", sprite = "SPRITE_YOUNGSTER",
       text = "TEXT_CASINO_DREAMER", x = 12, y = 8, movement = "WALK", range = "UP_DOWN" },
-    { index = 15, name = "CASINO_REGULAR", sprite = "SPRITE_GRANNY",
+    { index = nextGameCornerIndex + 2, name = "CASINO_REGULAR", sprite = "SPRITE_GRANNY",
       text = "TEXT_CASINO_REGULAR", x = 16, y = 15, movement = "WALK", range = "LEFT_RIGHT" },
   } } })
   local lounge = mod.content.maps:get(ids.lounge)
@@ -148,3 +130,4 @@ function PalletCasino.register(mod, ids)
 end
 
 return PalletCasino
+end

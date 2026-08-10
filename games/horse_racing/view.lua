@@ -38,7 +38,10 @@ return function(UI)
           UI.color(C.goldLight); UI.rect("fill", 11, y - 2, 137, 13)
         end
         UI.color(C.ink)
-        Font.draw((index == state.horseIndex and ">" or " ") .. horseDef.name, 14, y)
+        -- The native Gen 1 font has no ASCII greater-than glyph. The gold row
+        -- highlight is already the selection affordance, so keep the label
+        -- clean instead of rendering a missing-character box.
+        Font.draw(horseDef.name, 14, y)
         local odds = tostring(horseDef.payout) .. "X"
         Font.draw(odds, 143 - Font.width(odds), y)
       end

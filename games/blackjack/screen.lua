@@ -1,6 +1,6 @@
 return function(ctx)
   local mod, Rules, View = ctx.mod, ctx.rules, ctx.view
-  local bets, coinCap = ctx.bets, ctx.coinCap
+  local bets = ctx.bets
   local Screen = { isOpaque = true }
   Screen.__index = Screen
 
@@ -29,8 +29,12 @@ return function(ctx)
   function Screen:recordRound()
     if self.settled or not self.round or self.round.state ~= "done" then return end
     self.settled = true
-    self.game.save.coins = math.min(coinCap,
-      ctx.coins(self.game) + self.round.payout)
+    local returned = ctx.creditPayout(self.game, self.round.payout)
+    local result = (self.round.result == "win" or self.round.result == "blackjack")
+      and "win" or self.round.result == "push" and "draw" or "loss"
+    local _, progress = ctx.settleRound(
+      self.game, self.reputationRound, result, returned)
+    self.rankUpPending = progress and progress.rankUp
     mod.save:set("hands_played", mod.save:get("hands_played", 0) + 1)
     if self.round.result == "win" or self.round.result == "blackjack" then
       mod.save:set("hands_won", mod.save:get("hands_won", 0) + 1)
@@ -53,6 +57,7 @@ return function(ctx)
     self.notice = nil
     ctx.play(self.game, "Slots_New_Spin")
     self.game.save.coins = ctx.coins(self.game) - bet
+    self.reputationRound = ctx.beginRound("blackjack", bet)
     self.round = Rules.newRound(bet, Rules.newDeck(function(n)
       return love.math.random(1, n)
     end))
@@ -79,6 +84,7 @@ return function(ctx)
       Rules.stand(self.round)
     elseif self.actionIndex == 3 and self:canDouble() then
       self.game.save.coins = ctx.coins(self.game) - self.round.bet
+      ctx.increaseStake(self.reputationRound, self.round.bet)
       Rules.double(self.round)
       self.cardAnim = 0.18
     else
@@ -112,9 +118,17 @@ return function(ctx)
       elseif input:wasPressed("b") then Rules.stand(self.round); self:recordRound() end
     elseif self.phase == "result" then
       if input:wasPressed("a") then
-        self.phase, self.round, self.notice, self.resultAge = "bet", nil, nil, 0
-        ctx.play(self.game, "Press_AB")
-      elseif input:wasPressed("b") then self:close() end
+        if self.rankUpPending and ctx.showRankUp then
+          self.rankUpPending = false; ctx.showRankUp(self.game)
+        else
+          self.phase, self.round, self.notice, self.resultAge = "bet", nil, nil, 0
+          ctx.play(self.game, "Press_AB")
+        end
+      elseif input:wasPressed("b") then
+        if self.rankUpPending and ctx.showRankUp then
+          self.rankUpPending = false; ctx.showRankUp(self.game)
+        else self:close() end
+      end
     end
   end
 

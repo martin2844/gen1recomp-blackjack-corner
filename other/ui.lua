@@ -102,7 +102,7 @@ return function(mod, Service, Catalog, Pawn, config)
           local prompt = ("Pawn %s for\n%d coins?"):format(name, value)
           if #Service.pawnLedger() >= Pawn.LIMIT then
             local oldest = Service.pawnLedger()[1]
-            prompt = prompt .. ("\fWARNING! %s will\nbe sold off."):format(oldest.name)
+            prompt = prompt .. ("\fOLDEST %s\nWILL BE SOLD."):format(oldest.name)
           end
           list:close()
           game.stack:push(mod.ui.TextBox.new(game, prompt, nil, {

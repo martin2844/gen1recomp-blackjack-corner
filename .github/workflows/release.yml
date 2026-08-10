@@ -23,6 +23,10 @@ name: Release
 # MOD_ID below is stamped to this mod's id when the file is copied.
 
 on:
+  pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'assets/screenshots/**'
   push:
     branches: [main]
     paths-ignore:
@@ -38,15 +42,58 @@ on:
         default: ""
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: release
   cancel-in-progress: false
 
 jobs:
-  release:
+  validate:
     runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Gen1Recomp test host
+        uses: actions/checkout@v4
+        with:
+          repository: bryanthaboi/gen1recomp
+          ref: 6f75a64c461070b07af1f89ad97fcf2473694eb8
+
+      - name: Checkout Blackjack Corner
+        uses: actions/checkout@v4
+        with:
+          path: mods/blackjack_corner
+
+      - name: Install LuaJIT
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y luajit
+
+      - name: Validate and lint
+        run: |
+          python3 tools/modkit.py validate mods/blackjack_corner --base fixture
+          python3 tools/modkit.py lint mods/blackjack_corner
+
+      - name: Run Lua suite
+        run: mods/blackjack_corner/tests/run_all.sh
+
+      - name: Verify release-shaped package
+        run: |
+          archive="$RUNNER_TEMP/blackjack_corner-ci.zip"
+          python3 tools/modkit.py pack mods/blackjack_corner \
+            --base fixture --output "$archive"
+          unzip -t "$archive"
+          if unzip -Z1 "$archive" | grep -E '(^|/)(tests|assets)/'; then
+            echo "::error::development-only files leaked into the package"
+            exit 1
+          fi
+
+  release:
+    needs: validate
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout

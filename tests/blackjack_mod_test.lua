@@ -5,6 +5,8 @@ local Stats = require("src.pokemon.Stats")
 local Pokemon = require("src.pokemon.Pokemon")
 local SlotMachine = require("src.ui.SlotMachine")
 local Runtime = require("src.mods.Runtime")
+local HeadlessFs = assert(loadfile(
+  "mods/blackjack_corner/tests/support/headless_fs.lua"))()
 local CoinCase = assert(loadfile("mods/blackjack_corner/other/coin_case.lua"))()
 
 local data = T.fixtures.fresh()
@@ -29,6 +31,9 @@ data.maps.GAME_CORNER = {
       sprite = "SPRITE_FIXTURE", text = "TEXT_GAMECORNER_GYM_GUIDE", x = 8, y = 14 },
     { index = 8, name = "GAMECORNER_GAMBLER", movement = "STAY", range = "RIGHT",
       sprite = "SPRITE_FIXTURE", text = "TEXT_GAMECORNER_GAMBLER", x = 11, y = 15 },
+    -- Simulate another content mod claiming the old hard-coded patron slot.
+    { index = 13, name = "COMPAT_GAMECORNER_GUEST", movement = "STAY", range = "DOWN",
+      sprite = "SPRITE_FIXTURE", text = "TEXT_GAMECORNER_GAMBLER", x = 2, y = 2 },
   },
 }
 local palletBlocks = {}
@@ -46,6 +51,46 @@ data.maps.PALLET_TOWN = {
     { x = 13, y = 5, destMap = "FIXTURE_MAP", destWarp = 1 },
     { x = 12, y = 11, destMap = "FIXTURE_MAP", destWarp = 1 },
   },
+  objects = {
+    { index = 3, name = "PALLETTOWN_FISHER", movement = "WALK",
+      range = "ANY_DIR", sprite = "SPRITE_FISHER",
+      text = "TEXT_PALLETTOWN_FISHER", x = 11, y = 14 },
+  },
+}
+local celadonBlocks = {}
+for i = 1, 450 do celadonBlocks[i] = 1 end
+data.maps.CELADON_CITY = {
+  id = "CELADON_CITY", label = "CeladonCity", index = 6,
+  tileset = "OVERWORLD", width = 25, height = 18,
+  blocks = celadonBlocks, borderBlock = 11, connections = {}, signs = {},
+  warps = {}, objects = {
+    { index = 8, name = "CELADONCITY_ROCKET1", movement = "WALK",
+      range = "LEFT_RIGHT", sprite = "SPRITE_ROCKET",
+      text = "TEXT_CELADONCITY_ROCKET1", x = 32, y = 29 },
+  },
+}
+local houseBlocks = {}
+for i = 1, 16 do houseBlocks[i] = 15 end
+data.maps.REDS_HOUSE_1F = {
+  id = "REDS_HOUSE_1F", label = "RedsHouse1F", index = 37,
+  tileset = "LOBBY", width = 4, height = 4,
+  blocks = houseBlocks, borderBlock = 10, connections = {}, signs = {},
+  warps = {
+    { x = 2, y = 7, destMap = "PALLET_TOWN", destWarp = 1 },
+    { x = 3, y = 7, destMap = "PALLET_TOWN", destWarp = 1 },
+    { x = 7, y = 1, destMap = "REDS_HOUSE_2F", destWarp = 1 },
+  },
+  objects = {
+    { index = 1, name = "REDSHOUSE1F_MOM", movement = "STAY",
+      range = "LEFT", sprite = "SPRITE_MOM", text = "TEXT_REDSHOUSE1F_MOM",
+      x = 5, y = 4 },
+  },
+}
+data.maps.REDS_HOUSE_2F = {
+  id = "REDS_HOUSE_2F", label = "RedsHouse2F", index = 38,
+  tileset = "LOBBY", width = 4, height = 4,
+  blocks = houseBlocks, borderBlock = 10, connections = {}, signs = {},
+  warps = { { x = 7, y = 1, destMap = "REDS_HOUSE_1F", destWarp = 3 } },
   objects = {},
 }
 data.maps.OAKS_LAB = {
@@ -59,7 +104,11 @@ data.maps.OAKS_LAB = {
   },
 }
 
-local run = T.sdk.loadMod("mods/blackjack_corner", { data = data, dev = true })
+local run = T.sdk.loadMod("mods/blackjack_corner", {
+  data = data,
+  dev = true,
+  fs = HeadlessFs.new({ "mods/blackjack_corner" }),
+})
 T.eq(#run.errors, 0, "blackjack mod loads cleanly")
 T.eq(run.data.constants.coinCap, 1000000,
   "the mod expands the native Coin Case limit to one million")
@@ -67,11 +116,16 @@ T.eq(run.data.constants.coinCap, 1000000,
 local api = run.loader.exports.blackjack_corner
 T.check(api and api.rules and api.holdem_rules and api.holdem_view and api.catalog and api.view
     and api.buyCoins and api.coinOffers and api.pawn and api.pawnPokemon
+    and api.pawnQuote
     and api.redeemPokemon and api.pawnLedger and api.crash_rules
     and api.flappy_rules and api.case_rules and api.giveCaseReward
     and api.horse_rules and api.plinko_rules and api.roulette_rules
     and api.roulette_view
-    and api.gamble and api.gym_cases,
+    and api.gamble and api.gym_cases and api.campaign_state
+    and api.reputation_rules and api.reputation
+    and api.credit_rules and api.credit and api.credit_world
+    and api.house and api.house_world and api.arena_rules and api.arena
+    and api.arena_world,
   "games, prizes, coin exchange, pawning, and arcade rules are exported")
 T.check(api.roulette_view.RESULT_BUTTON_Y
     + api.roulette_view.RESULT_BUTTON_HEIGHT <= api.roulette_view.FRAME_CONTENT_BOTTOM,
@@ -121,6 +175,39 @@ do
     "declining Gamble Mode restores Oak's ordinary starter speech")
   T.eq(run.data.text._OaksLabOakBePatientText, originalOakRival,
     "declining Gamble Mode restores Oak's ordinary rival speech")
+end
+
+do
+  local function objectsByName(mapId)
+    local out, indices = {}, {}
+    for _, object in ipairs(run.data.maps[mapId].objects or {}) do
+      out[object.name] = object
+      T.check(not indices[object.index], mapId .. " house object indices stay unique")
+      indices[object.index] = true
+    end
+    return out
+  end
+  local downstairs = objectsByName("REDS_HOUSE_1F")
+  local upstairs = objectsByName("REDS_HOUSE_2F")
+  T.check(downstairs.REDSHOUSE1F_ROCKET_TENANT
+      and downstairs.REDSHOUSE1F_ROCKET_OBSERVER,
+    "the repossessed downstairs gains two Rocket occupants")
+  local challenger = downstairs.REDSHOUSE1F_ROCKET_CHALLENGE
+  T.check(challenger and challenger.trainerClass == "OPP_ROCKET"
+      and challenger.trainerParty == 8,
+    "the deed challenge uses a concrete, winnable Rocket party")
+  T.check(upstairs.REDSHOUSE2F_GAMBLE_MOM
+      and upstairs.REDSHOUSE2F_GAMBLE_MOM.hidden,
+    "the displaced Mom is staged upstairs without affecting normal saves")
+  for piece = 1, 5 do
+    local name = ("REDSHOUSE1F_ROCKET_EQUIPMENT_%02d"):format(piece)
+    T.check(downstairs[name] and downstairs[name].hidden,
+      name .. " is staged only for Rocket ownership")
+    T.check(run.data.sprites[("SPRITE_ROCKET_EQUIPMENT_%02d"):format(piece)],
+      name .. " derives from imported Rocket Hideout or Silph Co art")
+  end
+  T.eq(api.house_world.challengeSaveId(),
+    "REDS_HOUSE_1F_obj_4", "the restoration battle has a stable save identity")
 end
 
 do
@@ -302,6 +389,8 @@ T.check(run.data.screens.BlackjackCornerStarterRoulette ~= nil,
   "starter roulette screen is registered")
 T.check(run.data.screens.BlackjackCornerGymCase ~= nil,
   "Gym Case screen is registered")
+T.check(run.data.screens.BlackjackCornerHighRoller ~= nil,
+  "Gamble Mode registers its High Roller status screen")
 T.check(run.data.maps.BLACKJACK_LOUNGE ~= nil,
   "blackjack has a dedicated lounge map")
 T.check(run.data.maps.PALLET_CASINO ~= nil,
@@ -320,6 +409,17 @@ T.eq(run.data.maps.PALLET_TOWN.blocks[84], 0x1e,
   "the Pallet pond moves its bordered upper-right corner down one row")
 T.eq(#run.data.field.hiddenCoins.PALLET_CASINO, 3,
   "the Pallet casino hides three one-time coin pickups")
+
+do
+  local indices, names = {}, {}
+  for _, object in ipairs(run.data.maps.GAME_CORNER.objects) do
+    T.check(not indices[object.index],
+      "Game Corner additions allocate collision-free object indices")
+    indices[object.index], names[object.name] = true, object
+  end
+  T.check(names.CASINO_DEBTOR.index > names.COMPAT_GAMECORNER_GUEST.index,
+    "new patrons allocate after objects contributed by earlier content mods")
+end
 
 do
   local palletCasino = run.data.maps.PALLET_CASINO
@@ -393,6 +493,27 @@ do
     "the Lounge can open Horse Racing from its new terminal")
   T.check(contributedTalk("TEXT_PLINKO"),
     "the Lounge can open Plinko from its new terminal")
+  T.check(objects.ROCKET_LOAN_SHARK
+      and objects.ROCKET_LOAN_SHARK.text == "TEXT_ROCKET_CREDIT",
+    "a Rocket loan shark occupies the lower Lounge")
+  T.check(contributedTalk("TEXT_ROCKET_CREDIT"),
+    "the Rocket loan shark opens the credit service")
+end
+
+do
+  local function collector(mapId, name)
+    for _, object in ipairs(run.data.maps[mapId].objects or {}) do
+      if object.name == name then return object end
+    end
+  end
+  local palletCollector = collector("PALLET_TOWN", "PALLETTOWN_ROCKET_COLLECTOR")
+  local celadonCollector = collector("CELADON_CITY", "CELADONCITY_ROCKET_COLLECTOR")
+  T.check(palletCollector and palletCollector.hidden,
+    "Pallet's Rocket collector remains hidden until a default")
+  T.check(celadonCollector and celadonCollector.hidden,
+    "Celadon's Rocket collector remains hidden until a default")
+  T.check(palletCollector.index > 3 and celadonCollector.index > 8,
+    "collector additions preserve existing map object indices")
 end
 
 do
@@ -682,6 +803,164 @@ end
 
 do
   clearPawnLedger()
+  local bucket = run.loader.modSave.blackjack_corner
+  local previousMode, previousCampaign = bucket.gamble_mode, bucket.gamble_campaign
+  bucket.gamble_mode = true
+  bucket.gamble_campaign = api.campaign_state.defaults()
+  local game = gameWith(0)
+  game.save.inventory.COIN_CASE = 1
+  game.save.party = { fixtureMon("FIXMON_A", 10), fixtureMon("FIXMON_C", 30) }
+  local ok = api.credit.borrow(game)
+  T.check(ok, "the integration fixture opens a Rocket Credit account")
+  local quote = api.pawnQuote(game, 2)
+  local beforeDebt = api.credit.snapshot(game).total
+  game.save.coins = 1000000 - math.max(0, quote.value - beforeDebt)
+  local beforeCoins = game.save.coins
+  T.check(beforeCoins + quote.value > 1000000,
+    "the integration appraisal would overflow without direct debt routing")
+  local paid
+  ok, _, _, _, paid = api.credit.pawnAndRepay(game, 2, api.pawnPokemon)
+  T.check(ok, "Rocket Credit can pawn a real party Pokemon into repayment")
+  T.eq(paid, math.min(quote.value, beforeDebt),
+    "the real pawn appraisal pays no more than the outstanding ledger")
+  T.eq(game.save.coins, beforeCoins + quote.value - paid,
+    "the real pawn flow leaves only appraisal surplus in the Coin Case")
+  T.eq(#api.pawnLedger(), 1,
+    "pawn-to-debt repayment keeps the exact Pokemon redeemable")
+  T.eq(#game.save.party, 1, "pawn-to-debt removes only the chosen party member")
+
+  local campaign = bucket.gamble_campaign
+  campaign.debt.status = "DEFAULT"
+  campaign.debt.principal, campaign.debt.fees = 500, 100
+  campaign.debt.dueBadge = 1
+  local allowed = api.credit.luxuryAllowed(game)
+  T.check(not allowed, "a default activates the narrow luxury freeze")
+  api.credit_world.sync(game, api.credit)
+  T.check(game.save.objectToggles.PALLET_TOWN.PALLETTOWN_ROCKET_COLLECTOR,
+    "a default arms Pallet's Rocket collector for the next map entry")
+  T.check(game.save.objectToggles.CELADON_CITY.CELADONCITY_ROCKET_COLLECTOR,
+    "a default arms Celadon's Rocket collector for the next map entry")
+
+  game.save.coins = 100000
+  local item = api.catalog.ITEMS[1]
+  local coinsBefore = game.save.coins
+  local message
+  ok, message = api.buyItem(game, item)
+  T.check(not ok and message:find("frozen", 1, true),
+    "default blocks rare item redemption at the service boundary")
+  T.eq(game.save.coins, coinsBefore, "a frozen luxury purchase charges nothing")
+  bucket.paid_case_claim = nil
+  game.input = noInput
+  local case = run.data.screens.BlackjackCornerPrizeCase.new(game, {})
+  case:open()
+  T.eq(case.phase, "ready", "default blocks opening a new paid Prize Case")
+  T.eq(game.save.coins, coinsBefore, "a frozen Prize Case charges nothing")
+  bucket.paid_case_claim = {
+    kind = "item", id = "NEW_CASE_ITEM", quantity = 1,
+    label = "PENDING ITEM", tier = "rare",
+  }
+  local pending = run.data.screens.BlackjackCornerPrizeCase.new(game, {})
+  pending:open()
+  T.eq(pending.phase, "spinning",
+    "default still permits delivery of a Prize Case paid for earlier")
+  T.eq(game.save.coins, coinsBefore,
+    "resuming an existing claim during default never charges twice")
+  bucket.paid_case_claim = nil
+
+  game.save.coins = 1000
+  ok = api.credit.repayCoins(game, 1000)
+  T.check(ok and api.credit.snapshot(game).status == "CLEAR",
+    "the luxury freeze is fully recoverable through repayment")
+  api.credit_world.sync(game, api.credit)
+  T.check(not game.save.objectToggles.PALLET_TOWN.PALLETTOWN_ROCKET_COLLECTOR,
+    "clearing debt hides Pallet's collector again")
+  T.check(not game.save.objectToggles.CELADON_CITY.CELADONCITY_ROCKET_COLLECTOR,
+    "clearing debt hides Celadon's collector again")
+  T.check(api.credit.luxuryAllowed(game),
+    "clearing debt restores paid Prize Cases and prize counters")
+
+  bucket.gamble_mode, bucket.gamble_campaign = previousMode, previousCampaign
+  clearPawnLedger()
+end
+
+do
+  local bucket = run.loader.modSave.blackjack_corner
+  local previousMode, previousCampaign = bucket.gamble_mode, bucket.gamble_campaign
+  bucket.gamble_mode = true
+  bucket.gamble_campaign = api.campaign_state.defaults()
+  local game = gameWith(0, 0)
+  game.save.inventory.COIN_CASE = 1
+  local ok = api.house.claimBailout(game)
+  T.check(ok, "the integrated campaign can claim the zero-balance bailout")
+  T.eq(game.save.coins, 10000, "the integrated bailout pays exactly ten thousand")
+  api.house_world.sync(game, api.house)
+  local down = game.save.objectToggles.REDS_HOUSE_1F
+  local up = game.save.objectToggles.REDS_HOUSE_2F
+  T.check(not down.REDSHOUSE1F_MOM and up.REDSHOUSE2F_GAMBLE_MOM,
+    "repossession moves Mom from downstairs into Red's bedroom")
+  T.check(down.REDSHOUSE1F_ROCKET_TENANT
+      and down.REDSHOUSE1F_ROCKET_OBSERVER,
+    "repossession fills the family room with Rocket occupants")
+  T.check(not down.REDSHOUSE1F_ROCKET_CHALLENGE,
+    "the house battle stays hidden until the deed is paid")
+  for piece = 1, 5 do
+    T.check(down[("REDSHOUSE1F_ROCKET_EQUIPMENT_%02d"):format(piece)],
+      "repossession reveals Rocket equipment piece " .. piece)
+  end
+
+  game.save.coins = 30050
+  ok = api.house.buyBack(game)
+  T.check(ok, "the integrated campaign accepts the exact deed buyback")
+  T.eq(game.save.coins, 50, "the integrated buyback deducts thirty thousand")
+  api.house_world.sync(game, api.house)
+  down = game.save.objectToggles.REDS_HOUSE_1F
+  T.check(not down.REDSHOUSE1F_ROCKET_TENANT
+      and down.REDSHOUSE1F_ROCKET_CHALLENGE,
+    "deed payment swaps the tenant for the Rocket challenger")
+
+  ok = api.house.recordRocketVictory()
+  T.check(ok, "the integrated Rocket victory completes the house quest")
+  api.house_world.sync(game, api.house)
+  down, up = game.save.objectToggles.REDS_HOUSE_1F,
+    game.save.objectToggles.REDS_HOUSE_2F
+  T.check(down.REDSHOUSE1F_MOM and not up.REDSHOUSE2F_GAMBLE_MOM,
+    "restoration returns Mom downstairs")
+  T.check(not down.REDSHOUSE1F_ROCKET_OBSERVER
+      and not down.REDSHOUSE1F_ROCKET_CHALLENGE,
+    "restoration removes every Rocket occupant")
+  for piece = 1, 5 do
+    T.check(not down[("REDSHOUSE1F_ROCKET_EQUIPMENT_%02d"):format(piece)],
+      "restoration removes Rocket equipment piece " .. piece)
+  end
+
+  local function contribution(mapId, key)
+    for _, row in ipairs(run.loader.content.map_scripts:chain(mapId)) do
+      if row[key] then return row[key] end
+    end
+  end
+  T.check(contribution("REDS_HOUSE_1F", "onVictory"),
+    "the downstairs battle has a restoration victory hook")
+  local challengeOverridden = false
+  for _, row in ipairs(run.loader.content.map_scripts:chain("REDS_HOUSE_1F")) do
+    if row.talk and row.talk.TEXT_REDSHOUSE1F_ROCKET_CHALLENGE then
+      challengeOverridden = true
+    end
+  end
+  T.check(not challengeOverridden,
+    "the Rocket challenger stays on the engine's trainer battle path")
+  local upstairsTalk
+  for _, row in ipairs(run.loader.content.map_scripts:chain("REDS_HOUSE_2F")) do
+    if row.talk and row.talk.TEXT_REDSHOUSE2F_GAMBLE_MOM then
+      upstairsTalk = row.talk.TEXT_REDSHOUSE2F_GAMBLE_MOM
+    end
+  end
+  T.check(upstairsTalk, "displaced Mom retains an upstairs healing interaction")
+
+  bucket.gamble_mode, bucket.gamble_campaign = previousMode, previousCampaign
+end
+
+do
+  clearPawnLedger()
   local game = gameWith(0)
   game.save.inventory.COIN_CASE = 1
   game.save.party = { fixtureMon() }
@@ -955,6 +1234,10 @@ do
   local refundGame = gameWith(1000)
   refundGame.input = noInput
   refundGame.save.inventory.COIN_CASE = 1
+  local campaignBucket = run.loader.modSave.blackjack_corner
+  local previousMode = campaignBucket.gamble_mode
+  campaignBucket.gamble_mode = true
+  api.reputation.resetForQA()
   local refund = run.data.screens.BlackjackCornerPrizeCase.new(refundGame, {})
   refund:open()
   for index = 1, 19 do refundGame.save.inventory["FILLER_" .. index] = 1 end
@@ -962,11 +1245,36 @@ do
     kind = "item", id = "NEW_CASE_ITEM", quantity = 1,
     label = "NEW ITEM", tier = "rare",
   }
+  campaignBucket.paid_case_claim = refund.winner
   refund:settle()
-  T.check(refund.refunded, "an undeliverable case prize triggers a refund")
-  T.eq(refundGame.save.coins, 1000, "failed case delivery refunds all 500 coins")
+  local failedProgress = api.reputation.snapshot(refundGame)
+  T.check(refund.claimSaved and not refund.refunded,
+    "an undeliverable paid case saves the exact claim")
+  T.eq(refundGame.save.coins, 500,
+    "a saved paid-case claim cannot become a free reputation wager")
   T.eq(refundGame.save.inventory.NEW_CASE_ITEM, nil,
     "failed case delivery does not partially add the reward")
+  local retry = run.data.screens.BlackjackCornerPrizeCase.new(refundGame, {})
+  T.check(retry.hasSavedClaim, "a new screen detects the pending paid claim")
+  retry:open()
+  T.eq(retry.winner.id, "NEW_CASE_ITEM",
+    "a paid claim retry preserves the immutable reward")
+  T.eq(refundGame.save.coins, 500, "retrying a saved claim never charges twice")
+  retry:settle()
+  local retriedProgress = api.reputation.snapshot(refundGame)
+  T.eq(retriedProgress.completedGames, failedProgress.completedGames,
+    "retrying a paid claim cannot duplicate campaign settlement")
+  T.eq(retriedProgress.points, failedProgress.points,
+    "retrying a paid claim cannot duplicate reputation")
+  refundGame.save.inventory.FILLER_19 = nil
+  local delivered = run.data.screens.BlackjackCornerPrizeCase.new(refundGame, {})
+  delivered:open()
+  delivered:settle()
+  T.eq(refundGame.save.inventory.NEW_CASE_ITEM, 1,
+    "a saved paid claim delivers after Bag space is made")
+  T.check(not run.loader.modSave.blackjack_corner.paid_case_claim,
+    "successful delivery clears the persistent paid claim")
+  campaignBucket.gamble_mode = previousMode
 end
 
 do
@@ -1055,6 +1363,151 @@ do
   T.eq(screen.phase, "result", "the river bet advances to showdown")
   screen:draw()
   T.check(true, "holdem showdown view draws without an engine error")
+end
+
+do
+  local bucket = run.loader.modSave.blackjack_corner
+  bucket.gamble_mode = true
+  api.reputation.resetForQA()
+  local function prepared(coins)
+    local game = gameWith(coins or 5000)
+    game.input = noInput
+    game.save.inventory.COIN_CASE = 1
+    return game
+  end
+
+  local game = prepared()
+  local blackjack = run.data.screens.BlackjackCornerTable.new(game, {})
+  blackjack:deal()
+  if not blackjack.settled then
+    blackjack.round.state, blackjack.round.result = "done", "win"
+    blackjack.round.payout = blackjack.round.bet * 2
+    blackjack:recordRound()
+  end
+
+  game = prepared()
+  local holdem = run.data.screens.BlackjackCornerHoldemTable.new(game, {})
+  holdem:deal()
+  holdem.round.state, holdem.round.result, holdem.round.payout = "done", "loss", 0
+  holdem:recordRound()
+
+  game = prepared()
+  local crash = run.data.screens.BlackjackCornerCrash.new(game, {})
+  crash:launch(); crash.multiplier = 1.0; crash:cashOut()
+
+  game = prepared()
+  local tube = run.data.screens.BlackjackCornerTubeFlyer.new(game, {})
+  tube:start(); tube:finish()
+
+  game = prepared()
+  local case = run.data.screens.BlackjackCornerPrizeCase.new(game, {})
+  case:open()
+
+  game = prepared()
+  local horse = run.data.screens.BlackjackCornerHorseRacing.new(game, {})
+  horse:start(); horse.race.winner = horse.horseIndex; horse:finish()
+
+  game = prepared()
+  local plinko = run.data.screens.BlackjackCornerPlinko.new(game, {})
+  plinko:dropBall(); plinko.drop.slot = 5; plinko:finish()
+
+  local snapshot = api.reputation.snapshot(game)
+  for _, gameId in ipairs({ "blackjack", "holdem", "crash", "tube_flyer",
+      "prize_case", "horse_racing", "plinko" }) do
+    T.eq(snapshot.byGame[gameId].played, 1,
+      gameId .. " screen settles one real campaign round")
+  end
+  T.eq(snapshot.completedGames, 7,
+    "the seven casino screens share one exactly-once campaign ledger")
+  T.eq(snapshot.byGame.crash.draws, 1,
+    "a break-even 1.00x Crash cashout records a draw instead of a win")
+  case:settle()
+  T.eq(api.reputation.snapshot(game).completedGames, 7,
+    "Prize Case delivery cannot duplicate its reel settlement")
+
+  local blackjackReturned = snapshot.byGame.blackjack.returned
+  game = prepared(999990)
+  blackjack = run.data.screens.BlackjackCornerTable.new(game, {})
+  blackjack.reputationRound = api.reputation.beginRound("blackjack", 10)
+  blackjack.round = { state = "done", result = "win", payout = 25, bet = 10 }
+  blackjack:recordRound()
+  T.eq(game.save.coins, 1000000,
+    "Blackjack credits only the payout that fits in the Coin Case")
+  T.eq(api.reputation.snapshot(game).byGame.blackjack.returned,
+    blackjackReturned + 10,
+    "Blackjack statistics record the payout actually delivered")
+
+  local holdemReturned = snapshot.byGame.holdem.returned
+  game = prepared(999990)
+  holdem = run.data.screens.BlackjackCornerHoldemTable.new(game, {})
+  holdem.reputationRound = api.reputation.beginRound("holdem", 10)
+  holdem.round = { state = "done", result = "win", payout = 40 }
+  holdem:recordRound()
+  T.eq(game.save.coins, 1000000,
+    "Hold'em credits only the payout that fits in the Coin Case")
+  T.eq(api.reputation.snapshot(game).byGame.holdem.returned,
+    holdemReturned + 10,
+    "Hold'em statistics record the payout actually delivered")
+
+  game = prepared()
+  blackjack = run.data.screens.BlackjackCornerTable.new(game, {})
+  blackjack:deal()
+  game.stack = { top = function() return blackjack end }
+  T.eq(Runtime.call("save.write", function() return true end, game), false,
+    "saving is vetoed while an instant table round cannot be resumed")
+  blackjack.round.state, blackjack.round.result = "done", "loss"
+  blackjack.round.payout = 0
+  blackjack:recordRound()
+  T.eq(Runtime.call("save.write", function() return true end, game), true,
+    "saving resumes after the instant table round settles")
+
+  game = prepared()
+  tube = run.data.screens.BlackjackCornerTubeFlyer.new(game, {})
+  tube:start()
+  game.stack = { top = function() return tube end }
+  T.eq(Runtime.call("save.write", function() return true end, game), false,
+    "saving is vetoed while an animated arcade round cannot be resumed")
+  tube:finish()
+  T.eq(Runtime.call("save.write", function() return true end, game), true,
+    "saving resumes after the animated arcade round settles")
+
+  local menu = Runtime.call("ui.start_menu.items", function(_, rows) return rows end,
+    game, { { label = "POKéMON" }, { label = "SAVE" }, { label = "EXIT" } })
+  local highRoller
+  for _, item in ipairs(menu) do
+    if item.label == "HIGH ROLLER" then highRoller = item end
+  end
+  T.check(highRoller and type(highRoller.onSelect) == "function",
+    "Gamble Mode exposes High Roller progress from the Start menu")
+  local status = run.data.screens.BlackjackCornerHighRoller.new(game, {})
+  status:draw()
+  T.check(true, "the High Roller status panel renders without an engine error")
+
+  local campaign = run.loader.modSave.blackjack_corner.gamble_campaign
+  campaign.reputation.points = 99
+  campaign.reputation.rank = "ROOKIE"
+  campaign.reputation.rankRewardsClaimed = {}
+  campaign.reputation.pendingRankUps = {}
+  campaign.reputation.discoveredGames = {}
+  game = prepared()
+  game.save.inventory.BOULDERBADGE = 1
+  local rankGame = run.data.screens.BlackjackCornerTable.new(game, {})
+  rankGame:deal()
+  if not rankGame.settled then
+    rankGame.round.state, rankGame.round.result = "done", "loss"
+    rankGame.round.payout = 0
+    rankGame:recordRound()
+  end
+  T.check(rankGame.rankUpPending,
+    "a real game result carries its rank-up into result acknowledgement")
+
+  bucket.gamble_mode = false
+  menu = Runtime.call("ui.start_menu.items", function(_, rows) return rows end,
+    game, { { label = "SAVE" }, { label = "EXIT" } })
+  for _, item in ipairs(menu) do
+    T.check(item.label ~= "HIGH ROLLER",
+      "base mode keeps campaign progression out of the Start menu")
+  end
 end
 
 do

@@ -203,7 +203,7 @@ local function chooseMove(fighter, random)
   return fighter.moves[1]
 end
 
-local function attack(attackerIndex, fighters, random)
+local function attack(attackerIndex, fighters, random, forcedWinner, forceFinish)
   local defenderIndex = attackerIndex == 1 and 2 or 1
   local attacker, defender = fighters[attackerIndex], fighters[defenderIndex]
   local move = chooseMove(attacker, random)
@@ -213,6 +213,10 @@ local function attack(attackerIndex, fighters, random)
     local variance = 84 + rngInt(random, 17)
     damage = math.max(1, math.floor(move.base * move.stab * move.typeX10
       * variance / 10000))
+    if forceFinish and attackerIndex == forcedWinner then damage = defender.hp end
+    if defenderIndex == forcedWinner and damage >= defender.hp then
+      damage = math.max(0, defender.hp - 1)
+    end
     defender.hp = math.max(0, defender.hp - damage)
   end
   return {
@@ -220,27 +224,28 @@ local function attack(attackerIndex, fighters, random)
     move = move.name, damage = damage, missed = not hit,
     immune = hit and move.typeX10 == 0,
     typeX10 = move.typeX10, defenderHP = defender.hp,
+    protectedWinner = defenderIndex == forcedWinner and defender.hp == 1,
   }
 end
 
-local function simulate(fighters, random)
-  local actions, winner = {}, nil
+local function simulate(fighters, random, forcedWinner)
+  local actions, winner, comeback = {}, nil, false
   for _ = 1, Arena.MAX_TURNS do
     local first = fighters[1].stats.speed >= fighters[2].stats.speed and 1 or 2
     if fighters[1].stats.speed == fighters[2].stats.speed and rngInt(random, 2) == 2 then
       first = 3 - first
     end
     for _, attacker in ipairs({ first, 3 - first }) do
-      actions[#actions + 1] = attack(attacker, fighters, random)
+      local action = attack(attacker, fighters, random, forcedWinner,
+        comeback and attacker == forcedWinner)
+      actions[#actions + 1] = action
+      if action.protectedWinner then comeback = true end
       if fighters[3 - attacker].hp <= 0 then winner = attacker break end
     end
     if winner then break end
   end
   if not winner then
-    local leftRatio = fighters[1].hp / fighters[1].maxHP
-    local rightRatio = fighters[2].hp / fighters[2].maxHP
-    winner = leftRatio == rightRatio and rngInt(random, 2)
-      or (leftRatio > rightRatio and 1 or 2)
+    winner = forcedWinner
     local loser = 3 - winner
     fighters[loser].hp = 0
     actions[#actions + 1] = {
@@ -266,7 +271,15 @@ function Arena.newMatch(data, reputation, sequence, random)
   refreshMoves(data, left, right, leftSource)
   refreshMoves(data, right, left, rightSource)
   local odds, chances = Arena.postedOdds(left, right)
-  local actions, winner = simulate({ left, right }, random)
+  -- The posted probability is the betting contract. Pick the result from that
+  -- same model, then make the battle plan tell the selected result as a
+  -- plausible fight. Keeping pricing and outcomes on one source of truth
+  -- prevents deterministic matchup strength from turning favorites into a
+  -- positive-EV coin farm.
+  local winner = rngInt(random, 1000000)
+      <= math.floor(chances[1] * 1000000 + 0.5) and 1 or 2
+  local actions
+  actions, winner = simulate({ left, right }, random, winner)
   left.hp, right.hp = left.maxHP, right.maxHP
   return {
     id = math.max(1, math.floor(tonumber(sequence) or 1)), tier = tier.id,

@@ -7,6 +7,7 @@ tests/gamble_rules_test.lua
 tests/reputation_test.lua
 tests/credit_test.lua
 tests/house_test.lua
+tests/arena_test.lua
 tests/shiny_fallback_test.lua
 tests/fixtures/crystal_animated_sprites_with_shiny_visuals/main.lua
 tests/fixtures/crystal_animated_sprites_with_shiny_visuals/manifest.json
@@ -21,8 +22,10 @@ tests/fixtures/shiny_visuals/manifest.json
 tests/manual/README.md
 tests/manual/MATRIX.md
 tests/manual/V0.6_IN_GAME_TESTING.md
+tests/manual/V0.7_IN_GAME_TESTING.md
 tests/manual/releases/v0.5.0.md
 tests/manual/releases/v0.6.0.md
+tests/manual/releases/v0.7.0.md
 tests/manual/evidence/README.md
 tests/manual/drivers/high_roller_fresh.lua
 tests/manual/drivers/high_roller_rank_up.lua
@@ -42,3 +45,4 @@ tests/manual/drivers/v06_pawn_ui_audit.lua
 tests/manual/drivers/v06_buyback_ui_audit.lua
 tests/manual/drivers/v06_credit_ui_audit.lua
 tests/manual/drivers/v06_games_ui_audit.lua
+tests/manual/drivers/v07_arena_audit.lua

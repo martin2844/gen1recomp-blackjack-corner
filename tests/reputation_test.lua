@@ -57,6 +57,8 @@ T.eq(Rules.rankFor(500, 3).id, "HIGH_ROLLER",
 T.eq(Rules.rankFor(1500, 5).id, "VIP", "five badges unlock VIP")
 T.eq(Rules.rankFor(99999, 8).id, "KINGPIN",
   "eight badges and enough reputation unlock the arena's final rank")
+T.check(Rules.atLeast("KINGPIN", "HIGH_ROLLER"),
+  "Kingpin remains eligible for every high-tier rank feature")
 T.eq(Rules.progress(4000, 8).current.id, "KINGPIN",
   "the arena release removes the former Kingpin deferral")
 T.check(Rules.progress(100, 0).blockedByBadges,

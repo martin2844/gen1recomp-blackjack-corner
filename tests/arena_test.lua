@@ -41,6 +41,32 @@ for index = 1, 2 do
   T.check(impliedReturn <= 0.95 and impliedReturn >= 0.90,
     "posted odds include the bounded house margin")
 end
+
+-- Pricing and outcomes must remain one contract. A seeded large sample catches
+-- the old failure where the displayed favorite paid as a 70% shot but the
+-- independent battle simulator let it win almost every time.
+local calibrationSeed = 91373
+local function calibrationRandom(maximum)
+  calibrationSeed = (calibrationSeed * 48271) % 2147483647
+  return (calibrationSeed % maximum) + 1
+end
+local returned = { 0, 0 }
+local underdogWins = 0
+for sequence = 1, 20000 do
+  local card = Rules.newMatch(data, 900, sequence, calibrationRandom)
+  local favorite = card.odds[1] <= card.odds[2] and 1 or 2
+  if card.winner ~= favorite then underdogWins = underdogWins + 1 end
+  for side = 1, 2 do
+    returned[side] = returned[side] + Rules.payout(100, side, card)
+  end
+end
+for side = 1, 2 do
+  local rtp = returned[side] / 20000 / 100
+  T.check(rtp >= 0.90 and rtp <= 0.98,
+    "realized arena outcomes preserve the posted house margin")
+end
+T.check(underdogWins > 1000,
+  "seeded arena cards include meaningful underdog wins")
 T.eq(Rules.payout(100, match.winner, match), match.odds[match.winner],
   "winning payout uses the exact posted price")
 T.eq(Rules.payout(100, 3 - match.winner, match), 0,

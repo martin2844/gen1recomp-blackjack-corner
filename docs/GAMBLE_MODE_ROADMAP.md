@@ -106,11 +106,11 @@ These rules are release blockers:
 New campaign systems should use one versioned state document rather than
 adding unrelated save keys indefinitely.
 
-Planned mod save key: `gamble_campaign`
+Current mod save key: `gamble_campaign`
 
 ```lua
 {
-  schema = 2,
+  schema = 3,
   reputation = {
     points = 0,
     rank = "ROOKIE",
@@ -118,10 +118,17 @@ Planned mod save key: `gamble_campaign`
     completedGames = 0,
     wins = 0,
     losses = 0,
+    draws = 0,
     currentLossStreak = 0,
     bestLossStreak = 0,
     byGame = {},
+    discoveredGames = {},
     rankRewardsClaimed = {},
+    pendingRewardCoins = 0,
+    pendingRankUps = {},
+    pendingRounds = {},
+    settledRounds = {},
+    nextRoundId = 0,
   },
   debt = {
     principal = 0,
@@ -141,10 +148,15 @@ Planned mod save key: `gamble_campaign`
   },
   arena = {
     unlocked = false,
-    matchesWatched = 0,
-    pendingMatch = nil,
-    storyTier = 0,
-    ending = nil,
+    reputation = 0,
+    matchesPlayed = 0,
+    wins = 0,
+    losses = 0,
+    lifetimeWagered = 0,
+    lifetimeReturned = 0,
+    nextMatchId = 0,
+    pending = nil,
+    history = {},
   },
 }
 ```
@@ -251,7 +263,7 @@ Implementation status on `feat/v0.5-high-roller`:
 - ranks, badge ceilings, banked progress, rewards, and statistics: implemented;
 - Start-menu High Roller panel and reactive casino dialogue: implemented;
 - automated coverage and supervised manual-test framework: implemented;
-- complete Red/Blue human release-matrix signoff: pending.
+- complete Red/Blue human release-matrix signoff: passed.
 
 ## v0.6 implementation status
 

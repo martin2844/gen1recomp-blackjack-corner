@@ -15,6 +15,8 @@ T.eq(CreditRules.offer("ROOKIE").coins, 500,
   "Rookie credit begins with a controlled small offer")
 T.eq(CreditRules.offer("VIP").coins, 10000,
   "VIP rank unlocks the largest initial offer")
+T.eq(CreditRules.offer("KINGPIN").coins, 10000,
+  "Kingpin credit never falls back to the Rookie offer")
 local debt = { principal = 500, fees = 100 }
 local principal, fees, paid = CreditRules.allocatePayment(debt, 150)
 T.eq(fees, 0, "repayment clears fixed fees first")

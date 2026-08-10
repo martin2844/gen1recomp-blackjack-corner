@@ -21,7 +21,7 @@
 - A purpose-built native-resolution fight board with sprites, HP bars, attack
   lunges, misses, immunities, damage callouts, crowd reactions, and readable
   win/loss results.
-- A v0.7 Red/Blue manual release gate and deterministic 25-case native driver,
+- A v0.7 Red/Blue manual release gate and deterministic 35-case native driver,
   covering access, navigation, wagers, odds, persistence, results, defaults,
   fighter tiers, schema migration, and existing casino regressions.
 - A one-time last-resort bailout for Gamble Mode saves with exactly zero money
@@ -75,6 +75,15 @@
 
 ### Fixed
 
+- Arena results now use the same matchup probability as the posted odds, so
+  the advertised house margin survives real outcomes instead of making
+  favorites a reliable coin farm.
+- KINGPIN now retains top-tier Rocket Credit and casino dialogue, and a rank
+  unlocked at the Lounge lift is presented before the lift descends.
+- The native odds gate now uses a deterministic sample and requires both
+  favorite and underdog wins; bookie reopen checks use the real interaction.
+- Local mod packages now exclude the v0.7 arena test plan, native driver,
+  release checklist, and automated test just like the GitHub release archive.
 - Paid Prize Case claims now persist until delivery, so full storage cannot
   refund the wager while retaining free reputation; retries keep the exact
   reward and never charge or settle twice.

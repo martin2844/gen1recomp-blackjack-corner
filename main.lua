@@ -294,7 +294,7 @@ return function(mod)
     local state = Progress.snapshot(game)
     if not state then return ordinary end
     if cold and state.currentLossStreak >= 5 then return cold end
-    if vip and (state.rank == "VIP" or state.rank == "HIGH_ROLLER") then return vip end
+    if vip and ReputationRules.atLeast(state.rank, "HIGH_ROLLER") then return vip end
     if regular and state.rank == "REGULAR" then return regular end
     return ordinary
   end
@@ -365,10 +365,29 @@ return function(mod)
         UI.text(game, "The black panel\nflickers.\f" .. reason, done)
         return
       end
-      UI.text(game, "A hidden lock\nclicks open.\fThe lift descends\nbelow CELADON.", function()
-        if done then done() end
-        mod.world:warpTo(ids.arenaLobby, 9, 14, "up")
-      end)
+      local function descend()
+        UI.text(game, "A hidden lock\nclicks open.\fThe lift descends\nbelow CELADON.", function()
+          if done then done() end
+          mod.world:warpTo(ids.arenaLobby, 9, 14, "up")
+        end)
+      end
+      local function presentRankUps()
+        local progress = Progress.snapshot(game)
+        if progress and #progress.pendingRankUps > 0 then
+          mod.ui.push(game, ids.highRoller, { onClose = presentRankUps })
+        else
+          descend()
+        end
+      end
+      -- A badge ceiling can make KINGPIN become reachable at this exact
+      -- interaction. Never let the lift silently consume that one-time rank
+      -- introduction before the player sees it.
+      local progress = Progress.snapshot(game)
+      if progress and #progress.pendingRankUps > 0 then
+        UI.text(game, "The black panel\nflashes gold.\fCLEARANCE UPDATE!", presentRankUps)
+      else
+        descend()
+      end
     end,
   } })
 

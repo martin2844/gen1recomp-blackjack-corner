@@ -3,7 +3,6 @@
 -- failure paths against the live Red/Blue engine and writes visual evidence.
 return function(game)
   local U = dofile("tests/drivers/util.lua")
-  local Screens = require("src.ui.Screens")
   local SaveData = require("src.core.SaveData")
   local shotDir = assert(os.getenv("SHOT_DIR"), "SHOT_DIR is required")
   local loader = assert(game.mods, "mod loader is unavailable")
@@ -85,10 +84,14 @@ return function(game)
     game.save.objectToggles = game.save.objectToggles or {}
   end
   local function openArena()
-    U.teleport(game, api.arena_world.ARENA, 9, 9, "up")
-    Screens.push(game, "BlackjackCornerBattleArena", {})
-    U.wait(8)
-    return assert(game.stack:top(), "arena screen did not open")
+    U.teleport(game, api.arena_world.ARENA, 9, 11, "up")
+    U.tap(game, "a")
+    for _ = 1, 48 do
+      local top = game.stack:top()
+      if top and top.phase then U.wait(8); return top end
+      U.tap(game, "a"); U.wait(3)
+    end
+    error("arena bookie did not open the betting screen")
   end
 
   U.wait(10)
@@ -174,21 +177,30 @@ return function(game)
   assert(U.shot(game, shotDir .. "/arena-posted-odds.png"))
   pass("UI-01")
   local firstId = screen.pending.match.id
-  U.teleport(game, api.arena_world.ARENA, 9, 9, "up")
+  U.tap(game, "b"); U.wait(5)
   screen = openArena()
   eq(screen.pending.match.id, firstId, "unplayed card rerolled")
   pass("ODDS-01", "posted card remains stable between visits")
+  U.tap(game, "b"); U.wait(5)
+  assert(api.arena.resetPosted())
   local favoriteWins, underdogWins = 0, 0
+  local oddsSeed = 7007
+  local function oddsRandom(maximum)
+    oddsSeed = (oddsSeed * 48271) % 2147483647
+    return (oddsSeed % maximum) + 1
+  end
   for _ = 1, 10 do
-    local card = assert(api.arena.current(game))
+    local card = assert(api.arena.current(game, oddsRandom))
     local favorite = card.match.odds[1] <= card.match.odds[2] and 1 or 2
     if card.match.winner == favorite then favoriteWins = favoriteWins + 1
     else underdogWins = underdogWins + 1 end
     assert(card.match.odds[1] > 100 and card.match.odds[2] > 100)
     assert(api.arena.resetPosted())
   end
+  assert(favoriteWins > 0 and underdogWins > 0,
+    "seeded odds sample must include favorites and underdogs")
   screen = openArena()
-  pass("ODDS-02", ("ten live cards: %d favorites, %d underdogs")
+  pass("ODDS-02", ("ten seeded cards: %d favorites, %d underdogs")
     :format(favoriteWins, underdogWins))
   local oldCoins = game.save.coins
   game.save.coins = 0
@@ -276,14 +288,19 @@ return function(game)
   local rankRep = campaign().reputation
   rankRep.points, rankRep.rank = 4000, "KINGPIN"
   rankRep.pendingRankUps = { "KINGPIN" }
-  Screens.push(game, "BlackjackCornerHighRoller", {})
-  U.wait(10)
-  local rankScreen = assert(game.stack:top())
+  U.teleport(game, "BLACKJACK_LOUNGE", 2, 11, "left")
+  U.tap(game, "a")
+  local rankScreen
+  for _ = 1, 48 do
+    local top = game.stack:top()
+    if top and top.rankUp then rankScreen = top; break end
+    U.tap(game, "a"); U.wait(3)
+  end
+  assert(rankScreen, "lift did not present the pending Kingpin rank-up")
   assert(rankScreen.rankUp and rankScreen.rankUp.id == "KINGPIN")
   assert(U.shot(game, shotDir .. "/arena-kingpin-rank-up.png"))
-  U.tap(game, "a"); U.wait(8)
-  assert(api.arena.access(game))
-  pass("RESULT-04", "KINGPIN presentation hands off to arena access")
+  U.tap(game, "a"); advanceToMap(api.arena_world.LOBBY)
+  pass("RESULT-04", "lift presents KINGPIN before descending")
 
   -- Select the longest real simulation produced by 500 deterministic cards
   -- and prove its complete animation resolves without a softlock.

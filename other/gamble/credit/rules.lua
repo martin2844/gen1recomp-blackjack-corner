@@ -7,6 +7,7 @@ Rules.OFFERS = {
   REGULAR = { coins = 2000, fee = 400, label = "REGULAR 2K" },
   HIGH_ROLLER = { coins = 5000, fee = 1000, label = "HIGH 5K" },
   VIP = { coins = 10000, fee = 2000, label = "VIP 10K" },
+  KINGPIN = { coins = 10000, fee = 2000, label = "KINGPIN 10K" },
 }
 
 Rules.LATE_FEES = { 100, 150, 250, 400, 600, 850, 1200, 1600 }

@@ -91,4 +91,8 @@ end
 
 function Rules.rankIndex(id) return rankIndex(id) end
 
+function Rules.atLeast(id, minimum)
+  return rankIndex(id) >= rankIndex(minimum)
+end
+
 return Rules

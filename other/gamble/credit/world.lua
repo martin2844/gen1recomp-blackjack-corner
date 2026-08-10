@@ -1,3 +1,4 @@
+return function(World)
 local CreditWorld = {}
 
 CreditWorld.COLLECTORS = {
@@ -13,21 +14,13 @@ CreditWorld.COLLECTORS = {
   },
 }
 
-local function nextIndex(map)
-  local index = 1
-  for _, object in ipairs(map.objects or {}) do
-    index = math.max(index, (tonumber(object.index) or 0) + 1)
-  end
-  return index
-end
-
 function CreditWorld.register(mod)
   for _, collector in ipairs(CreditWorld.COLLECTORS) do
     local map = mod.content.maps:get(collector.mapId)
     if map then
       mod.content.maps:patch(collector.mapId, { objects = { __append = {
         {
-          index = nextIndex(map), name = collector.name, hidden = true,
+          index = World.nextObjectIndex(map), name = collector.name, hidden = true,
           movement = "STAY", range = collector.range,
           sprite = "SPRITE_ROCKET", text = collector.text,
           x = collector.x, y = collector.y,
@@ -53,3 +46,4 @@ function CreditWorld.sync(game, credit)
 end
 
 return CreditWorld
+end

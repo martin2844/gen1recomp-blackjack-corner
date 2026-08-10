@@ -5,6 +5,8 @@ local Stats = require("src.pokemon.Stats")
 local Pokemon = require("src.pokemon.Pokemon")
 local SlotMachine = require("src.ui.SlotMachine")
 local Runtime = require("src.mods.Runtime")
+local HeadlessFs = assert(loadfile(
+  "mods/blackjack_corner/tests/support/headless_fs.lua"))()
 local CoinCase = assert(loadfile("mods/blackjack_corner/other/coin_case.lua"))()
 
 local data = T.fixtures.fresh()
@@ -29,6 +31,9 @@ data.maps.GAME_CORNER = {
       sprite = "SPRITE_FIXTURE", text = "TEXT_GAMECORNER_GYM_GUIDE", x = 8, y = 14 },
     { index = 8, name = "GAMECORNER_GAMBLER", movement = "STAY", range = "RIGHT",
       sprite = "SPRITE_FIXTURE", text = "TEXT_GAMECORNER_GAMBLER", x = 11, y = 15 },
+    -- Simulate another content mod claiming the old hard-coded patron slot.
+    { index = 13, name = "COMPAT_GAMECORNER_GUEST", movement = "STAY", range = "DOWN",
+      sprite = "SPRITE_FIXTURE", text = "TEXT_GAMECORNER_GAMBLER", x = 2, y = 2 },
   },
 }
 local palletBlocks = {}
@@ -99,7 +104,11 @@ data.maps.OAKS_LAB = {
   },
 }
 
-local run = T.sdk.loadMod("mods/blackjack_corner", { data = data, dev = true })
+local run = T.sdk.loadMod("mods/blackjack_corner", {
+  data = data,
+  dev = true,
+  fs = HeadlessFs.new({ "mods/blackjack_corner" }),
+})
 T.eq(#run.errors, 0, "blackjack mod loads cleanly")
 T.eq(run.data.constants.coinCap, 1000000,
   "the mod expands the native Coin Case limit to one million")
@@ -400,6 +409,17 @@ T.eq(run.data.maps.PALLET_TOWN.blocks[84], 0x1e,
   "the Pallet pond moves its bordered upper-right corner down one row")
 T.eq(#run.data.field.hiddenCoins.PALLET_CASINO, 3,
   "the Pallet casino hides three one-time coin pickups")
+
+do
+  local indices, names = {}, {}
+  for _, object in ipairs(run.data.maps.GAME_CORNER.objects) do
+    T.check(not indices[object.index],
+      "Game Corner additions allocate collision-free object indices")
+    indices[object.index], names[object.name] = true, object
+  end
+  T.check(names.CASINO_DEBTOR.index > names.COMPAT_GAMECORNER_GUEST.index,
+    "new patrons allocate after objects contributed by earlier content mods")
+end
 
 do
   local palletCasino = run.data.maps.PALLET_CASINO
@@ -1404,6 +1424,52 @@ do
   case:settle()
   T.eq(api.reputation.snapshot(game).completedGames, 7,
     "Prize Case delivery cannot duplicate its reel settlement")
+
+  local blackjackReturned = snapshot.byGame.blackjack.returned
+  game = prepared(999990)
+  blackjack = run.data.screens.BlackjackCornerTable.new(game, {})
+  blackjack.reputationRound = api.reputation.beginRound("blackjack", 10)
+  blackjack.round = { state = "done", result = "win", payout = 25, bet = 10 }
+  blackjack:recordRound()
+  T.eq(game.save.coins, 1000000,
+    "Blackjack credits only the payout that fits in the Coin Case")
+  T.eq(api.reputation.snapshot(game).byGame.blackjack.returned,
+    blackjackReturned + 10,
+    "Blackjack statistics record the payout actually delivered")
+
+  local holdemReturned = snapshot.byGame.holdem.returned
+  game = prepared(999990)
+  holdem = run.data.screens.BlackjackCornerHoldemTable.new(game, {})
+  holdem.reputationRound = api.reputation.beginRound("holdem", 10)
+  holdem.round = { state = "done", result = "win", payout = 40 }
+  holdem:recordRound()
+  T.eq(game.save.coins, 1000000,
+    "Hold'em credits only the payout that fits in the Coin Case")
+  T.eq(api.reputation.snapshot(game).byGame.holdem.returned,
+    holdemReturned + 10,
+    "Hold'em statistics record the payout actually delivered")
+
+  game = prepared()
+  blackjack = run.data.screens.BlackjackCornerTable.new(game, {})
+  blackjack:deal()
+  game.stack = { top = function() return blackjack end }
+  T.eq(Runtime.call("save.write", function() return true end, game), false,
+    "saving is vetoed while an instant table round cannot be resumed")
+  blackjack.round.state, blackjack.round.result = "done", "loss"
+  blackjack.round.payout = 0
+  blackjack:recordRound()
+  T.eq(Runtime.call("save.write", function() return true end, game), true,
+    "saving resumes after the instant table round settles")
+
+  game = prepared()
+  tube = run.data.screens.BlackjackCornerTubeFlyer.new(game, {})
+  tube:start()
+  game.stack = { top = function() return tube end }
+  T.eq(Runtime.call("save.write", function() return true end, game), false,
+    "saving is vetoed while an animated arcade round cannot be resumed")
+  tube:finish()
+  T.eq(Runtime.call("save.write", function() return true end, game), true,
+    "saving resumes after the animated arcade round settles")
 
   local menu = Runtime.call("ui.start_menu.items", function(_, rows) return rows end,
     game, { { label = "POKéMON" }, { label = "SAVE" }, { label = "EXIT" } })

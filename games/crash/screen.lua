@@ -32,9 +32,8 @@ return function(ctx)
 
   function Screen:cashOut()
     if self.phase ~= "running" then return end
-    self.payout = math.min(ctx.coinCap - ctx.coins(self.game),
-      Rules.payout(self.bet, self.multiplier))
-    self.game.save.coins = ctx.coins(self.game) + self.payout
+    self.payout = ctx.creditPayout(
+      self.game, Rules.payout(self.bet, self.multiplier))
     local result = self.payout > self.bet and "win"
       or self.payout == self.bet and "draw" or "loss"
     local _, progress = ctx.settleRound(

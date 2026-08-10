@@ -90,34 +90,61 @@ local function factory(mod, opts)
     }
   end
 
-  function Service.beginRound(gameId, stake)
+  function Service.beginRound(gameId, stake, durable)
     if not Rules.GAMES[gameId] then return nil, "UNKNOWN GAME" end
     local campaign = store.load(true)
     if not campaign then return nil, "GAMBLE MODE OFF" end
     local rep = campaign.reputation
-    rep.nextRoundId = rep.nextRoundId + 1
-    local token = gameId .. ":" .. tostring(rep.nextRoundId)
-    rep.pendingRounds[token] = {
+    local pending = {
       gameId = gameId,
       stake = math.max(0, math.floor(tonumber(stake) or 0)),
       rankAtStart = rep.rank,
     }
+    -- Most games keep their complete round on an opaque screen and therefore
+    -- cannot resume it after the engine's F2 restore rebuilds the stack. Keep
+    -- those tokens local so an interrupted round cannot leak save entries.
+    -- The Arena opts into a durable token because its entire ticket is saved.
+    if not durable then
+      pending.transient = true
+      return pending
+    end
+    rep.nextRoundId = rep.nextRoundId + 1
+    local token = gameId .. ":" .. tostring(rep.nextRoundId)
+    rep.pendingRounds[token] = pending
     persist(campaign)
     return token
   end
 
+  function Service.canSave(game)
+    local stack = game and game.stack
+    local screen = stack and stack.top and stack:top() or nil
+    local token = screen and screen.reputationRound
+    return not (type(token) == "table" and token.transient == true
+      and token.settled ~= true)
+  end
+
   function Service.settleRound(game, token, result, returned)
-    if type(token) ~= "string" then return false, "NO ROUND" end
+    local transient = type(token) == "table" and token.transient == true
+    if not transient and type(token) ~= "string" then return false, "NO ROUND" end
     local campaign = store.load(true)
     if not campaign then return false, "GAMBLE MODE OFF" end
     local rep = campaign.reputation
-    if settledMap(rep)[token] then return false, "ALREADY SETTLED" end
-    local pending = rep.pendingRounds[token]
-    if not pending then return false, "UNKNOWN ROUND" end
-    rep.pendingRounds[token] = nil
-    rep.settledRounds[#rep.settledRounds + 1] = token
-    while #rep.settledRounds > 128 do table.remove(rep.settledRounds, 1) end
-
+    local pending
+    if transient then
+      if token.settled then return false, "ALREADY SETTLED" end
+      pending = token
+      if not Rules.GAMES[pending.gameId] then return false, "UNKNOWN ROUND" end
+      token.settled = true
+    else
+      if settledMap(rep)[token] then return false, "ALREADY SETTLED" end
+      pending = rep.pendingRounds[token]
+      if not pending or not Rules.GAMES[pending.gameId] then
+        return false, "UNKNOWN ROUND"
+      end
+      rep.pendingRounds[token] = nil
+      rep.settledRounds[#rep.settledRounds + 1] = token
+      while #rep.settledRounds > 128 do table.remove(rep.settledRounds, 1) end
+    end
     result = ({ win = true, loss = true, draw = true })[result]
       and result or "loss"
     returned = math.max(0, math.floor(tonumber(returned) or 0))
@@ -158,6 +185,11 @@ local function factory(mod, opts)
   end
 
   function Service.increaseStake(token, amount)
+    if type(token) == "table" and token.transient == true then
+      if token.settled then return false, "ALREADY SETTLED" end
+      token.stake = token.stake + math.max(0, math.floor(tonumber(amount) or 0))
+      return true
+    end
     local campaign = store.load(true)
     if not campaign then return false, "GAMBLE MODE OFF" end
     local pending = campaign.reputation.pendingRounds[token]

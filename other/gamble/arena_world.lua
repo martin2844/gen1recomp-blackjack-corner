@@ -1,27 +1,14 @@
+return function(Helpers)
 local World = {}
 
 World.LOBBY = "ROCKET_ARENA_LOBBY"
 World.ARENA = "ROCKET_BATTLE_ARENA"
 
-local function floorBlocks(topDoor, bottomDoor)
-  local blocks = {}
-  for row = 1, 9 do
-    for col = 1, 10 do
-      local block = 32
-      if row == 1 or row == 9 then block = 27 end
-      if topDoor and row == 1 and col == 5 then block = 61 end
-      if bottomDoor and row == 9 and col == 5 then block = 61 end
-      blocks[#blocks + 1] = block
-    end
-  end
-  return blocks
-end
-
 local function object(objects, name, sprite, text, x, y, range, movement)
-  objects[#objects + 1] = {
-    index = #objects + 1, name = name, sprite = sprite, text = text,
+  Helpers.appendObject(objects, {
+    name = name, sprite = sprite, text = text,
     x = x, y = y, movement = movement or "STAY", range = range or "DOWN",
-  }
+  })
 end
 
 function World.register(mod, loungeId)
@@ -44,10 +31,7 @@ function World.register(mod, loungeId)
   end
 
   local lounge = mod.content.maps:get(loungeId)
-  local nextIndex = 1
-  for _, existing in ipairs(lounge.objects or {}) do
-    nextIndex = math.max(nextIndex, (tonumber(existing.index) or 0) + 1)
-  end
+  local nextIndex = Helpers.nextObjectIndex(lounge)
   mod.content.maps:patch(loungeId, { objects = { __append = {
     { index = nextIndex, name = "ARENA_LIFT_TOP", sprite = "SPRITE_ARENA_LIFT_01",
       x = 1, y = 10, movement = "STAY", range = "DOWN" },
@@ -70,7 +54,7 @@ function World.register(mod, loungeId)
   mod.content.maps:register(World.LOBBY, {
     id = World.LOBBY, label = "RocketArenaLobby", index = 1102,
     tileset = "LOBBY", width = 10, height = 9,
-    blocks = floorBlocks(true, true), borderBlock = 15, palette = "SLOTS2",
+    blocks = Helpers.arenaFloorBlocks(true, true), borderBlock = 15, palette = "SLOTS2",
     connections = {}, signs = {}, warps = {}, objects = lobby,
   })
 
@@ -96,10 +80,11 @@ function World.register(mod, loungeId)
   mod.content.maps:register(World.ARENA, {
     id = World.ARENA, label = "RocketBattleArena", index = 1103,
     tileset = "LOBBY", width = 10, height = 9,
-    blocks = floorBlocks(false, true), borderBlock = 15, palette = "SLOTS1",
+    blocks = Helpers.arenaFloorBlocks(false, true), borderBlock = 15, palette = "SLOTS1",
     connections = {}, signs = {}, warps = {}, objects = arena,
   })
   return true
 end
 
 return World
+end

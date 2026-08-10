@@ -9,11 +9,27 @@ end
 local Rules = loadModule("games/battle_arena/rules.lua")
 local State = loadModule("other/gamble/state.lua")
 local ServiceFactory = loadModule("games/battle_arena/service.lua")
-local data = {
-  pokemon = require("data.generated.pokemon"),
-  moves = require("data.generated.moves"),
-  type_chart = require("data.generated.type_chart"),
-}
+-- Keep the unit suite ROM-free. Imported-data validation separately checks
+-- these public IDs against a real Red/Blue cache; the rules test only needs a
+-- complete deterministic model with the same species and move keys.
+local data = { pokemon = {}, moves = {}, type_chart = { matchups = {} } }
+for index, fighter in ipairs(Rules.FIGHTERS) do
+  data.pokemon[fighter.species] = {
+    name = fighter.species,
+    types = { "NORMAL" },
+    baseStats = {
+      hp = 55 + index, attack = 50 + index * 2,
+      defense = 48 + index, speed = 45 + index * 2,
+      special = 52 + index,
+    },
+  }
+  for moveIndex, move in ipairs(fighter.moves) do
+    data.moves[move] = data.moves[move] or {
+      name = move, power = 45 + moveIndex * 10,
+      accuracy = 92 + moveIndex, type = "NORMAL",
+    }
+  end
+end
 
 local repaired = State.sanitize({ schema = 3, arena = {
   pending = { status = "BET", match = {} },

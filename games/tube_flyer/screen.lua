@@ -56,8 +56,7 @@ return function(ctx)
       local passed = Rules.update(self.run, dt or 1 / 60,
         function(maximum) return love.math.random(1, maximum) end)
       if passed > 0 then
-        local paid = math.min(passed, ctx.coinCap - ctx.coins(self.game))
-        self.game.save.coins = ctx.coins(self.game) + paid
+        local paid = ctx.creditPayout(self.game, passed)
         self.run.earned = self.run.earned + paid
         mod.save:set("flappy_coins", mod.save:get("flappy_coins", 0) + paid)
         ctx.play(self.game, "Slots_Reward")

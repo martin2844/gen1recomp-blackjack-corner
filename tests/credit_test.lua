@@ -69,17 +69,22 @@ T.eq(game.save.money, 8000, "money repayment uses the documented exchange rate")
 T.eq(service.snapshot(game).total, 250, "money repayment reduces the same ledger")
 
 game.save.inventory.BOULDERBADGE = 1
+local luxuryAllowed, luxuryMessage = service.luxuryAllowed(game)
+T.check(not luxuryAllowed and luxuryMessage:find("frozen", 1, true),
+  "luxury authorization enforces a newly passed badge deadline immediately")
 local changed, added, status = service.syncMilestones(game)
-T.check(changed and added == CreditRules.lateFee(1),
-  "the due badge applies one fixed late fee")
+T.check(not changed and added == 0,
+  "rechecking the synchronized badge deadline cannot duplicate its late fee")
 T.eq(status, "DEFAULT", "missing the badge deadline enters DEFAULT")
+T.eq(service.snapshot(game).fees, CreditRules.lateFee(1),
+  "the authorization boundary applies exactly one fixed late fee")
 T.check(service.noteCollector("PALLET_TOWN"),
   "the first collector encounter is persisted during default")
 T.check(not service.noteCollector("PALLET_TOWN"),
   "the same collector encounter is idempotent")
 T.check(service.snapshot(game).collectorsTriggered.PALLET_TOWN,
   "credit statements retain the collector history")
-local luxuryAllowed, luxuryMessage = service.luxuryAllowed(game)
+luxuryAllowed, luxuryMessage = service.luxuryAllowed(game)
 T.check(not luxuryAllowed and luxuryMessage:find("frozen", 1, true),
   "default freezes only the campaign's luxury prize services")
 local afterDefault = service.snapshot(game)

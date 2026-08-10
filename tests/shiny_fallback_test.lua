@@ -2,6 +2,8 @@ package.path = "./?.lua;./?/init.lua;" .. package.path
 
 local T = require("tests.modkit")
 local ImageWriter = require("src.import.ImageWriter")
+local HeadlessFs = assert(loadfile(
+  "mods/blackjack_corner/tests/support/headless_fs.lua"))()
 
 local MOD = "mods/blackjack_corner"
 local SOURCE_PREFIX = "assets/" .. "generated/"
@@ -17,6 +19,7 @@ for _, provider in ipairs({
 }) do
   local run = T.sdk.loadMods({ provider.path, MOD }, {
     data = T.fixtures.fresh(), dev = true,
+    fs = HeadlessFs.new({ provider.path, MOD }),
   })
   T.eq(#run.errors, 0, "external shiny provider and Blackjack Corner load cleanly")
   T.eq(run.loader.order[1], provider.id,
@@ -36,7 +39,10 @@ for _, provider in ipairs({
   run.release()
 end
 
-local run = T.sdk.loadMod(MOD, { data = T.fixtures.fresh(), dev = true })
+local run = T.sdk.loadMod(MOD, {
+  data = T.fixtures.fresh(), dev = true,
+  fs = HeadlessFs.new({ MOD }),
+})
 T.eq(#run.errors, 0, "Blackjack Corner loads cleanly without a shiny provider")
 local api = run.loader.exports.blackjack_corner
 T.eq(api.shiny_provider, "blackjack_corner",
@@ -212,7 +218,10 @@ run.release()
 do
   local external = T.sdk.loadMods({
     MOD .. "/tests/fixtures/shiny_indicators", MOD,
-  }, { data = T.fixtures.fresh(), dev = true })
+  }, {
+    data = T.fixtures.fresh(), dev = true,
+    fs = HeadlessFs.new({ MOD .. "/tests/fixtures/shiny_indicators", MOD }),
+  })
   T.eq(#external.errors, 0,
     "Blackjack Corner hot reloads cleanly with an external provider")
   T.eq(SummaryMenu._blackjackCornerShinyBridge, nil,

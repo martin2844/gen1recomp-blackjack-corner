@@ -14,6 +14,14 @@ return function(mod, Catalog, Pawn, config)
     return math.max(0, tonumber(game.save.coins) or 0)
   end
 
+  function Service.creditCoins(game, requested)
+    local current = math.floor(Service.coins(game))
+    local amount = math.max(0, math.floor(tonumber(requested) or 0))
+    local delivered = math.min(amount, math.max(0, coinCap - current))
+    game.save.coins = current + delivered
+    return delivered
+  end
+
   function Service.coinOffers(game)
     local current = Service.coins(game)
     local money = math.max(0, tonumber(game.save.money) or 0)

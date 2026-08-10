@@ -30,9 +30,8 @@ return function(ctx)
   end
 
   function Screen:finish()
-    self.payout = math.min(ctx.coinCap - ctx.coins(self.game),
-      Rules.payout(self.bet, self.drop.slot))
-    self.game.save.coins = ctx.coins(self.game) + self.payout
+    self.payout = ctx.creditPayout(
+      self.game, Rules.payout(self.bet, self.drop.slot))
     local _, progress = ctx.settleRound(self.game, self.reputationRound,
       self.payout > self.bet and "win"
         or self.payout == self.bet and "draw" or "loss",

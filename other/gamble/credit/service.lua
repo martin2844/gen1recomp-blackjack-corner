@@ -127,6 +127,7 @@ return function(mod, opts)
   end
 
   function Service.luxuryAllowed(game)
+    Service.syncMilestones(game)
     local state = Service.snapshot(game)
     if not state or state.status ~= "DEFAULT" then return true end
     return false, "ROCKET CREDIT has\nfrozen luxury prizes.\fRepay your debt in\nthe Celadon Lounge."

@@ -30,9 +30,8 @@ return function(ctx)
   end
 
   function Screen:finish()
-    self.payout = math.min(ctx.coinCap - ctx.coins(self.game),
+    self.payout = ctx.creditPayout(self.game,
       Rules.payout(self.bet, self.horseIndex, self.race.winner))
-    self.game.save.coins = ctx.coins(self.game) + self.payout
     local _, progress = ctx.settleRound(self.game, self.reputationRound,
       self.payout > 0 and "win" or "loss", self.payout)
     self.rankUpPending = progress and progress.rankUp

@@ -38,7 +38,8 @@ return function(mod)
   local Services = loadLocal(mod, "other/services.lua")
   local UIFactory = loadLocal(mod, "other/ui.lua")
   local CoinCase = loadLocal(mod, "other/coin_case.lua")
-  local Lounge = loadLocal(mod, "other/lounge.lua")
+  local WorldHelpers = loadLocal(mod, "other/world_helpers.lua")
+  local Lounge = loadLocal(mod, "other/lounge.lua")(WorldHelpers)
   local GambleMode = loadLocal(mod, "other/gamble/mode.lua")
   local GymCases = loadLocal(mod, "other/gamble/gym_cases.lua")
   local CampaignState = loadLocal(mod, "other/gamble/state.lua")
@@ -48,12 +49,12 @@ return function(mod)
   local CreditRules = loadLocal(mod, "other/gamble/credit/rules.lua")
   local CreditService = loadLocal(mod, "other/gamble/credit/service.lua")
   local CreditUIFactory = loadLocal(mod, "other/gamble/credit/ui.lua")
-  local CreditWorld = loadLocal(mod, "other/gamble/credit/world.lua")
+  local CreditWorld = loadLocal(mod, "other/gamble/credit/world.lua")(WorldHelpers)
   local HouseService = loadLocal(mod, "other/gamble/credit/house_service.lua")
-  local HouseWorld = loadLocal(mod, "other/gamble/credit/house_world.lua")
+  local HouseWorld = loadLocal(mod, "other/gamble/credit/house_world.lua")(WorldHelpers)
   local ArenaServiceFactory = loadLocal(mod, paths.arena .. "service.lua")
-  local ArenaWorld = loadLocal(mod, "other/gamble/arena_world.lua")
-  local PalletCasino = loadLocal(mod, "other/pallet_casino.lua")
+  local ArenaWorld = loadLocal(mod, "other/gamble/arena_world.lua")(WorldHelpers)
+  local PalletCasino = loadLocal(mod, "other/pallet_casino.lua")(WorldHelpers)
   local Sound = require("src.core.Sound")
 
   local ids = {
@@ -94,9 +95,10 @@ return function(mod)
   local function play(game, name) Sound.play(game.data, name) end
   local common = {
     mod = mod, coins = Service.coins, coinCap = config.coinCap,
+    creditPayout = Service.creditCoins,
     close = UI.close, play = play,
-    beginRound = function(gameId, stake)
-      return Progress and Progress.beginRound(gameId, stake) or nil
+    beginRound = function(gameId, stake, durable)
+      return Progress and Progress.beginRound(gameId, stake, durable) or nil
     end,
     increaseStake = function(token, stake)
       return Progress and Progress.increaseStake(token, stake) or false
@@ -219,6 +221,10 @@ return function(mod)
 
   mod.events:on("intro.oak_speech.answered", function(ev)
     if ev.saveKey == "gamble_mode" and ev.value == true then Progress.ensure() end
+  end)
+  mod.hooks:wrap("save.write", function(next, game)
+    if not Progress.canSave(game) then return false end
+    return next(game)
   end)
   mod.hooks:wrap("ui.start_menu.items", function(next, game, items)
     local out = next(game, items)

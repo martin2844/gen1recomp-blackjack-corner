@@ -101,7 +101,7 @@ return function(mod, opts)
       return false, "COIN CASE TOO FULL"
     end
     local matchId = pending.match.id
-    local token = opts.beginRound and opts.beginRound("arena", stake)
+    local token = opts.beginRound and opts.beginRound("arena", stake, true)
     if not token then return false, "WAGER UNAVAILABLE" end
     -- beginRound writes the shared campaign record. Reload it before adding
     -- arena fields so neither service can overwrite the other's mutation.

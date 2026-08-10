@@ -1,6 +1,6 @@
 return function(ctx)
   local mod, Rules, View = ctx.mod, ctx.rules, ctx.view
-  local bets, coinCap = ctx.bets, ctx.coinCap
+  local bets = ctx.bets
   local Screen = { isOpaque = true }
   Screen.__index = Screen
 
@@ -29,12 +29,11 @@ return function(ctx)
   function Screen:recordRound()
     if self.settled or not self.round or self.round.state ~= "done" then return end
     self.settled = true
-    self.game.save.coins = math.min(coinCap,
-      ctx.coins(self.game) + self.round.payout)
+    local returned = ctx.creditPayout(self.game, self.round.payout)
     local result = (self.round.result == "win" or self.round.result == "blackjack")
       and "win" or self.round.result == "push" and "draw" or "loss"
     local _, progress = ctx.settleRound(
-      self.game, self.reputationRound, result, self.round.payout)
+      self.game, self.reputationRound, result, returned)
     self.rankUpPending = progress and progress.rankUp
     mod.save:set("hands_played", mod.save:get("hands_played", 0) + 1)
     if self.round.result == "win" or self.round.result == "blackjack" then

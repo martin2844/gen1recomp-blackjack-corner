@@ -90,6 +90,9 @@ T.eq(save.unrelated, "kept", "campaign initialization preserves other mod data")
 
 local game = { save = { coins = 100, inventory = {} } }
 local token = assert(service.beginRound("blackjack", 10))
+T.eq(type(token), "table", "screen-only games use transient round tokens")
+T.eq(next(save.gamble_campaign.reputation.pendingRounds), nil,
+  "starting a non-resumable game cannot leak a pending save entry")
 T.check(service.increaseStake(token, 10), "progressive bets extend the same round")
 local ok, result = service.settleRound(game, token, "loss", 0)
 T.check(ok, "a paid casino round settles")
@@ -101,6 +104,15 @@ ok = service.settleRound(game, token, "win", 1000)
 T.check(not ok, "the same casino round cannot settle twice")
 T.eq(service.snapshot(game).completedGames, 1,
   "duplicate settlement cannot duplicate reputation")
+
+local durable = assert(service.beginRound("arena", 50, true))
+T.eq(type(durable), "string", "resumable games opt into durable round tokens")
+T.check(save.gamble_campaign.reputation.pendingRounds[durable] ~= nil,
+  "a durable Arena round survives a save/reload boundary")
+T.check(service.settleRound(game, durable, "loss", 0),
+  "a durable round settles through the same reputation ledger")
+T.eq(save.gamble_campaign.reputation.pendingRounds[durable], nil,
+  "settling a durable round clears its pending save entry")
 
 local rookieSecond = assert(service.beginRound("blackjack", 10))
 local rookieSecondResult

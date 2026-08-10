@@ -13,11 +13,13 @@ Prize Cases, animated horse racing, Plinko, Pokemon pawning, shinies, rare
 items, and a one-time Master Ball. Gamble Mode's final High Roller rank now
 opens a concealed Rocket lift into an underground Pokemon battle-betting arena.
 
-The mod supports Pokemon Red, Blue, and Yellow. It contains no ROM or
-ROM-derived artwork; world and shiny graphics are generated locally from the
-player's imported game data.
+The v0.5 release is certified on Pokemon Red and Blue. Pokemon Yellow support
+is available but remains experimental until its distinct one-ball Oak flow has
+its own native release gate. The mod contains no ROM or ROM-derived artwork;
+world and shiny graphics are generated locally from the player's imported game
+data.
 
-## Version 0.7 highlights
+## Version 0.5 highlights
 
 | Area | What the release adds |
 | --- | --- |
@@ -31,10 +33,10 @@ player's imported game data.
 | Atmosphere | Ten new gamblers and staff plus eight new one-time floor pickups across three casino interiors |
 | Code quality | Small per-game modules under `games/`, supporting systems under `other/`, automated rule/integration coverage, and a Red/Blue native release gate |
 
-## v0.7 Underground Arena
+## v0.5 Gamble campaign
 
-Version 0.7 completes the first High Roller progression arc without changing
-the always-available base casino expansion:
+Version 0.5 bundles the complete first High Roller progression arc without
+changing the always-available base casino expansion:
 
 - all eight paid casino games feed one exactly-once High Roller reputation
   ledger;
@@ -81,10 +83,12 @@ the always-available base casino expansion:
   odds, live fight animation, result settlement, disk persistence, fighter
   tiers, default behavior, and every return path.
 
-The implementation and release train are mapped in
+The implementation and internal milestone train are mapped in
 [docs/GAMBLE_MODE_ROADMAP.md](docs/GAMBLE_MODE_ROADMAP.md). Human UI/E2E signoff
 uses the supervised drivers and matrix in [`tests/manual`](tests/manual); the
-complete Underground Arena release gate is
+public release record is
+[tests/manual/releases/v0.5.0.md](tests/manual/releases/v0.5.0.md), with the
+detailed Arena phase gate retained in
 [tests/manual/V0.7_IN_GAME_TESTING.md](tests/manual/V0.7_IN_GAME_TESTING.md).
 
 ## Screenshots
@@ -192,7 +196,7 @@ complete Underground Arena release gate is
 
 ## Install
 
-1. Download `blackjack_corner-0.7.0.zip` from the
+1. Download `blackjack_corner-0.5.0.zip` from the
    [latest release](https://github.com/martin2844/gen1recomp-blackjack-corner/releases/latest).
    Use the named mod ZIP, not GitHub's automatic source-code archives.
 2. Open Gen1Recomp and choose **MODS > Import mod .zip**.
@@ -630,7 +634,7 @@ other/
   pawn/         rules.lua
   prizes/       catalog.lua
   shiny/        fallback.lua
-  coin_case.lua lounge.lua pallet_casino.lua services.lua ui.lua
+  coin_case.lua lounge.lua pallet_casino.lua services.lua ui.lua world_helpers.lua
 main.lua        composition, registration, and hooks only
 ```
 
@@ -643,17 +647,7 @@ Clone this repository into a Gen1Recomp checkout so it is located at
 ```sh
 python3 tools/modkit.py validate mods/blackjack_corner --base fixture
 python3 tools/modkit.py lint mods/blackjack_corner
-luajit mods/blackjack_corner/tests/blackjack_rules_test.lua
-luajit mods/blackjack_corner/tests/holdem_rules_test.lua
-luajit mods/blackjack_corner/tests/pawn_test.lua
-luajit mods/blackjack_corner/tests/arcade_rules_test.lua
-luajit mods/blackjack_corner/tests/gamble_rules_test.lua
-luajit mods/blackjack_corner/tests/reputation_test.lua
-luajit mods/blackjack_corner/tests/credit_test.lua
-luajit mods/blackjack_corner/tests/house_test.lua
-luajit mods/blackjack_corner/tests/arena_test.lua
-luajit mods/blackjack_corner/tests/blackjack_mod_test.lua
-luajit mods/blackjack_corner/tests/shiny_fallback_test.lua
+mods/blackjack_corner/tests/run_all.sh
 ```
 
 The release workflow publishes an installable ZIP and SHA-256 checksum on

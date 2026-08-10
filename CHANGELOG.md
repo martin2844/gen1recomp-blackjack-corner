@@ -1,6 +1,8 @@
 # Changelog
 
-## [0.7.0] - 2026-08-10
+## Unreleased
+
+## [0.5.0] - 2026-08-10
 
 ### Added
 
@@ -21,7 +23,7 @@
 - A purpose-built native-resolution fight board with sprites, HP bars, attack
   lunges, misses, immunities, damage callouts, crowd reactions, and readable
   win/loss results.
-- A v0.7 Red/Blue manual release gate and deterministic 35-case native driver,
+- A Red/Blue manual Arena gate and deterministic 35-case native driver,
   covering access, navigation, wagers, odds, persistence, results, defaults,
   fighter tiers, schema migration, and existing casino regressions.
 - A one-time last-resort bailout for Gamble Mode saves with exactly zero money
@@ -37,9 +39,9 @@
   retryable Rocket trainer battle; winning restores the original home and Mom
   while preserving any separate credit debt or default.
 - Dedicated supervised drivers for the bailout, occupied home, and house
-  battle, plus a full v0.6 Red/Blue in-game test plan covering navigation,
+  battle, plus a full Red/Blue in-game test plan covering navigation,
   dialogue, economy boundaries, battle loss, save/reload, and restoration.
-- The first v0.6 Rocket Credit slice: a visible loan shark in the Celadon
+- A visible Rocket Credit loan shark in the Celadon
   Lounge with rank-based offers, fixed fees, and one active loan at a time.
 - Repayment using either casino coins or ordinary money, with fees paid before
   principal and every default remaining fully recoverable.
@@ -53,23 +55,22 @@
 - Default-only luxury restrictions for new paid Prize Cases and Celadon's
   Pokemon/item counters. Casino games, travel, healing, story progress, coin
   sales, ordinary pawning, and redemption remain available.
-- A schema-two migration that carries legacy campaign, debt, and family-home
-  state forward without discarding fields owned by later versions.
-- The first v0.5 Gamble Mode campaign slice: a schema-versioned persistent
+- Ordered save migrations that carry legacy campaign, debt, family-home, and
+  Arena state forward without discarding future-owned fields.
+- A schema-versioned persistent Gamble Mode campaign
   state with additive placeholders for reputation, debt, house ownership, and
-  the future underground arena.
+  the underground arena.
 - Shared High Roller reputation across Blackjack, Hold'em, Crash, Tube Flyer,
-  Prize Case, Horse Racing, and Plinko, including lifetime wager and per-game
-  win/loss/draw statistics.
-- Rookie, Regular, High Roller, and VIP progression with badge ceilings,
-  banked reputation, one-time coin rewards, and a deliberately deferred
-  Kingpin rank for the arena release.
+  Prize Case, Horse Racing, Plinko, and the Arena, including lifetime wager
+  and per-game win/loss/draw statistics.
+- Rookie, Regular, High Roller, VIP, and KINGPIN progression with badge
+  ceilings, banked reputation, and one-time coin rewards.
 - A native-resolution High Roller status panel in the Start menu with rank,
   progress, badge requirements, aggregate results, lifetime wagers, losing
   streaks, and one-time rank-up presentations.
 - Rank- and losing-streak-aware dialogue for patrons and staff in both casino
   destinations.
-- A supervised manual QA framework with isolated LOVE identities, scripted
+- A supervised manual QA framework with isolated LÖVE identities, scripted
   save setup, screenshots, explicit keyboard handoff, a Red/Blue test matrix,
   and a v0.5 release checklist.
 
@@ -82,8 +83,19 @@
   unlocked at the Lounge lift is presented before the lift descends.
 - The native odds gate now uses a deterministic sample and requires both
   favorite and underdog wins; bookie reopen checks use the real interaction.
-- Local mod packages now exclude the v0.7 arena test plan, native driver,
-  release checklist, and automated test just like the GitHub release archive.
+- Local mod packages now exclude tests, native drivers, release evidence, and
+  screenshot galleries just like the GitHub release archive.
+- Pull requests and releases now run ROM-free validation, lint, the complete
+  Lua suite, and a release-shaped package check before publication.
+- Casino payout credit now has one shared cap-aware path, so Blackjack and
+  Hold'em statistics report only coins actually delivered near the 1M limit.
+- Non-resumable game screens now use transient reputation rounds and veto F1
+  saves while a wager is live, preventing interrupted rounds from losing a bet
+  or leaking orphaned pending tokens into campaign saves.
+- Game Corner object IDs now allocate through shared world helpers, preventing
+  patrons from aliasing objects added by earlier content mods.
+- Luxury authorization synchronizes badge deadlines before admitting the
+  player, so a newly defaulted Rocket loan cannot use prizes or Arena wagers.
 - Paid Prize Case claims now persist until delivery, so full storage cannot
   refund the wager while retaining free reputation; retries keep the exact
   reward and never charge or settle twice.

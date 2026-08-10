@@ -2,7 +2,7 @@
 
 Status: APPROVED  
 Target branch: `feat/v0.7-underground-arena`  
-Current target release: `v0.7.0`  
+Public target release: `v0.5.0` (bundles the internal v0.5-v0.7 phases)  
 Last updated: 2026-08-10
 
 ## Product shape

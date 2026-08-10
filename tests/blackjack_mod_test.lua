@@ -115,7 +115,8 @@ T.check(api and api.rules and api.holdem_rules and api.holdem_view and api.catal
     and api.gamble and api.gym_cases and api.campaign_state
     and api.reputation_rules and api.reputation
     and api.credit_rules and api.credit and api.credit_world
-    and api.house and api.house_world,
+    and api.house and api.house_world and api.arena_rules and api.arena
+    and api.arena_world,
   "games, prizes, coin exchange, pawning, and arcade rules are exported")
 T.check(api.roulette_view.RESULT_BUTTON_Y
     + api.roulette_view.RESULT_BUTTON_HEIGHT <= api.roulette_view.FRAME_CONTENT_BOTTOM,
@@ -1391,7 +1392,8 @@ do
   plinko:dropBall(); plinko.drop.slot = 5; plinko:finish()
 
   local snapshot = api.reputation.snapshot(game)
-  for gameId in pairs(api.reputation_rules.GAMES) do
+  for _, gameId in ipairs({ "blackjack", "holdem", "crash", "tube_flyer",
+      "prize_case", "horse_racing", "plinko" }) do
     T.eq(snapshot.byGame[gameId].played, 1,
       gameId .. " screen settles one real campaign round")
   end

@@ -11,7 +11,7 @@ local State = loadModule("other/gamble/state.lua")
 local Rules = loadModule("other/gamble/reputation/rules.lua")
 local ServiceFactory = loadModule("other/gamble/reputation/service.lua")
 
-T.eq(State.SCHEMA, 2, "Rocket Credit advances the campaign schema explicitly")
+T.eq(State.SCHEMA, 3, "Underground Arena advances the campaign schema explicitly")
 local clean = State.sanitize({ reputation = {
   points = -50, completedGames = "4", currentLossStreak = 0 / 0,
   byGame = { blackjack = { played = "2", wins = 1 } },
@@ -27,7 +27,7 @@ T.check(clean.house.status == "FAMILY_HOME" and not clean.arena.unlocked,
 
 local migratedDebt = State.sanitize({ schema = 1,
   debt = { balance = 321 }, house = { repossessed = true } })
-T.eq(migratedDebt.schema, 2, "schema-one campaigns migrate in order")
+T.eq(migratedDebt.schema, 3, "schema-one campaigns migrate in order")
 T.eq(migratedDebt.debt.principal, 321, "legacy debt balance becomes principal")
 T.eq(migratedDebt.house.status, "ROCKET_OWNED",
   "legacy repossession state survives the schema-two migration")
@@ -55,11 +55,10 @@ T.eq(Rules.rankFor(100, 1).id, "REGULAR",
 T.eq(Rules.rankFor(500, 3).id, "HIGH_ROLLER",
   "three badges unlock High Roller")
 T.eq(Rules.rankFor(1500, 5).id, "VIP", "five badges unlock VIP")
-T.eq(Rules.rankFor(99999, 8).id, "VIP",
-  "the deferred Kingpin rank cannot unlock before the arena release")
-T.check(Rules.progress(4000, 8).next.deferred
-    and Rules.progress(4000, 8).blockedByArena,
-  "VIP progress names the reserved Kingpin arena unlock")
+T.eq(Rules.rankFor(99999, 8).id, "KINGPIN",
+  "eight badges and enough reputation unlock the arena's final rank")
+T.eq(Rules.progress(4000, 8).current.id, "KINGPIN",
+  "the arena release removes the former Kingpin deferral")
 T.check(Rules.progress(100, 0).blockedByBadges,
   "the progress model explains a badge-locked rank")
 T.check(Rules.pointsFor(500, "win", false) > Rules.pointsFor(500, "loss", false),
@@ -84,7 +83,7 @@ T.eq(service.ensure(), nil, "base mode never creates Gamble campaign state")
 T.eq(save.gamble_campaign, nil, "base-mode saves remain untouched")
 enabled = true
 local campaign = service.ensure()
-T.eq(campaign.schema, 2, "Gamble Mode lazily creates current campaign state")
+T.eq(campaign.schema, 3, "Gamble Mode lazily creates current campaign state")
 T.eq(save.unrelated, "kept", "campaign initialization preserves other mod data")
 
 local game = { save = { coins = 100, inventory = {} } }

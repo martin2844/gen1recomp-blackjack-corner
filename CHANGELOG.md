@@ -1,9 +1,29 @@
 # Changelog
 
-## Unreleased
+## [0.7.0] - 2026-08-10
 
 ### Added
 
+- A concealed lift in the expanded Celadon Lounge for Gamble Mode players who
+  earn KINGPIN at 4,000 reputation with all eight badges.
+- A separate Rocket VIP lobby and underground spectator arena with a bookie,
+  animated crowd, dedicated exits, original dialogue, and a locally generated
+  eight-piece battle pit.
+- House-owned Pokemon battle betting with posted decimal odds derived from
+  imported species stats, levels, curated moves, accuracy, STAB, Gen I type
+  matchups, and the original physical/special split.
+- STREET, ELITE, and RARE fighter tiers driven by arena reputation, progressing
+  from ordinary opponents to Lapras, Snorlax, Aerodactyl, Gyarados, Dragonite,
+  and Alakazam.
+- Persistent arena tickets that commit fighters, odds, outcome, animation,
+  wager, and High Roller round before a fight; reload and repeated settlement
+  cannot reroll a loss or duplicate coins and reputation.
+- A purpose-built native-resolution fight board with sprites, HP bars, attack
+  lunges, misses, immunities, damage callouts, crowd reactions, and readable
+  win/loss results.
+- A v0.7 Red/Blue manual release gate and deterministic 25-case native driver,
+  covering access, navigation, wagers, odds, persistence, results, defaults,
+  fighter tiers, schema migration, and existing casino regressions.
 - A one-time last-resort bailout for Gamble Mode saves with exactly zero money
   and zero coins. It grants 10,000 coins in exchange for the Pallet family
   home, with the full consequence and 30,000-coin recovery cost confirmed

@@ -403,7 +403,7 @@ return function(game)
       }, pendingRewardCoins = 11 },
   }
   local migrated = api.reputation.ensure()
-  eq(migrated.schema, 2); eq(migrated.reputation.points, 77)
+  eq(migrated.schema, 3); eq(migrated.reputation.points, 77)
   eq(migrated.reputation.byGame.blackjack.played, 9)
   check(migrated.reputation.discoveredGames.ROOKIE.blackjack)
   eq(migrated.debt.status, "CLEAR"); eq(migrated.house.status, "FAMILY_HOME")

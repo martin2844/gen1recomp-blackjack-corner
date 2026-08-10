@@ -1,7 +1,7 @@
 local State = {}
 
 State.KEY = "gamble_campaign"
-State.SCHEMA = 2
+State.SCHEMA = 3
 
 local VALID_RANKS = {
   ROOKIE = true, REGULAR = true, HIGH_ROLLER = true,
@@ -109,6 +109,63 @@ local function sanitizeDiscoveries(value)
   return out
 end
 
+local function sanitizeArenaPending(value)
+  if type(value) ~= "table" or not ({ POSTED = true, BET = true,
+      RESULT = true })[value.status] then return nil end
+  local match = value.match
+  if type(match) ~= "table" or type(match.fighters) ~= "table"
+      or type(match.fighters[1]) ~= "table"
+      or type(match.fighters[2]) ~= "table" then return nil end
+  local out = deepCopy(value)
+  out.match.id = number(match.id, 0)
+  if out.match.id < 1 then return nil end
+  out.match.tier = ({ STREET = true, ELITE = true, RARE = true })[match.tier]
+    and match.tier or "STREET"
+  for index = 1, 2 do
+    local fighter = out.match.fighters[index]
+    if type(fighter.species) ~= "string" or fighter.species == "" then return nil end
+    fighter.name = type(fighter.name) == "string" and fighter.name or fighter.species
+    fighter.level = number(fighter.level, 1, 1)
+    fighter.maxHP = number(fighter.maxHP, 1, 1)
+    fighter.hp = fighter.maxHP
+    if type(fighter.stats) ~= "table" or type(fighter.moves) ~= "table" then
+      return nil
+    end
+  end
+  if type(match.odds) ~= "table" then return nil end
+  out.match.odds = { number(match.odds[1], 0), number(match.odds[2], 0) }
+  if out.match.odds[1] < 100 or out.match.odds[2] < 100 then return nil end
+  out.match.winner = number(match.winner, 0)
+  if out.match.winner < 1 or out.match.winner > 2 then return nil end
+  local actions = {}
+  for _, source in ipairs(type(match.actions) == "table" and match.actions or {}) do
+    if type(source) == "table" and #actions < 128 then
+      local action = deepCopy(source)
+      action.attacker, action.defender = number(source.attacker, 0),
+        number(source.defender, 0)
+      action.damage, action.defenderHP = number(source.damage, 0),
+        number(source.defenderHP, 0)
+      action.move = type(source.move) == "string" and source.move or "ATTACK"
+      if action.attacker >= 1 and action.attacker <= 2
+          and action.defender >= 1 and action.defender <= 2
+          and action.attacker ~= action.defender then actions[#actions + 1] = action end
+    end
+  end
+  out.match.actions = actions
+  if #actions == 0 then return nil end
+  if out.status ~= "POSTED" then
+    out.selected = number(value.selected, 0)
+    out.stake = number(value.stake, 0)
+    if out.selected < 1 or out.selected > 2 or out.stake < 1
+        or type(value.roundToken) ~= "string" then return nil end
+  end
+  if out.status == "RESULT" then
+    out.payout = number(value.payout, 0)
+    out.won = value.won == true
+  end
+  return out
+end
+
 function State.defaults()
   return {
     schema = State.SCHEMA,
@@ -141,7 +198,18 @@ function State.defaults()
       status = "FAMILY_HOME", bailoutClaimed = false,
       buybackPaid = false, rocketBattleWon = false,
     },
-    arena = { unlocked = false, reputation = 0 },
+    arena = {
+      unlocked = false,
+      reputation = 0,
+      matchesPlayed = 0,
+      wins = 0,
+      losses = 0,
+      lifetimeWagered = 0,
+      lifetimeReturned = 0,
+      nextMatchId = 0,
+      pending = nil,
+      history = {},
+    },
   }
 end
 
@@ -167,6 +235,18 @@ State.MIGRATIONS = {
     end
     house.repossessed = nil
     house.boughtBack = nil
+  end,
+  [3] = function(value)
+    -- v0.7 owns the arena record that earlier releases reserved. Keep the
+    -- reserved unlock/reputation values and add the match ledger around them.
+    local arena = ensureTable(value, "arena")
+    if arena.matchesPlayed == nil then arena.matchesPlayed = 0 end
+    if arena.wins == nil then arena.wins = 0 end
+    if arena.losses == nil then arena.losses = 0 end
+    if arena.lifetimeWagered == nil then arena.lifetimeWagered = 0 end
+    if arena.lifetimeReturned == nil then arena.lifetimeReturned = 0 end
+    if arena.nextMatchId == nil then arena.nextMatchId = 0 end
+    if type(arena.history) ~= "table" then arena.history = {} end
   end,
 }
 
@@ -241,6 +321,20 @@ function State.sanitize(value)
   end
   arena.unlocked = arena.unlocked == true
   arena.reputation = number(arena.reputation, 0)
+  arena.matchesPlayed = number(arena.matchesPlayed, 0)
+  arena.wins = number(arena.wins, 0)
+  arena.losses = number(arena.losses, 0)
+  arena.lifetimeWagered = number(arena.lifetimeWagered, 0)
+  arena.lifetimeReturned = number(arena.lifetimeReturned, 0)
+  arena.nextMatchId = number(arena.nextMatchId, 0)
+  arena.pending = sanitizeArenaPending(arena.pending)
+  local history = {}
+  for _, row in ipairs(tableOrEmpty(arena.history)) do
+    if type(row) == "table" and #history < 12 then
+      history[#history + 1] = deepCopy(row)
+    end
+  end
+  arena.history = history
   return out
 end
 

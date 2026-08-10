@@ -3,17 +3,20 @@ local Rules = {}
 Rules.GAMES = {
   blackjack = true, holdem = true, crash = true, tube_flyer = true,
   prize_case = true, horse_racing = true, plinko = true,
+  arena = true,
 }
 
 Rules.GAME_ORDER = {
   "blackjack", "holdem", "crash", "tube_flyer",
   "prize_case", "horse_racing", "plinko",
+  "arena",
 }
 
 Rules.GAME_LABELS = {
   blackjack = "BLACKJACK", holdem = "HOLD'EM", crash = "CRASH",
   tube_flyer = "TUBE FLYER", prize_case = "PRIZE CASE",
   horse_racing = "RACING", plinko = "PLINKO",
+  arena = "ARENA",
 }
 
 Rules.RANKS = {
@@ -21,9 +24,8 @@ Rules.RANKS = {
   { id = "REGULAR", label = "REGULAR", points = 100, badges = 1, reward = 250 },
   { id = "HIGH_ROLLER", label = "HIGH ROLLER", points = 500, badges = 3, reward = 1000 },
   { id = "VIP", label = "VIP", points = 1500, badges = 5, reward = 5000 },
-  -- The final campaign rank is visible but its unlock arrives with the arena.
   { id = "KINGPIN", label = "KINGPIN", points = 4000, badges = 8,
-    reward = 10000, deferred = true },
+    reward = 10000 },
 }
 
 Rules.BADGES = {

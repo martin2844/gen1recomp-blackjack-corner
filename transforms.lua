@@ -185,6 +185,47 @@ local function buildMachine(ctx, id, c)
   end
 end
 
+local function buildArenaWorld(ctx)
+  local c = MACHINE_COLORS
+  -- A deliberately unlabelled freight-lift panel conceals the stairs in the
+  -- Lounge. Its gold lamp is the only hint after KINGPIN unlocks the route.
+  local lift = ctx.blank(16, 32, 0, 0, 0, 0)
+  fill(lift, 1, 0, 14, 32, c.outline)
+  fill(lift, 3, 2, 10, 28, c.bodyDark)
+  fill(lift, 5, 5, 6, 14, c.screen)
+  for y = 7, 17, 3 do fill(lift, 6, y, 4, 1, c.body) end
+  circle(lift, 8, 24, 3, c.trim); circle(lift, 8, 24, 1, c.red)
+  fill(lift, 3, 29, 10, 3, c.outline)
+  for piece = 0, 1 do
+    local part = ctx.blank(16, 16, 0, 0, 0, 0)
+    ctx.blit(part, lift, 0, 0, 0, piece * 16, 16, 16)
+    ctx.writeImage(part, ("world/arena_lift_%02d.png"):format(piece + 1))
+  end
+
+  -- Four-by-two spectator pit used only as overworld scenery. The actual
+  -- combat presentation uses native Pokemon battle art on its own screen.
+  local ring = ctx.blank(64, 32, 0, 0, 0, 0)
+  fill(ring, 0, 2, 64, 28, c.outline)
+  fill(ring, 2, 4, 60, 24, c.bodyDark)
+  fill(ring, 5, 6, 54, 18, { 0.48, 0.39, 0.30, 1 })
+  fill(ring, 7, 8, 50, 14, { 0.72, 0.63, 0.47, 1 })
+  fill(ring, 0, 2, 64, 2, c.trim)
+  fill(ring, 2, 26, 60, 3, c.red)
+  for _, x in ipairs({ 4, 59 }) do
+    fill(ring, x, 0, 2, 30, c.paper)
+    fill(ring, x - 1, 5, 4, 2, c.trim)
+    fill(ring, x - 1, 22, 4, 2, c.trim)
+  end
+  circle(ring, 22, 15, 4, c.red)
+  circle(ring, 42, 15, 4, c.blue)
+  for piece = 0, 7 do
+    local part = ctx.blank(16, 16, 0, 0, 0, 0)
+    ctx.blit(part, ring, 0, 0, piece % 4 * 16,
+      math.floor(piece / 4) * 16, 16, 16)
+    ctx.writeImage(part, ("world/arena_ring_%02d.png"):format(piece + 1))
+  end
+end
+
 local function tileBlit(ctx, target, sheet, tile, x, y)
   ctx.blit(target, sheet, x, y, tile % 16 * 8,
     math.floor(tile / 16) * 8, 8, 8)
@@ -256,6 +297,7 @@ return function(ctx)
     buildMachine(ctx, id, MACHINE_COLORS)
   end
   buildImportedRocketEquipment(ctx)
+  buildArenaWorld(ctx)
 
   -- Three 16x16 pieces replace Oak's Poké Balls only in Gamble Mode.
   local roulette = ctx.blank(48, 16, 0, 0, 0, 0)

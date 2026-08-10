@@ -10,40 +10,53 @@ random, the rival rolls separately, Gym TMs become mystery cases, and Pallet
 Town gains its own gloomy casino. Celadon's expanded floor remains the main
 destination, with blackjack, house-banked Texas Hold'em, Crash, Tube Flyer,
 Prize Cases, animated horse racing, Plinko, Pokemon pawning, shinies, rare
-items, and a one-time Master Ball.
+items, and a one-time Master Ball. Gamble Mode's final High Roller rank now
+opens a concealed Rocket lift into an underground Pokemon battle-betting arena.
 
 The mod supports Pokemon Red, Blue, and Yellow. It contains no ROM or
 ROM-derived artwork; world and shiny graphics are generated locally from the
 player's imported game data.
 
-## Version 0.4 highlights
+## Version 0.7 highlights
 
 | Area | What the release adds |
 | --- | --- |
 | Adventure | Optional save-scoped Gamble Mode changes the starter, rival team, and all eight Gym Leader rewards |
 | Pallet Town | A new early-game casino with blackjack, Hold'em, horse racing, Plinko, Prize Cases, coin sales, pawning, gamblers, and hidden coins |
 | Celadon | A dedicated 20x18 lounge with two tables, three front cabinets, and a rear Horse Racing and Plinko arcade |
-| Seven games | Blackjack, Hold'em, Crash, Tube Flyer, Prize Case, animated horse racing, and Plinko |
+| Eight games | Blackjack, Hold'em, Crash, Tube Flyer, Prize Case, animated horse racing, Plinko, and the Underground Arena |
 | Services | Bulk coin purchases and a pawn broker that stores up to five exact party Pokemon for later redemption |
 | Rewards | Version-exclusive Pokemon, starters, fossils, shiny upgrades, rare TMs, Surfing Pikachu, Dragonite, Mew, and Master Balls |
 | Economy | A 1,000,000-coin Coin Case used consistently by the new games, original slots, and hidden coin pickups |
 | Atmosphere | Ten new gamblers and staff plus eight new one-time floor pickups across three casino interiors |
-| Code quality | Small per-game modules under `games/`, supporting systems under `other/`, and 805 automated checks |
+| Code quality | Small per-game modules under `games/`, supporting systems under `other/`, automated rule/integration coverage, and a Red/Blue native release gate |
 
-## v0.6 development preview
+## v0.7 Underground Arena
 
-The `feat/v0.6-rocket-credit` branch builds the progressive Gamble Mode campaign
-without changing the always-available base casino expansion:
+Version 0.7 completes the first High Roller progression arc without changing
+the always-available base casino expansion:
 
-- all seven paid casino games feed one exactly-once High Roller reputation
+- all eight paid casino games feed one exactly-once High Roller reputation
   ledger;
-- Rookie, Regular, High Roller, and VIP ranks combine reputation requirements
+- Rookie, Regular, High Roller, VIP, and KINGPIN ranks combine reputation requirements
   with story-safe badge ceilings;
 - excess reputation remains banked until the required badge is earned;
 - rank-ups grant one-time coin rewards and get a dedicated pixel presentation;
 - the Start menu exposes a compact High Roller panel with rank progress,
   results, lifetime wagers, and cold streaks;
 - casino patrons and staff react to rank and sustained losses;
+- a concealed lift in the Celadon Lounge opens at KINGPIN—4,000 REP and all
+  eight badges—and leads through a Rocket VIP lobby into a separate spectator
+  arena;
+- AI-controlled Pokemon fight using real species stats, levels, moves,
+  accuracy, Gen I types, STAB, and physical/special rules;
+- posted decimal odds include a visible house margin while controlled
+  randomness keeps an underdog capable of winning;
+- STREET, ELITE, and RARE cards expand the house fighter pool as arena
+  reputation grows, without ever using the player's party;
+- exact fighters, odds, wager, simulated outcome, animation plan, and High
+  Roller token are saved before the fight so restarting cannot reroll a loss
+  or duplicate a payout;
 - old saves lazily receive a versioned campaign record while existing game,
   pawn, case, party, and currency state stays intact.
 - a Rocket loan shark in the Celadon Lounge offers larger fixed-fee loans as
@@ -64,16 +77,43 @@ without changing the always-available base casino expansion:
   relocated Mom upstairs who still heals the party;
 - reclaiming the home requires an explicit 30,000-coin deed buyback and a
   retryable Rocket battle, after which the original house is fully restored;
-- the current headless suite covers 1,039 assertions, with Red and Blue native
-  UI smoke runs layered on top.
+- Red and Blue native runs verify the concealed lift, two new maps, readable
+  odds, live fight animation, result settlement, disk persistence, fighter
+  tiers, default behavior, and every return path.
 
 The implementation and release train are mapped in
 [docs/GAMBLE_MODE_ROADMAP.md](docs/GAMBLE_MODE_ROADMAP.md). Human UI/E2E signoff
 uses the supervised drivers and matrix in [`tests/manual`](tests/manual); the
-complete Rocket Credit release gate is
-[tests/manual/V0.6_IN_GAME_TESTING.md](tests/manual/V0.6_IN_GAME_TESTING.md).
+complete Underground Arena release gate is
+[tests/manual/V0.7_IN_GAME_TESTING.md](tests/manual/V0.7_IN_GAME_TESTING.md).
 
 ## Screenshots
+
+### Underground Arena
+
+<table>
+  <tr>
+    <td width="50%"><img src="assets/screenshots/underground-arena-concealed-lift.png" alt="The concealed Rocket Arena lift in the Celadon Lounge"><br><sub>KINGPIN reveals a concealed lift inside the expanded Lounge.</sub></td>
+    <td width="50%"><img src="assets/screenshots/underground-arena-vip-lobby.png" alt="The Rocket Arena VIP lobby"><br><sub>The lift descends into a separate Rocket-operated VIP lobby.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="assets/screenshots/underground-arena-spectator-floor.png" alt="The underground spectator floor and Pokemon battle pit"><br><sub>House fighters meet inside an eight-piece spectator pit.</sub></td>
+    <td width="50%"><img src="assets/screenshots/underground-arena-posted-odds.png" alt="Arena board showing two fighters and posted decimal odds"><br><sub>Choose a fighter and stake after reviewing the posted odds.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="assets/screenshots/underground-arena-live-battle.png" alt="An animated arena match with HP bars and move text"><br><sub>Moves, misses, damage, HP, and crowd reactions animate live.</sub></td>
+    <td width="50%"><img src="assets/screenshots/underground-arena-winning-result.png" alt="Arena winning ticket result and payout"><br><sub>Winning and losing tickets settle once at their posted price.</sub></td>
+  </tr>
+  <tr>
+    <td width="33%"><img src="assets/screenshots/underground-arena-street-card.png" alt="Street tier arena match"><br><sub>STREET</sub></td>
+    <td width="33%"><img src="assets/screenshots/underground-arena-elite-card.png" alt="Elite tier arena match"><br><sub>ELITE</sub></td>
+    <td width="33%"><img src="assets/screenshots/underground-arena-rare-card.png" alt="Rare tier arena match"><br><sub>RARE</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="assets/screenshots/underground-arena-kingpin-rank-up.png" alt="The one-time Kingpin High Roller rank-up"><br><sub>All eight badges and 4,000 REP earn the final KINGPIN rank.</sub></td>
+    <td width="50%"><img src="assets/screenshots/underground-arena-long-fight.png" alt="A long arena match with fitted move text"><br><sub>Long matches retain readable move and damage captions.</sub></td>
+  </tr>
+</table>
 
 ### Expanded Casino Floor
 
@@ -152,7 +192,7 @@ complete Rocket Credit release gate is
 
 ## Install
 
-1. Download `blackjack_corner-0.4.1.zip` from the
+1. Download `blackjack_corner-0.7.0.zip` from the
    [latest release](https://github.com/martin2844/gen1recomp-blackjack-corner/releases/latest).
    Use the named mod ZIP, not GitHub's automatic source-code archives.
 2. Open Gen1Recomp and choose **MODS > Import mod .zip**.
@@ -273,6 +313,30 @@ pickups reward looking down while everyone else watches the machines.
 - Either table's dealer can explain the game and open its screen.
 - Table graphics are built locally from authored pixel primitives and ship no
   copied Pokemon ROM art.
+
+### Underground Battle Arena
+
+Gamble Mode players who reach **KINGPIN**—4,000 High Roller REP and all eight
+badges—can inspect a concealed lift on the west wall of the Celadon Lounge.
+It opens into a dedicated Rocket VIP lobby and a separate spectator floor:
+
+- The arena posts two house-owned Pokemon, their levels, and decimal odds
+  before any wager is accepted. The player's party is never eligible.
+- Match strength uses imported species base stats, level-scaled battle stats,
+  curated moves, accuracy, Gen I type effectiveness, STAB, and the original
+  physical/special type split.
+- A 6% house margin is built into the posted prices, but an underdog can still
+  win. The outcome is never changed after a ticket is placed.
+- Wagers range from 50 to 10,000 coins. Any ticket whose maximum posted return
+  would overflow the 1,000,000-coin Coin Case is refused before charging.
+- STREET cards use ordinary fighters, ELITE adds stronger evolved Pokemon at
+  250 arena REP, and RARE adds Lapras, Snorlax, Aerodactyl, Gyarados,
+  Dragonite, and Alakazam at 900 arena REP.
+- The complete ticket and animation plan are persisted before the fight.
+  Reloading resumes the same match; settlement, payout, and reputation remain
+  exactly once even after repeated inputs.
+- A later Rocket Credit default blocks new luxury wagers, but a ticket already
+  paid for always remains accessible and settleable.
 
 ### Playable blackjack
 
@@ -534,6 +598,8 @@ also rejected without charging coins when the Bag has no room.
   prize redemption, and the pawn broker.
 - Gamble Mode is a new-save choice. It cannot be enabled retroactively from
   the options menu, and declining it leaves story rewards untouched.
+- The Underground Arena is a Gamble Mode campaign destination and requires
+  KINGPIN. The two casinos and seven earlier games remain available without it.
 - Blackjack does not include splits, insurance, or surrender.
 - Texas Hold'em is a custom house-banked game, not multiplayer poker.
 - Mods or total conversions that replace the Celadon Game Corner, Prize Room,
@@ -554,10 +620,11 @@ games/
   prize_case/   rules.lua  screen.lua  view.lua
   horse_racing/ rules.lua  screen.lua  view.lua
   plinko/       rules.lua  screen.lua  view.lua
+  battle_arena/ rules.lua  service.lua  screen.lua  view.lua
   starter_roulette/ rules.lua  screen.lua  view.lua
   shared/       ui.lua
 other/
-  gamble/       mode.lua  gym_cases.lua  state.lua
+  gamble/       mode.lua  gym_cases.lua  state.lua  arena_world.lua
     reputation/ service.lua  screen.lua
     credit/     service.lua  ui.lua  world.lua  house_service.lua  house_world.lua
   pawn/         rules.lua
@@ -584,6 +651,7 @@ luajit mods/blackjack_corner/tests/gamble_rules_test.lua
 luajit mods/blackjack_corner/tests/reputation_test.lua
 luajit mods/blackjack_corner/tests/credit_test.lua
 luajit mods/blackjack_corner/tests/house_test.lua
+luajit mods/blackjack_corner/tests/arena_test.lua
 luajit mods/blackjack_corner/tests/blackjack_mod_test.lua
 luajit mods/blackjack_corner/tests/shiny_fallback_test.lua
 ```

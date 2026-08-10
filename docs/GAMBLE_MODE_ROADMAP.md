@@ -1,8 +1,8 @@
 # Gamble Mode Campaign Roadmap
 
 Status: APPROVED  
-Target branch: `feat/v0.6-rocket-credit`  
-Current target release: `v0.6.0`  
+Target branch: `feat/v0.7-underground-arena`  
+Current target release: `v0.7.0`  
 Last updated: 2026-08-10
 
 ## Product shape
@@ -263,7 +263,22 @@ Implementation status on `feat/v0.6-rocket-credit`:
 - badge-milestone default and idempotent late fees: implemented;
 - voluntary pawn-to-debt flow and default-only luxury restrictions: implemented;
 - recoverable Pallet/Celadon collector presence: implemented;
-- zero-balance bailout, repossession, buyback, and restoration: pending.
+- zero-balance bailout, repossession, buyback, and restoration: implemented;
+- complete automated suite and supervised Red/Blue release gate: passed.
+
+## v0.7 implementation status
+
+Implementation status on `feat/v0.7-underground-arena`:
+
+- schema-three arena migration and KINGPIN progression: implemented;
+- concealed Lounge lift, Rocket VIP lobby, and spectator arena: implemented;
+- real-stat matchup model, posted odds, tiered fighter pools, and simulation:
+  implemented;
+- persistent wagers, outcomes, animation plans, payouts, and High Roller
+  settlement: implemented;
+- native fight board, sprites, HP animation, crowd, and results: implemented;
+- automated arena coverage and deterministic native audit driver: implemented;
+- complete Red/Blue release-matrix signoff: in progress.
 
 ### Chunk 1: campaign state and migrations
 
@@ -337,7 +352,7 @@ Initial rank vocabulary:
 | REGULAR | Casino staff recognize the player | At least 1 badge |
 | HIGH ROLLER | Larger rewards and private attention | At least 3 badges |
 | VIP | Future arena access | At least 5 badges |
-| KINGPIN | Final campaign status | Reserved for later releases |
+| KINGPIN | Underground Arena access | At least 8 badges |
 
 Point rules should reward actual play without turning a single cheap game into
 the optimal grind:
@@ -606,7 +621,7 @@ For this mod, the best test loop is:
 
 - A player can explain their current rank, why it changed, and what unlocks next
   without reading external documentation.
-- All seven games contribute to reputation exactly once per completed economic
+- All eight games contribute to reputation exactly once per completed economic
   event.
 - No single low-stake game is the obvious fastest grind during supervised play.
 - Rank progression feels noticeable during ordinary casino play but cannot
@@ -635,6 +650,6 @@ For this mod, the best test loop is:
 - Real-time or play-time-based debt interest.
 - Permanent story softlocks for defaulting.
 - House repossession before `v0.6.0`.
-- Underground arena content before `v0.7.0`.
+- Cinnabar underworld content before `v0.8.0`.
 - Giovanni and Cinnabar campaign content before `v0.8.0`.
 - TCG features.

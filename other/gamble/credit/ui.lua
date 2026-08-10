@@ -111,11 +111,11 @@ return function(mod, opts)
           Credit.snapshot(game).total, #opts.pawnLedger(), opts.pawnLimit),
         onChoose = function(item)
           local quote = item.value
-          local prompt = ("Pawn %s for\n%d coins toward debt?")
+          local prompt = ("Pawn %s?\nValue %d.")
             :format(quote.name, quote.value)
           if #opts.pawnLedger() >= opts.pawnLimit then
             local oldest = opts.pawnLedger()[1]
-            prompt = prompt .. ("\fWARNING! %s will\nbe sold off.")
+            prompt = prompt .. ("\fOLDEST %s\nWILL BE SOLD.")
               :format(oldest.name or "The oldest POKEMON")
           end
           list:close()
@@ -148,7 +148,7 @@ return function(mod, opts)
 
     local function buyBackHome(openMenu)
       game.stack:push(mod.ui.TextBox.new(game,
-        ("Pay %d coins for\nthe family deed?\fTEAM ROCKET still\ndemands one battle.")
+        ("Pay %d coins\nfor family deed?\fBeat one ROCKET\nto reclaim it.")
           :format(House.BUYBACK_COST), nil, {
           choice = function(yes)
             if not yes then openMenu(); return end

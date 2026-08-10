@@ -361,9 +361,6 @@ return function(mod)
       TEXT_REDSHOUSE1F_ROCKET_OBSERVER = function(game, _, _, done)
         UI.text(game, "This spot is great\nto keep OAK under\nwatch.", done)
       end,
-      TEXT_REDSHOUSE1F_ROCKET_CHALLENGE = function(game, _, _, done)
-        UI.text(game, "Fine. The deed is\nyours again.", done)
-      end,
     },
     onVictory = function(game)
       local id = HouseWorld.challengeSaveId()

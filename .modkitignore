@@ -34,3 +34,11 @@ tests/manual/drivers/rocket_credit_default.lua
 tests/manual/drivers/rocket_credit_bailout.lua
 tests/manual/drivers/rocket_house_repossessed.lua
 tests/manual/drivers/rocket_house_buyback.lua
+tests/manual/drivers/v06_new_game_audit.lua
+tests/manual/drivers/v06_full_audit.lua
+tests/manual/drivers/v06_battle_audit.lua
+tests/manual/drivers/v06_bailout_ui_audit.lua
+tests/manual/drivers/v06_pawn_ui_audit.lua
+tests/manual/drivers/v06_buyback_ui_audit.lua
+tests/manual/drivers/v06_credit_ui_audit.lua
+tests/manual/drivers/v06_games_ui_audit.lua

@@ -57,7 +57,7 @@ return function(UI)
       preview()
       UI.color(C.ink); UI.centered(Font, "10 COINS TO FLY", 83)
       UI.button(Font, "A START", 96, coinCount >= 10, theme)
-      UI.color(C.ink); UI.centered(Font, state.notice or "TUBE +1 COIN", 120)
+      UI.color(C.ink); UI.centered(Font, state.notice or "TUBE PAYS 1", 120)
       UI.centered(Font, "B EXIT", 130)
     else
       UI.frame("TUBE", Font, coinCount, theme)
@@ -69,7 +69,7 @@ return function(UI)
         UI.panel(14, 101, 132, 37, C.paper)
         UI.color(C.ink)
         UI.centered(Font, "FLIGHT OVER  S " .. state.run.score, 106)
-        UI.centered(Font, "+" .. (state.run.earned or state.run.score) .. " COINS", 118)
+        UI.centered(Font, "WIN " .. (state.run.earned or state.run.score) .. " COINS", 118)
         UI.centered(Font, "A AGAIN  B EXIT", 130)
       end
     end

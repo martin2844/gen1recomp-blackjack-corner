@@ -919,6 +919,14 @@ do
   end
   T.check(contribution("REDS_HOUSE_1F", "onVictory"),
     "the downstairs battle has a restoration victory hook")
+  local challengeOverridden = false
+  for _, row in ipairs(run.loader.content.map_scripts:chain("REDS_HOUSE_1F")) do
+    if row.talk and row.talk.TEXT_REDSHOUSE1F_ROCKET_CHALLENGE then
+      challengeOverridden = true
+    end
+  end
+  T.check(not challengeOverridden,
+    "the Rocket challenger stays on the engine's trainer battle path")
   local upstairsTalk
   for _, row in ipairs(run.loader.content.map_scripts:chain("REDS_HOUSE_2F")) do
     if row.talk and row.talk.TEXT_REDSHOUSE2F_GAMBLE_MOM then

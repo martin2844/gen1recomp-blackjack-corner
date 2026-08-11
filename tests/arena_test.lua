@@ -8,13 +8,18 @@ end
 
 local Rules = loadModule("games/battle_arena/rules.lua")
 local State = loadModule("other/gamble/state.lua")
+local StoryFactory = loadModule("other/gamble/arena_story.lua")
 local ServiceFactory = loadModule("games/battle_arena/service.lua")
 local ScreenFactory = loadModule("games/battle_arena/screen.lua")
 -- Keep the unit suite ROM-free. Imported-data validation separately checks
 -- these public IDs against a real Red/Blue cache; the rules test only needs a
 -- complete deterministic model with the same species and move keys.
 local data = { pokemon = {}, moves = {}, type_chart = { matchups = {} } }
-for index, fighter in ipairs(Rules.FIGHTERS) do
+local allFighters = {}
+for _, roster in ipairs({ Rules.FIGHTERS, Rules.EXHIBITION_FIGHTERS }) do
+  for _, fighter in ipairs(roster) do allFighters[#allFighters + 1] = fighter end
+end
+for index, fighter in ipairs(allFighters) do
   data.pokemon[fighter.species] = {
     name = fighter.species,
     types = { "NORMAL" },
@@ -88,12 +93,22 @@ T.eq(Rules.payout(100, match.winner, match), match.odds[match.winner],
   "winning payout uses the exact posted price")
 T.eq(Rules.payout(100, 3 - match.winner, match), 0,
   "a losing arena ticket returns nothing")
+local exhibition = Rules.newExhibition(data, 77, deterministic)
+T.eq(exhibition.id, 77, "the exhibition receives a durable Arena match id")
+T.eq(exhibition.kind, "EXHIBITION", "the story card is explicitly classified")
+T.eq(exhibition.tier, "EXHIBITION", "the story card has a dedicated visual tier")
+T.eq(exhibition.fighters[1].species, "DRAGONITE",
+  "Series 3 always posts its announced left fighter")
+T.eq(exhibition.fighters[2].species, "MEWTWO",
+  "Series 3 always posts its announced engineered opponent")
+T.eq(exhibition.reward, "GIOVANNI AUDIENCE",
+  "the story reward is committed with the fighter pair and result")
 T.eq(Rules.tierFor(249).id, "STREET", "street card lasts through 249 arena rep")
 T.eq(Rules.tierFor(250).id, "ELITE", "elite card unlocks at 250 arena rep")
 T.eq(Rules.tierFor(900).id, "RARE", "rare fighters unlock at 900 arena rep")
 T.eq(Rules.wagerLimit("VIP"), 0, "VIP cannot wager before final-rank access")
 T.eq(Rules.wagerLimit("KINGPIN"), 10000, "Kingpin unlocks the full wager board")
-for _, fighter in ipairs(Rules.FIGHTERS) do
+for _, fighter in ipairs(allFighters) do
   T.check(data.pokemon[fighter.species] ~= nil,
     fighter.species .. " exists in the imported species data")
   for _, move in ipairs(fighter.moves) do
@@ -235,6 +250,64 @@ T.check(ok and game.save.coins == coinsAfter and settledCalls == 1,
   "reopening a result cannot duplicate payout or reputation")
 T.check(service.acknowledge(), "acknowledging a result retires its ticket")
 T.eq(service.snapshot(game).pending, nil, "the next visit is ready for a new card")
+
+local story = StoryFactory(mod, {
+  state = State, active = function() return enabled end,
+})
+saved.gamble_campaign.story.stage = story.STAGES.INVITATION
+service = ServiceFactory(mod, {
+  state = State, rules = Rules, active = function() return enabled end,
+  coinCap = 1000000, rank = function() return rank end,
+  allowed = function() return true end,
+  beginRound = beginRound, settleRound = settleRound,
+  exhibition = story.exhibitionAvailable,
+  settleExhibition = story.settleExhibition,
+})
+local storyCard = assert(service.current(game, deterministic))
+T.eq(storyCard.kind, "EXHIBITION",
+  "an authenticated invitation replaces an unpaid ordinary card")
+T.eq(service.current(game, deterministic).match.id, storyCard.match.id,
+  "reopening cannot reroll the committed exhibition")
+local storyMatchId = storyCard.match.id
+ok = service.placeBet(game, storyCard.match.winner, 100)
+T.check(ok, "the exhibition uses the ordinary durable wager boundary")
+ok, ticket = service.settle(game)
+T.check(ok and ticket.won, "a winning exhibition settles through the Arena ledger")
+local storyState = story.snapshot(game)
+T.eq(storyState.stage, story.STAGES.CHOICE,
+  "winning Series 3 summons Giovanni's choice stage")
+T.eq(storyState.exhibition.attempts, 1,
+  "the story records one exhibition attempt exactly once")
+T.eq(storyState.exhibition.wins, 1,
+  "the story records the exhibition victory exactly once")
+local attemptsAfterWin = storyState.exhibition.attempts
+ok = service.settle(game)
+T.check(ok and story.snapshot(game).exhibition.attempts == attemptsAfterWin,
+  "reopening a won result cannot duplicate story settlement")
+T.check(service.acknowledge(), "the won exhibition result remains acknowledgeable")
+
+saved.gamble_campaign.story.stage = story.STAGES.INVITATION
+saved.gamble_campaign.story.exhibition = {
+  attempts = 0, wins = 0, lastMatchId = 0,
+}
+saved.gamble_campaign.arena.pending = nil
+local losingCard = assert(service.current(game, deterministic))
+ok = service.placeBet(game, 3 - losingCard.match.winner, 100)
+T.check(ok, "the exhibition also accepts a losing committed selection")
+ok, ticket = service.settle(game)
+T.check(ok and not ticket.won, "a lost exhibition produces a durable loss")
+storyState = story.snapshot(game)
+T.eq(storyState.stage, story.STAGES.INVITATION,
+  "losing keeps the invitation recoverable")
+T.eq(storyState.exhibition.attempts, 1,
+  "a lost exhibition is still counted once")
+T.check(service.acknowledge(), "the player can acknowledge a lost exhibition")
+local retryCard = assert(service.current(game, deterministic))
+T.check(retryCard.match.id > storyMatchId
+    and retryCard.match.fighters[1].species == losingCard.match.fighters[1].species
+    and retryCard.match.fighters[2].species == losingCard.match.fighters[2].species,
+  "a retry preserves the fixed Series 3 pairing under a new durable ticket")
+T.check(service.resetPosted(), "the unplayed retry can be retired by the QA reset")
 
 rank = "VIP"
 saved.gamble_campaign.arena.unlocked = false

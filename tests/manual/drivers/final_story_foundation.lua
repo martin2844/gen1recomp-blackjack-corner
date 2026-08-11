@@ -18,6 +18,12 @@ return function(game)
   campaign.arena.stairsRevealed = true
   game.save.inventory = game.save.inventory or {}
   game.save.inventory.COIN_CASE = 1
+  for _, badge in ipairs(api.reputation_rules.BADGES) do
+    game.save.inventory[badge] = 1
+  end
+  for _, rankRow in ipairs(api.reputation_rules.RANKS) do
+    campaign.reputation.rankRewardsClaimed[rankRow.id] = true
+  end
   game.save.objectToggles = game.save.objectToggles or {}
   api.arena_world.sync(game, api.arena_security)
 
@@ -79,4 +85,48 @@ return function(game)
   assert(state.stage == api.arena_story.STAGES.INVITATION)
   assert(state.clues[api.arena_story.CLUES.MANSION_LOG])
   U.log("PASS", "CIN-05", "Mansion log authenticated the invitation")
+
+  game.save.coins = 50000
+  local exhibition = assert(api.arena.current(game))
+  assert(exhibition.kind == "EXHIBITION")
+  local committedId = exhibition.match.id
+  local committedWinner = exhibition.match.winner
+  U.teleport(game, api.arena_world.ARENA, 9, 4, "up")
+  U.wait(20)
+  U.tap(game, "a")
+  U.wait(120)
+  local screen
+  for _ = 1, 5 do
+    local top = game.stack:top()
+    if top and top.pending then screen = top break end
+    U.tap(game, "a")
+    U.wait(120)
+  end
+  assert(screen and screen.pending and screen.pending.kind == "EXHIBITION")
+  assert(screen.pending.match.id == committedId)
+  assert(U.shot(game, shotDir .. "/story-exhibition-card.png"))
+  if committedWinner == 2 then U.tap(game, "down"); U.wait(5) end
+  U.tap(game, "a")
+  U.wait(20)
+  assert(U.shot(game, shotDir .. "/story-exhibition-intro.png"))
+  for _ = 1, 6000 do
+    U.wait(1)
+    if screen.phase == "result" then break end
+  end
+  assert(screen.phase == "result" and screen.pending.won)
+  assert(screen.pending.match.id == committedId)
+  assert(U.shot(game, shotDir .. "/story-exhibition-result.png"))
+  state = api.arena_story.snapshot(game)
+  assert(state.stage == api.arena_story.STAGES.CHOICE)
+  assert(state.exhibition.attempts == 1 and state.exhibition.wins == 1)
+  U.log("PASS", "EXH-04", "Series 3 win committed Giovanni's audience")
+
+  U.tap(game, "b")
+  U.wait(60)
+  U.teleport(game, api.arena_world.ARENA, 10, 7, "up")
+  U.wait(30)
+  U.tap(game, "a")
+  U.wait(120)
+  assert(U.shot(game, shotDir .. "/story-giovanni-summoned.png"))
+  U.log("PASS", "EXH-05", "Giovanni appeared physically after the win")
 end

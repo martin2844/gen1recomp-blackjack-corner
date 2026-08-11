@@ -1,7 +1,7 @@
 local State = {}
 
 State.KEY = "gamble_campaign"
-State.SCHEMA = 6
+State.SCHEMA = 7
 
 local VALID_RANKS = {
   ROOKIE = true, REGULAR = true, HIGH_ROLLER = true,
@@ -20,6 +20,7 @@ State.STORY_STAGES = {
   LEAD = "CINNABAR_LEAD",
   INVESTIGATION = "CINNABAR_INVESTIGATION",
   INVITATION = "EXHIBITION_INVITATION",
+  CHOICE = "GIOVANNI_CHOICE",
 }
 
 local VALID_STORY_CLUES, VALID_STORY_STAGES = {}, {}
@@ -30,6 +31,7 @@ local STORY_STAGE_ORDER = {
   [State.STORY_STAGES.LEAD] = 2,
   [State.STORY_STAGES.INVESTIGATION] = 3,
   [State.STORY_STAGES.INVITATION] = 4,
+  [State.STORY_STAGES.CHOICE] = 5,
 }
 
 local function number(value, fallback, minimum)
@@ -143,8 +145,12 @@ local function sanitizeArenaPending(value)
   local out = deepCopy(value)
   out.match.id = number(match.id, 0)
   if out.match.id < 1 then return nil end
-  out.match.tier = ({ STREET = true, ELITE = true, RARE = true })[match.tier]
+  out.match.tier = ({ STREET = true, ELITE = true, RARE = true,
+      EXHIBITION = true })[match.tier]
     and match.tier or "STREET"
+  out.match.kind = match.kind == "EXHIBITION" and "EXHIBITION" or "STANDARD"
+  out.match.reward = type(match.reward) == "string" and match.reward or nil
+  out.kind = value.kind == "EXHIBITION" and "EXHIBITION" or out.match.kind
   for index = 1, 2 do
     local fighter = out.match.fighters[index]
     if type(fighter.species) ~= "string" or fighter.species == "" then return nil end
@@ -251,6 +257,9 @@ function State.defaults()
     story = {
       stage = State.STORY_STAGES.RUMORS,
       clues = {},
+      exhibition = {
+        attempts = 0, wins = 0, lastMatchId = 0,
+      },
     },
   }
 end
@@ -305,6 +314,10 @@ State.MIGRATIONS = {
     if story.stage == nil then story.stage = State.STORY_STAGES.RUMORS end
     if type(story.clues) ~= "table" then story.clues = {} end
   end,
+  [7] = function(value)
+    local story = ensureTable(value, "story")
+    ensureTable(story, "exhibition")
+  end,
 }
 
 function State.migrate(value)
@@ -332,6 +345,7 @@ function State.sanitize(value)
   local house = ensureTable(out, "house")
   local arena = ensureTable(out, "arena")
   local story = ensureTable(out, "story")
+  local exhibition = ensureTable(story, "exhibition")
 
   out.schema = savedSchema > State.SCHEMA and savedSchema or State.SCHEMA
   rep.points = number(rep.points, 0)
@@ -403,6 +417,12 @@ function State.sanitize(value)
   local clueAllowlist
   if savedSchema <= State.SCHEMA then clueAllowlist = VALID_STORY_CLUES end
   story.clues = sanitizeBooleanMap(story.clues, clueAllowlist)
+  exhibition.attempts = number(exhibition.attempts, 0)
+  exhibition.wins = number(exhibition.wins, 0)
+  exhibition.lastMatchId = number(exhibition.lastMatchId, 0)
+  if exhibition.wins > exhibition.attempts then
+    exhibition.attempts = exhibition.wins
+  end
   if savedSchema <= State.SCHEMA or VALID_STORY_STAGES[story.stage] then
     local arenaFound = 0
     for _, id in ipairs({ State.STORY_CLUES.FRAME,
@@ -430,9 +450,16 @@ function State.sanitize(value)
     if order >= STORY_STAGE_ORDER[State.STORY_STAGES.INVITATION]
         or (story.clues[State.STORY_CLUES.LAB_ARCHIVE]
           and story.clues[State.STORY_CLUES.MANSION_LOG]) then
-      story.stage = State.STORY_STAGES.INVITATION
+      if order < STORY_STAGE_ORDER[State.STORY_STAGES.INVITATION] then
+        story.stage = State.STORY_STAGES.INVITATION
+        order = STORY_STAGE_ORDER[story.stage]
+      end
       story.clues[State.STORY_CLUES.LAB_ARCHIVE] = true
       story.clues[State.STORY_CLUES.MANSION_LOG] = true
+    end
+    if exhibition.wins > 0
+        and order < STORY_STAGE_ORDER[State.STORY_STAGES.CHOICE] then
+      story.stage = State.STORY_STAGES.CHOICE
     end
   end
   return out

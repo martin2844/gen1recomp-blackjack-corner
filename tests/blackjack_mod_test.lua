@@ -668,6 +668,8 @@ do
     "BLACKJACK_CORNER_CINNABAR_HANDLER")
   local mansionResearcher = collector("POKEMON_MANSION_B1F",
     "BLACKJACK_CORNER_MANSION_RESEARCHER")
+  local giovanni = collector("ROCKET_BATTLE_ARENA",
+    "BLACKJACK_CORNER_GIOVANNI")
   T.check(palletCollector and palletCollector.hidden,
     "Pallet's Rocket collector remains hidden until a default")
   T.check(celadonCollector and celadonCollector.hidden,
@@ -682,6 +684,8 @@ do
   T.check(not hasStoryMaps
       or (cinnabarHandler.index > 2 and mansionResearcher.index > 8),
     "story contacts allocate indices after every native map object")
+  T.check(giovanni and giovanni.hidden and giovanni.index > 9,
+    "Giovanni is staged after the native Arena cast and remains hidden")
 end
 
 do

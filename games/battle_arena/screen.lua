@@ -68,7 +68,14 @@ return function(ctx)
 
   function Screen:nextMatch()
     local rankUp = self.pending and self.pending.rankUp
+    local exhibitionWon = self.pending and self.pending.kind == "EXHIBITION"
+      and self.pending.won == true
     Service.acknowledge()
+    if exhibitionWon then
+      self:close()
+      if rankUp and ctx.showRankUp then ctx.showRankUp(self.game) end
+      return
+    end
     if rankUp and ctx.showRankUp then
       self:close(); ctx.showRankUp(self.game); return
     end

@@ -90,6 +90,33 @@ T.eq(state.stage, story.STAGES.INVITATION,
   "two Cinnabar records advance the campaign back toward Celadon")
 T.eq(state.cinnabarClueCount, 2,
   "the complete Cinnabar investigation persists both records")
+T.check(story.exhibitionAvailable(game),
+  "the authenticated invitation exposes the engineered exhibition")
+ok, state, reason = story.settleExhibition(game, 0, true)
+T.check(not ok and reason == "INVALID MATCH",
+  "story settlement rejects a missing durable Arena match id")
+ok, state, reason = story.settleExhibition(game, 21, false)
+T.check(ok and reason == "EXHIBITION LOST",
+  "a committed exhibition loss is recorded without blocking a retry")
+T.eq(state.stage, story.STAGES.INVITATION,
+  "a loss keeps the exhibition invitation active")
+T.eq(state.exhibition.attempts, 1,
+  "the lost exhibition advances the attempt ledger exactly once")
+ok, state, reason = story.settleExhibition(game, 21, false)
+T.check(not ok and reason == "ALREADY SETTLED",
+  "the same exhibition match cannot settle twice")
+ok, state, reason = story.settleExhibition(game, 22, true)
+T.check(ok and reason == "GIOVANNI SUMMONED",
+  "a committed exhibition win summons Giovanni")
+T.eq(state.stage, story.STAGES.CHOICE,
+  "the victory advances to Giovanni's choice stage")
+T.eq(state.exhibition.attempts, 2,
+  "the exhibition ledger preserves both attempts")
+T.eq(state.exhibition.wins, 1,
+  "the exhibition ledger preserves the one victory")
+handlerVisible, researcherVisible, giovanniVisible = StoryWorld.sync(game, story)
+T.check(handlerVisible and not researcherVisible and giovanniVisible,
+  "Giovanni replaces the Cinnabar contact after the exhibition victory")
 
 ok, state, reason = story.discover(game, "NOT_A_REAL_CLUE")
 T.check(not ok and reason == "UNKNOWN CLUE",
@@ -100,7 +127,7 @@ local migrated = State.sanitize({
   schema = 4,
   arena = { stairsRevealed = true, matchesPlayed = 9 },
 })
-T.eq(migrated.schema, 6, "schema four campaigns migrate into story state")
+T.eq(migrated.schema, 7, "schema four campaigns migrate into story state")
 T.eq(migrated.story.stage, story.STAGES.RUMORS,
   "an upgraded campaign starts the rumor trail without skipping content")
 T.eq(migrated.arena.matchesPlayed, 9,
@@ -118,13 +145,13 @@ T.eq(repaired.story.stage, story.STAGES.LEAD,
   "complete clues repair a partially written chapter transition")
 
 local future = State.sanitize({
-  schema = 7,
+  schema = 8,
   story = { stage = "GIOVANNI_FINALE", clues = {
     FUTURE_DOSSIER = true,
     [story.CLUES.LAB_ARCHIVE] = true,
   } },
 })
-T.eq(future.schema, 7, "a future campaign schema is never downgraded")
+T.eq(future.schema, 8, "a future campaign schema is never downgraded")
 T.eq(future.story.stage, "GIOVANNI_FINALE",
   "a future story chapter survives an older build")
 T.check(future.story.clues.FUTURE_DOSSIER,

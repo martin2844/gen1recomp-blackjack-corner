@@ -168,6 +168,9 @@ return function(mod)
   local House = HouseService(mod, {
     state = CampaignState, active = Gamble.active, coinCap = config.coinCap,
   })
+  ArenaStory = ArenaStoryFactory(mod, {
+    state = CampaignState, active = Gamble.active,
+  })
   Arena = ArenaServiceFactory(mod, {
     state = CampaignState, rules = ArenaRules, active = Gamble.active,
     coinCap = config.coinCap,
@@ -177,13 +180,16 @@ return function(mod)
     end,
     allowed = function(game) return Credit.luxuryAllowed(game) end,
     beginRound = common.beginRound, settleRound = common.settleRound,
+    exhibition = ArenaStory.exhibitionAvailable,
+    settleExhibition = function(game, matchId, won)
+      local ok, state, reason = ArenaStory.settleExhibition(game, matchId, won)
+      StoryWorld.sync(game, ArenaStory, ok and won)
+      return ok, state, reason
+    end,
   })
   ArenaSecurity = ArenaSecurityFactory(mod, {
     state = CampaignState, active = Gamble.active,
     lobbyMap = ids.arenaLobby, arenaMap = ids.arenaMap,
-  })
-  ArenaStory = ArenaStoryFactory(mod, {
-    state = CampaignState, active = Gamble.active,
   })
   config.luxuryAllowed = Credit.luxuryAllowed
   local function syncCampaignWorld(game)
@@ -543,7 +549,20 @@ return function(mod)
     TEXT_ARENA_BOOKIE = function(game, _, _, done)
       local allowed, reason = Arena.access(game)
       if not allowed then UI.text(game, reason, done); return end
-      open(game, "NO TRAINER ORDERS.\nNO ITEMS.\nNO MERCY.\fPick the fighter.\nThe pit decides.", ids.arena, done)
+      local story = ArenaStory.snapshot(game)
+      local invitation = story and story.stage == ArenaStory.STAGES.INVITATION
+      open(game, invitation
+        and "SERIES 3 IS READY.\nGIOVANNI IS WATCHING.\fPick the fighter.\nWin his audience."
+        or "NO TRAINER ORDERS.\nNO ITEMS.\nNO MERCY.\fPick the fighter.\nThe pit decides.",
+        ids.arena, done)
+    end,
+    TEXT_BLACKJACK_CORNER_GIOVANNI = function(game, _, _, done)
+      local story = ArenaStory.snapshot(game)
+      if story and story.stage == ArenaStory.STAGES.CHOICE then
+        UI.text(game, "You beat SERIES 3.\fMost people wager\ncoins. You wagered\nyour judgment.\fNow decide what kind\nof winner you are.", done)
+      else
+        UI.text(game, "The boss has no\nbusiness with you.", done)
+      end
     end,
     TEXT_ARENA_TO_LOBBY = function(game, _, _, done)
       UI.text(game, "The lobby door is\nbehind you.", done)

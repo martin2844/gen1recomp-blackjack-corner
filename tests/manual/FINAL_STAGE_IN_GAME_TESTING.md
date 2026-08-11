@@ -34,8 +34,15 @@ dialogue, presentation, pacing, save/reload, and story continuity.
 
 ## Engineered exhibition
 
-Reserved for Chunk C: committed exhibition card, odds, win/loss/reload,
-animation, reward delivery, and no-reroll guarantees.
+| ID | State and action | Expected result | Evidence |
+| --- | --- | --- | --- |
+| EXH-01 | Return to the pit with `EXHIBITION_INVITATION` and an unpaid ordinary card | The ordinary posting is replaced by the dedicated Series 3 card without deducting coins | Image + values |
+| EXH-02 | Inspect Series 3 before betting | Dragonite L62 and Mewtwo L65, odds, committed winner, action list, and `GIOVANNI AUDIENCE` reward are persisted together | Image + values |
+| EXH-03 | Bet, save, and reload before/during animation | The exact match id, pair, odds, selected fighter, stake, winner, actions, and reward resume with no second deduction | Values + animation |
+| EXH-04 | Win Series 3 | The normal payout settles once, story advances to `GIOVANNI_CHOICE`, and the result directs the player out to Giovanni | Image + values |
+| EXH-05 | Leave the result screen after a win | Giovanni appears physically in B2 with readable introductory dialogue | Image + navigation |
+| EXH-06 | Lose Series 3, acknowledge, and retry | The invitation remains active, the loss counts once, and the fixed Dragonite/Mewtwo pairing returns under a new durable ticket | Image + values |
+| EXH-07 | Repeat settlement/reload around both results | Reputation, coins, Arena history, attempt count, and story stage never duplicate or regress | Values |
 
 ## Giovanni choice and endings
 
@@ -59,11 +66,16 @@ and Blue. It physically read the B1 painting, persisted the complete lead
 through a real disk save/restore, opened the completed-lead greeter dialogue,
 met the Cinnabar Lab handler, and recovered the Mansion B1 specimen log. The
 native interactions passed `STORY-03`, `STORY-09`, `STORY-10`, `CIN-03`, and
-`CIN-05` in both ROMs. Evidence is under:
+`CIN-05` in both ROMs. It also opened the Series 3 card, selected the committed
+winner, watched the battle settle, and met the summoned Giovanni, passing
+`EXH-04` and `EXH-05` in both ROMs. Evidence is under:
 
 - Red: `/tmp/blackjack-corner-v060/story-red`
 - Blue: `/tmp/blackjack-corner-v060/story-blue`
+- Red exhibition: `/tmp/blackjack-corner-v060/exhibition-red`
+- Blue exhibition: `/tmp/blackjack-corner-v060/exhibition-blue`
 
-The complete automated suite passes 1,602 assertions. The remaining fan
+The complete automated suite passes 1,649 assertions. The remaining fan
 dialogue, participation pacing, repeat-contact, palette, route-integrity, and
-economy permutations stay open until the whole Cinnabar chapter is present.
+economy permutations plus the native loss/reload exhibition paths stay open
+until the whole Cinnabar chapter is present.

@@ -56,6 +56,16 @@ Arena.FIGHTERS = {
     moves = { "PSYCHIC_M", "PSYBEAM", "SEISMIC_TOSS", "TRI_ATTACK" } },
 }
 
+-- Giovanni's Series 3 card is intentionally fixed. The pair is part of the
+-- story contract, while the committed winner and action list still come from
+-- the same priced simulator as an ordinary Arena match.
+Arena.EXHIBITION_FIGHTERS = {
+  { species = "DRAGONITE", level = 62, tier = 4,
+    moves = { "THUNDER", "BLIZZARD", "HYPER_BEAM", "BODY_SLAM" } },
+  { species = "MEWTWO", level = 65, tier = 4,
+    moves = { "PSYCHIC_M", "SWIFT", "SUBMISSION", "MEGA_KICK" } },
+}
+
 local SPECIAL = {
   FIRE = true, WATER = true, GRASS = true, ELECTRIC = true,
   ICE = true, PSYCHIC_TYPE = true, DRAGON = true,
@@ -256,17 +266,8 @@ local function simulate(fighters, random, forcedWinner)
   return actions, winner
 end
 
-function Arena.newMatch(data, reputation, sequence, random)
-  local tier = Arena.tierFor(reputation)
-  local pool = {}
-  local tierIndex = tier.id == "RARE" and 3 or (tier.id == "ELITE" and 2 or 1)
-  for _, fighter in ipairs(Arena.FIGHTERS) do
-    if fighter.tier <= tierIndex then pool[#pool + 1] = fighter end
-  end
-  local leftIndex = rngInt(random, #pool)
-  local rightIndex = rngInt(random, #pool - 1)
-  if rightIndex >= leftIndex then rightIndex = rightIndex + 1 end
-  local leftSource, rightSource = pool[leftIndex], pool[rightIndex]
+local function buildMatch(data, leftSource, rightSource, tier, sequence, random,
+    kind, reward)
   local left, right = hydrate(data, leftSource), hydrate(data, rightSource)
   refreshMoves(data, left, right, leftSource)
   refreshMoves(data, right, left, rightSource)
@@ -282,10 +283,31 @@ function Arena.newMatch(data, reputation, sequence, random)
   actions, winner = simulate({ left, right }, random, winner)
   left.hp, right.hp = left.maxHP, right.maxHP
   return {
-    id = math.max(1, math.floor(tonumber(sequence) or 1)), tier = tier.id,
+    id = math.max(1, math.floor(tonumber(sequence) or 1)), tier = tier,
+    kind = kind or "STANDARD", reward = reward,
     fighters = { left, right }, odds = odds, chances = chances,
     actions = actions, winner = winner,
   }
+end
+
+function Arena.newMatch(data, reputation, sequence, random)
+  local tier = Arena.tierFor(reputation)
+  local pool = {}
+  local tierIndex = tier.id == "RARE" and 3 or (tier.id == "ELITE" and 2 or 1)
+  for _, fighter in ipairs(Arena.FIGHTERS) do
+    if fighter.tier <= tierIndex then pool[#pool + 1] = fighter end
+  end
+  local leftIndex = rngInt(random, #pool)
+  local rightIndex = rngInt(random, #pool - 1)
+  if rightIndex >= leftIndex then rightIndex = rightIndex + 1 end
+  return buildMatch(data, pool[leftIndex], pool[rightIndex], tier.id,
+    sequence, random, "STANDARD")
+end
+
+function Arena.newExhibition(data, sequence, random)
+  return buildMatch(data, Arena.EXHIBITION_FIGHTERS[1],
+    Arena.EXHIBITION_FIGHTERS[2], "EXHIBITION", sequence, random,
+    "EXHIBITION", "GIOVANNI AUDIENCE")
 end
 
 function Arena.payout(stake, selected, match)

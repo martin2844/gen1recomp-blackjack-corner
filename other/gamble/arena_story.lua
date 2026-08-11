@@ -16,6 +16,7 @@ return function(mod, opts)
     [Story.STAGES.LEAD] = 2,
     [Story.STAGES.INVESTIGATION] = 3,
     [Story.STAGES.INVITATION] = 4,
+    [Story.STAGES.CHOICE] = 5,
   }
 
   local arenaClues = {
@@ -43,6 +44,7 @@ return function(mod, opts)
       cinnabarClueCount = count(campaign.story.clues, cinnabarClues),
       cinnabarClueTarget = Story.CINNABAR_TARGET,
       matchesPlayed = campaign.arena.matchesPlayed,
+      exhibition = opts.state.copy(campaign.story.exhibition),
     }
   end
 
@@ -98,6 +100,36 @@ return function(mod, opts)
     campaign.story.clues[Story.CLUES.LAB_ARCHIVE] = true
     store.save(campaign)
     return true, snapshot(campaign), "INVESTIGATION STARTED"
+  end
+
+  function Story.exhibitionAvailable()
+    local campaign = store.load(false)
+    return campaign ~= nil
+      and campaign.story.stage == Story.STAGES.INVITATION
+  end
+
+  function Story.settleExhibition(_, matchId, won)
+    local campaign = store.load(false)
+    if not campaign then return false, nil, "GAMBLE MODE OFF" end
+    if campaign.story.stage ~= Story.STAGES.INVITATION
+        and campaign.story.stage ~= Story.STAGES.CHOICE then
+      return false, snapshot(campaign), "NO EXHIBITION INVITATION"
+    end
+    matchId = math.max(0, math.floor(tonumber(matchId) or 0))
+    local exhibition = campaign.story.exhibition
+    if matchId < 1 then return false, snapshot(campaign), "INVALID MATCH" end
+    if matchId <= exhibition.lastMatchId then
+      return false, snapshot(campaign), "ALREADY SETTLED"
+    end
+    exhibition.lastMatchId = matchId
+    exhibition.attempts = exhibition.attempts + 1
+    if won then
+      exhibition.wins = exhibition.wins + 1
+      campaign.story.stage = Story.STAGES.CHOICE
+    end
+    store.save(campaign)
+    return true, snapshot(campaign), won and "GIOVANNI SUMMONED"
+      or "EXHIBITION LOST"
   end
 
   function Story.resetForQA()

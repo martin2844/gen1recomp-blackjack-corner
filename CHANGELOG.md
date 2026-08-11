@@ -10,6 +10,10 @@
 - Extended the lead into a schema-six Cinnabar investigation with a hidden Lab
   handler, a Mansion researcher, two persistent records, and an authenticated
   exhibition invitation back to Celadon.
+- Added the schema-seven Series 3 exhibition: a fixed Dragonite/Mewtwo card
+  whose complete odds, result, wager, animation plan, and Giovanni audience
+  reward are committed before the fight. Wins summon Giovanni in the pit;
+  losses remain recoverable without changing the announced pairing.
 - Added a dedicated final-stage implementation plan, Red/Blue manual matrix,
   future-schema preservation coverage, and a native story-foundation driver.
 

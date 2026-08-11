@@ -46,8 +46,9 @@ This chunk is implemented on the final-stage branch.
 - Return the player to Celadon with an authenticated exhibition invitation.
 
 Chunks A and B now have their state, services, native contacts, dialogue, and
-automated coverage on the feature branch. Full physical Red/Blue investigation
-signoff remains open while Chunk C is built.
+automated coverage on the feature branch. Their focused Red/Blue route passes;
+the cumulative repeat, palette, and compatibility permutations remain open
+while the Giovanni finale is built.
 
 ### C. Engineered exhibition
 
@@ -59,6 +60,13 @@ signoff remains open while Chunk C is built.
   impossible battle rules.
 - Losing remains recoverable and cannot reroll the committed opponent.
 - Winning summons Giovanni and moves the campaign to its choice stage.
+
+Chunk C is implemented on the feature branch. The Series 3 card fixes
+Dragonite against Mewtwo, persists its complete priced battle and Giovanni
+audience reward before animation, survives service reloads, records losses as
+recoverable attempts, and summons a native Giovanni actor after a win. Red and
+Blue have passed the focused winning UI path; native loss/reload permutations
+remain in the final cumulative gate.
 
 ### D. Giovanni finale
 
@@ -84,17 +92,23 @@ signoff remains open while Chunk C is built.
 ## Persistent state
 
 Schema five adds the Arena rumor trail; schema six extends the same sibling
-document for the Cinnabar investigation:
+document for the Cinnabar investigation; schema seven adds the exhibition
+ledger:
 
 ```lua
 story = {
-  stage = "CINNABAR_INVESTIGATION",
+  stage = "GIOVANNI_CHOICE",
   clues = {
     CINNABAR_FRAME = true,
     CAGE_MANIFEST = true,
     FUJI_CHART = true,
     LAB_ARCHIVE = true,
     MANSION_LOG = true,
+  },
+  exhibition = {
+    attempts = 1,
+    wins = 1,
+    lastMatchId = 42,
   },
 }
 ```
@@ -116,6 +130,10 @@ CINNABAR_LEAD
     | meet the Lab handler and recover the Mansion log
     v
 EXHIBITION_INVITATION
+    |
+    | win the committed Series 3 exhibition
+    v
+GIOVANNI_CHOICE
 ```
 
 Later stage names and their fields are added only in the chunk that implements

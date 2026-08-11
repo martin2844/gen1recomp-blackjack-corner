@@ -78,6 +78,12 @@ remain in the final cumulative gate.
 - Never remove badges, essential items, travel, healing, existing prizes, or
   the ability to finish the ordinary Pokemon story.
 
+Chunk D is implemented on the feature branch. Giovanni presents EXPOSE,
+CHAMPION, and LEAVE through native UI; each irreversible branch shows its own
+consequences and requires a second YES/NO confirmation. The committed ending
+is monotonic and survives sanitation/reload. Red has passed EXPOSE and Blue has
+passed CHAMPION through the physical B2 actor.
+
 ### E. Ending world and balance
 
 - EXPOSE changes Rocket staff, selected gamblers, the Arena board, and luxury
@@ -93,11 +99,11 @@ remain in the final cumulative gate.
 
 Schema five adds the Arena rumor trail; schema six extends the same sibling
 document for the Cinnabar investigation; schema seven adds the exhibition
-ledger:
+ledger; schema eight records the irreversible Giovanni decision:
 
 ```lua
 story = {
-  stage = "GIOVANNI_CHOICE",
+  stage = "ROCKET_EXPOSED",
   clues = {
     CINNABAR_FRAME = true,
     CAGE_MANIFEST = true,
@@ -110,6 +116,7 @@ story = {
     wins = 1,
     lastMatchId = 42,
   },
+  ending = { choice = "EXPOSE" },
 }
 ```
 
@@ -134,6 +141,10 @@ EXHIBITION_INVITATION
     | win the committed Series 3 exhibition
     v
 GIOVANNI_CHOICE
+    |                 |
+    | EXPOSE          | CHAMPION
+    v                 v
+ROCKET_EXPOSED    HOUSE_CHAMPION
 ```
 
 Later stage names and their fields are added only in the chunk that implements

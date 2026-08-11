@@ -110,7 +110,7 @@ Current mod save key: `gamble_campaign`
 
 ```lua
 {
-  schema = 7,
+  schema = 8,
   reputation = {
     points = 0,
     rank = "ROOKIE",

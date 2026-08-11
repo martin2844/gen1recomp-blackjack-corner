@@ -129,4 +129,37 @@ return function(game)
   U.wait(120)
   assert(U.shot(game, shotDir .. "/story-giovanni-summoned.png"))
   U.log("PASS", "EXH-05", "Giovanni appeared physically after the win")
+
+  local menu
+  for _ = 1, 8 do
+    local top = game.stack:top()
+    if top and top.items then menu = top break end
+    U.tap(game, "a")
+    U.wait(120)
+  end
+  assert(menu and #menu.items == 3)
+  assert(U.shot(game, shotDir .. "/story-giovanni-choice.png"))
+  local GameVersion = require("src.core.GameVersion")
+  local expected = GameVersion.isBlue() and api.arena_story.ENDINGS.CHAMPION
+    or api.arena_story.ENDINGS.EXPOSE
+  if expected == api.arena_story.ENDINGS.CHAMPION then
+    U.tap(game, "down")
+    U.wait(5)
+  end
+  U.tap(game, "a")
+  U.wait(120)
+  assert(U.shot(game, shotDir .. "/story-giovanni-consequence.png"))
+  for _ = 1, 12 do
+    state = api.arena_story.snapshot(game)
+    if state.ending.choice then break end
+    U.tap(game, "a")
+    U.wait(120)
+  end
+  state = api.arena_story.snapshot(game)
+  assert(state.ending.choice == expected)
+  local expectedStage = expected == api.arena_story.ENDINGS.EXPOSE
+    and api.arena_story.STAGES.EXPOSED or api.arena_story.STAGES.CHAMPION
+  assert(state.stage == expectedStage)
+  assert(U.shot(game, shotDir .. "/story-giovanni-ending.png"))
+  U.log("PASS", "END-03", expected .. " committed after consequence copy")
 end

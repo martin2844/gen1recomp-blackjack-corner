@@ -1,7 +1,7 @@
 local State = {}
 
 State.KEY = "gamble_campaign"
-State.SCHEMA = 7
+State.SCHEMA = 8
 
 local VALID_RANKS = {
   ROOKIE = true, REGULAR = true, HIGH_ROLLER = true,
@@ -21,6 +21,12 @@ State.STORY_STAGES = {
   INVESTIGATION = "CINNABAR_INVESTIGATION",
   INVITATION = "EXHIBITION_INVITATION",
   CHOICE = "GIOVANNI_CHOICE",
+  EXPOSED = "ROCKET_EXPOSED",
+  CHAMPION = "HOUSE_CHAMPION",
+}
+State.STORY_ENDINGS = {
+  EXPOSE = "EXPOSE",
+  CHAMPION = "CHAMPION",
 }
 
 local VALID_STORY_CLUES, VALID_STORY_STAGES = {}, {}
@@ -32,6 +38,8 @@ local STORY_STAGE_ORDER = {
   [State.STORY_STAGES.INVESTIGATION] = 3,
   [State.STORY_STAGES.INVITATION] = 4,
   [State.STORY_STAGES.CHOICE] = 5,
+  [State.STORY_STAGES.EXPOSED] = 6,
+  [State.STORY_STAGES.CHAMPION] = 6,
 }
 
 local function number(value, fallback, minimum)
@@ -260,6 +268,7 @@ function State.defaults()
       exhibition = {
         attempts = 0, wins = 0, lastMatchId = 0,
       },
+      ending = { choice = nil },
     },
   }
 end
@@ -318,6 +327,10 @@ State.MIGRATIONS = {
     local story = ensureTable(value, "story")
     ensureTable(story, "exhibition")
   end,
+  [8] = function(value)
+    local story = ensureTable(value, "story")
+    ensureTable(story, "ending")
+  end,
 }
 
 function State.migrate(value)
@@ -346,6 +359,7 @@ function State.sanitize(value)
   local arena = ensureTable(out, "arena")
   local story = ensureTable(out, "story")
   local exhibition = ensureTable(story, "exhibition")
+  local ending = ensureTable(story, "ending")
 
   out.schema = savedSchema > State.SCHEMA and savedSchema or State.SCHEMA
   rep.points = number(rep.points, 0)
@@ -423,6 +437,8 @@ function State.sanitize(value)
   if exhibition.wins > exhibition.attempts then
     exhibition.attempts = exhibition.wins
   end
+  ending.choice = ({ EXPOSE = true, CHAMPION = true })[ending.choice]
+    and ending.choice or nil
   if savedSchema <= State.SCHEMA or VALID_STORY_STAGES[story.stage] then
     local arenaFound = 0
     for _, id in ipairs({ State.STORY_CLUES.FRAME,
@@ -460,6 +476,20 @@ function State.sanitize(value)
     if exhibition.wins > 0
         and order < STORY_STAGE_ORDER[State.STORY_STAGES.CHOICE] then
       story.stage = State.STORY_STAGES.CHOICE
+      order = STORY_STAGE_ORDER[story.stage]
+    end
+    if story.stage == State.STORY_STAGES.EXPOSED then
+      ending.choice = State.STORY_ENDINGS.EXPOSE
+    elseif story.stage == State.STORY_STAGES.CHAMPION then
+      ending.choice = State.STORY_ENDINGS.CHAMPION
+    elseif ending.choice == State.STORY_ENDINGS.EXPOSE then
+      story.stage = State.STORY_STAGES.EXPOSED
+    elseif ending.choice == State.STORY_ENDINGS.CHAMPION then
+      story.stage = State.STORY_STAGES.CHAMPION
+    end
+    if ending.choice and exhibition.wins == 0 then
+      exhibition.wins = 1
+      exhibition.attempts = math.max(exhibition.attempts, 1)
     end
   end
   return out

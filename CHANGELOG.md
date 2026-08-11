@@ -14,6 +14,9 @@
   whose complete odds, result, wager, animation plan, and Giovanni audience
   reward are committed before the fight. Wins summon Giovanni in the pit;
   losses remain recoverable without changing the announced pairing.
+- Added Giovanni's schema-eight finale decision with native EXPOSE, CHAMPION,
+  and LEAVE controls, branch-specific consequence copy, a second YES/NO
+  confirmation, irreversible persistence, and ending-specific repeat dialogue.
 - Added a dedicated final-stage implementation plan, Red/Blue manual matrix,
   future-schema preservation coverage, and a native story-foundation driver.
 

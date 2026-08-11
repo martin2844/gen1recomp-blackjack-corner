@@ -559,7 +559,40 @@ return function(mod)
     TEXT_BLACKJACK_CORNER_GIOVANNI = function(game, _, _, done)
       local story = ArenaStory.snapshot(game)
       if story and story.stage == ArenaStory.STAGES.CHOICE then
-        UI.text(game, "You beat SERIES 3.\fMost people wager\ncoins. You wagered\nyour judgment.\fNow decide what kind\nof winner you are.", done)
+        local openChoice
+        local function confirm(choice)
+          local expose = choice == ArenaStory.ENDINGS.EXPOSE
+          local warning = expose
+            and "EXPOSE ROCKET?\nVIP perks end.\fTheir staff turns on\nyou.\fEvery game and route\nstays open.\fThis cannot be\nundone. Proceed?"
+            or "JOIN THE HOUSE?\nBecome CHAMPION.\fRocket keeps control.\fA final reward and\nVIP title unlock.\fThis cannot be\nundone. Proceed?"
+          game.stack:push(mod.ui.TextBox.new(game, warning, nil, {
+            choice = function(yes)
+              if not yes then openChoice(); return end
+              local ok, _, reason = ArenaStory.chooseEnding(game, choice)
+              StoryWorld.sync(game, ArenaStory, ok)
+              if not ok then UI.text(game, reason, done); return end
+              UI.text(game, expose
+                and "Then let daylight in.\fThe ledgers leave\nwith you.\fROCKET will remember\nthis choice."
+                or "A sensible wager.\fFrom now on, the\nhouse knows your name:\nCHAMPION.", done)
+            end,
+          }))
+        end
+        function openChoice()
+          game.stack:push(mod.ui.Menu.new(game, {
+            { label = "EXPOSE", onSelect = function()
+                confirm(ArenaStory.ENDINGS.EXPOSE)
+              end },
+            { label = "CHAMPION", onSelect = function()
+                confirm(ArenaStory.ENDINGS.CHAMPION)
+              end },
+            { label = "LEAVE", onSelect = done },
+          }, { tx = 4, ty = 3, maxVisible = 3, onCancel = done }))
+        end
+        UI.text(game, "You beat SERIES 3.\fMost people wager\ncoins. You wagered\nyour judgment.\fNow decide what kind\nof winner you are.", openChoice)
+      elseif story and story.stage == ArenaStory.STAGES.EXPOSED then
+        UI.text(game, "You chose daylight.\fDo not confuse my\nrestraint with\nforgiveness.", done)
+      elseif story and story.stage == ArenaStory.STAGES.CHAMPION then
+        UI.text(game, "CHAMPION.\fThe house is watching.\nMake it profitable.", done)
       else
         UI.text(game, "The boss has no\nbusiness with you.", done)
       end

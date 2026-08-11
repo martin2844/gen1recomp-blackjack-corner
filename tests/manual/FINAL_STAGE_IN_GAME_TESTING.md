@@ -46,8 +46,16 @@ dialogue, presentation, pacing, save/reload, and story continuity.
 
 ## Giovanni choice and endings
 
-Reserved for Chunks D-E: consequence copy, cancel behavior, both irreversible
-choices, ending world reactions, services, rewards, and ordinary story access.
+| ID | State and action | Expected result | Evidence |
+| --- | --- | --- | --- |
+| END-01 | Talk to Giovanni after the Series 3 win | A clear `EXPOSE` / `CHAMPION` / `LEAVE` menu appears and cancelling changes nothing | Image + values |
+| END-02 | Select either ending | Its distinct loss/gain consequences appear before a second YES/NO confirmation | Image |
+| END-03 | Confirm EXPOSE on Red and CHAMPION on Blue | The selected ending and stage save exactly once, with readable ending copy | Image + values |
+| END-04 | Say NO, leave, reopen, then confirm | Cancellation is non-mutating and the full choice remains available | Values + navigation |
+| END-05 | Attempt to select the other ending after confirmation and reload | Giovanni gives ending-specific repeat copy; the first choice cannot change | Image + values |
+
+Ending-specific world reactions, service changes, rewards, and ordinary-story
+route checks remain reserved for Chunk E.
 
 ## Final signoff
 
@@ -75,7 +83,10 @@ winner, watched the battle settle, and met the summoned Giovanni, passing
 - Red exhibition: `/tmp/blackjack-corner-v060/exhibition-red`
 - Blue exhibition: `/tmp/blackjack-corner-v060/exhibition-blue`
 
-The complete automated suite passes 1,649 assertions. The remaining fan
+The same driver selected EXPOSE on Red and CHAMPION on Blue, displayed the
+branch-specific consequence copy, and passed `END-03` for both branches.
+
+The complete automated suite passes 1,659 assertions. The remaining fan
 dialogue, participation pacing, repeat-contact, palette, route-integrity, and
 economy permutations plus the native loss/reload exhibition paths stay open
-until the whole Cinnabar chapter is present.
+until the ending-world and balance pass is complete.

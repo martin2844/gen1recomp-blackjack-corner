@@ -117,6 +117,23 @@ T.eq(state.exhibition.wins, 1,
 handlerVisible, researcherVisible, giovanniVisible = StoryWorld.sync(game, story)
 T.check(handlerVisible and not researcherVisible and giovanniVisible,
   "Giovanni replaces the Cinnabar contact after the exhibition victory")
+ok, state, reason = story.chooseEnding(game, "NOT_AN_ENDING")
+T.check(not ok and reason == "INVALID ENDING",
+  "Giovanni rejects an unknown finale choice")
+T.eq(state.stage, story.STAGES.CHOICE,
+  "an invalid finale choice changes no story state")
+ok, state, reason = story.chooseEnding(game, story.ENDINGS.EXPOSE)
+T.check(ok and reason == story.ENDINGS.EXPOSE,
+  "EXPOSE commits through the story service")
+T.eq(state.stage, story.STAGES.EXPOSED,
+  "EXPOSE advances to its permanent ending stage")
+T.eq(state.ending.choice, story.ENDINGS.EXPOSE,
+  "the exposed ending persists its explicit choice")
+ok, state, reason = story.chooseEnding(game, story.ENDINGS.CHAMPION)
+T.check(not ok and reason == "ENDING ALREADY CHOSEN",
+  "an ending cannot be switched after confirmation")
+T.eq(state.ending.choice, story.ENDINGS.EXPOSE,
+  "the rejected switch preserves the first ending")
 
 ok, state, reason = story.discover(game, "NOT_A_REAL_CLUE")
 T.check(not ok and reason == "UNKNOWN CLUE",
@@ -127,7 +144,7 @@ local migrated = State.sanitize({
   schema = 4,
   arena = { stairsRevealed = true, matchesPlayed = 9 },
 })
-T.eq(migrated.schema, 7, "schema four campaigns migrate into story state")
+T.eq(migrated.schema, 8, "schema four campaigns migrate into story state")
 T.eq(migrated.story.stage, story.STAGES.RUMORS,
   "an upgraded campaign starts the rumor trail without skipping content")
 T.eq(migrated.arena.matchesPlayed, 9,
@@ -145,19 +162,35 @@ T.eq(repaired.story.stage, story.STAGES.LEAD,
   "complete clues repair a partially written chapter transition")
 
 local future = State.sanitize({
-  schema = 8,
+  schema = 9,
   story = { stage = "GIOVANNI_FINALE", clues = {
     FUTURE_DOSSIER = true,
     [story.CLUES.LAB_ARCHIVE] = true,
   } },
 })
-T.eq(future.schema, 8, "a future campaign schema is never downgraded")
+T.eq(future.schema, 9, "a future campaign schema is never downgraded")
 T.eq(future.story.stage, "GIOVANNI_FINALE",
   "a future story chapter survives an older build")
 T.check(future.story.clues.FUTURE_DOSSIER,
   "future clue fields survive an older build")
 T.check(future.story.clues[story.CLUES.LAB_ARCHIVE],
   "known prerequisite clues cannot regress a future chapter")
+
+saved.gamble_campaign.story.stage = story.STAGES.CHOICE
+saved.gamble_campaign.story.ending = { choice = nil }
+saved.gamble_campaign.story.exhibition = {
+  attempts = 1, wins = 1, lastMatchId = 22,
+}
+ok, state, reason = story.chooseEnding(game, story.ENDINGS.CHAMPION)
+T.check(ok and reason == story.ENDINGS.CHAMPION,
+  "CHAMPION commits through the same explicit boundary")
+T.eq(state.stage, story.STAGES.CHAMPION,
+  "CHAMPION advances to its permanent ending stage")
+local repairedEnding = State.sanitize({ schema = 8,
+  story = { stage = story.STAGES.CHAMPION, ending = {} },
+})
+T.eq(repairedEnding.story.ending.choice, story.ENDINGS.CHAMPION,
+  "ending sanitation repairs a partially written champion transition")
 
 T.check(story.resetForQA(), "the story service exposes a deterministic QA reset")
 T.eq(story.snapshot(game).clueCount, 0, "QA reset clears only story progress")

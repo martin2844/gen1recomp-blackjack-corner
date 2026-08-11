@@ -2,6 +2,7 @@ return function(mod, opts)
   local Story = {
     CLUES = assert(opts.state.STORY_CLUES),
     STAGES = assert(opts.state.STORY_STAGES),
+    ENDINGS = assert(opts.state.STORY_ENDINGS),
     TARGET = 3,
     CINNABAR_TARGET = 2,
   }
@@ -17,6 +18,8 @@ return function(mod, opts)
     [Story.STAGES.INVESTIGATION] = 3,
     [Story.STAGES.INVITATION] = 4,
     [Story.STAGES.CHOICE] = 5,
+    [Story.STAGES.EXPOSED] = 6,
+    [Story.STAGES.CHAMPION] = 6,
   }
 
   local arenaClues = {
@@ -45,6 +48,7 @@ return function(mod, opts)
       cinnabarClueTarget = Story.CINNABAR_TARGET,
       matchesPlayed = campaign.arena.matchesPlayed,
       exhibition = opts.state.copy(campaign.story.exhibition),
+      ending = opts.state.copy(campaign.story.ending),
     }
   end
 
@@ -130,6 +134,25 @@ return function(mod, opts)
     store.save(campaign)
     return true, snapshot(campaign), won and "GIOVANNI SUMMONED"
       or "EXHIBITION LOST"
+  end
+
+  function Story.chooseEnding(_, choice)
+    local campaign = store.load(false)
+    if not campaign then return false, nil, "GAMBLE MODE OFF" end
+    if choice ~= Story.ENDINGS.EXPOSE and choice ~= Story.ENDINGS.CHAMPION then
+      return false, snapshot(campaign), "INVALID ENDING"
+    end
+    if campaign.story.ending.choice then
+      return false, snapshot(campaign), "ENDING ALREADY CHOSEN"
+    end
+    if campaign.story.stage ~= Story.STAGES.CHOICE then
+      return false, snapshot(campaign), "GIOVANNI IS NOT READY"
+    end
+    campaign.story.ending.choice = choice
+    campaign.story.stage = choice == Story.ENDINGS.EXPOSE
+      and Story.STAGES.EXPOSED or Story.STAGES.CHAMPION
+    store.save(campaign)
+    return true, snapshot(campaign), choice
   end
 
   function Story.resetForQA()

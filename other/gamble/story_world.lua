@@ -45,7 +45,8 @@ function StoryWorld.sync(game, story, reload)
   local handlerVisible = state and state.stage ~= stages.RUMORS
   local researcherVisible = state and (state.stage == stages.INVESTIGATION
     or state.stage == stages.INVITATION)
-  local giovanniVisible = state and state.stage == stages.CHOICE
+  local giovanniVisible = state and (state.stage == stages.CHOICE
+    or state.stage == stages.EXPOSED or state.stage == stages.CHAMPION)
   game.save.objectToggles = game.save.objectToggles or {}
   World.setObjectVisible(game.save, StoryWorld.PEOPLE[1].mapId,
     StoryWorld.PEOPLE[1].name, handlerVisible == true)

@@ -84,8 +84,8 @@ changing the always-available base casino expansion:
 - default brings Rocket collectors to Pallet and Celadon and freezes only paid
   Prize Cases and the luxury prize counters—games, travel, healing, story,
   clerks, and pawn redemption remain available;
-- a one-time last-resort bailout grants 10,000 coins only when both currencies
-  are empty, in exchange for Team Rocket taking the Pallet family home;
+- the Pallet family home can be pawned once at any money or casino balance for
+  10,000 additional coins, in exchange for Team Rocket taking possession;
 - the occupied home gains Rocket tenants, surveillance dialogue, authentic
   Rocket Hideout/Silph Co equipment derived from the imported game, and a
   relocated Mom upstairs who still heals the party;

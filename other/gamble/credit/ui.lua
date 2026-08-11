@@ -134,12 +134,12 @@ return function(mod, opts)
       game.stack:push(list)
     end
 
-    local function claimBailout(openMenu)
+    local function pawnHome(openMenu)
       game.stack:push(mod.ui.TextBox.new(game,
-        "TEAM ROCKET pays\n10000 coins.\fThey take your Pallet\nfamily home.\fBuyback is 30000\nplus one battle.\fSell the family\nhome?", nil, {
+        "TEAM ROCKET pays\n10000 coins now.\fThey take your Pallet\nfamily home.\fBuyback is 30000\nplus one battle.\fPawn the family\nhome?", nil, {
           choice = function(yes)
             if not yes then openMenu(); return end
-            local _, message = House.claimBailout(game)
+            local _, message = House.pawnHome(game)
             if opts.syncWorld then opts.syncWorld(game) end
             closeWith(game, message, openMenu)
           end,
@@ -188,10 +188,10 @@ return function(mod, opts)
       end
       if House then
         local home = House.snapshot(game)
-        local canBailout = House.canClaimBailout(game)
-        if canBailout then
-          rows[#rows + 1] = { label = "LAST RESORT",
-            onSelect = function() claimBailout(openMenu) end }
+        if home and home.status == "FAMILY_HOME"
+            and not home.bailoutClaimed then
+          rows[#rows + 1] = { label = "PAWN HOUSE",
+            onSelect = function() pawnHome(openMenu) end }
         elseif home and home.status == "ROCKET_OWNED" then
           rows[#rows + 1] = { label = "BUYBACK " .. House.BUYBACK_COST,
             onSelect = function() buyBackHome(openMenu) end }

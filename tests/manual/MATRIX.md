@@ -13,7 +13,7 @@
 | Pawn and pay | On | Prepared debt | Appraisal pays debt, surplus stays in Coin Case, ticket remains redeemable, FIFO warning still appears |
 | Default consequences | On | Defaulted | Pallet/Celadon collectors appear; Prize Case and prize counters freeze; games, clerk, travel, healing, story and pawn redemption remain available |
 | Default recovery | On | Defaulted | Full repayment restores luxury prizes and collectors disappear on the next map entry |
-| Last-resort bailout | On | Zero money/coins | Warning is explicit; YES grants exactly 10,000 once; NO changes nothing; debt remains independent |
+| Pawn family home | On | Any balance with 10,000 Coin Case capacity | Warning is explicit; YES adds exactly 10,000 once; NO changes nothing; debt remains independent |
 | Repossessed house | On | Rocket-owned | Mom moves upstairs and still heals; Rockets/furniture appear; doors, stairs, PC, routes and story stay usable |
 | House buyback | On | Rocket-owned + 30,000 coins | Exact deed cost is charged once and challenger replaces the ordinary tenant |
 | House battle | On | Buyback paid | Loss remains retryable after reload; win restores the house exactly once |

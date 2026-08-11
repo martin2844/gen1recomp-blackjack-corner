@@ -262,31 +262,33 @@ return function(game)
   check(U.shot(game, shotDir .. "/recovered-pallet-no-collector.png"))
   pass("RECOVER-01")
 
-  -- Bailout boundaries and one-time persistence.
+  -- Anytime house-pawn boundaries and one-time persistence.
   reset(); game.save.coins, game.save.money = 0, 1
-  check(not api.house.canClaimBailout(game)); pass("BAIL-01")
+  check(api.house.canPawnHome(game)); pass("BAIL-01")
   game.save.coins, game.save.money = 1, 0
-  check(not api.house.canClaimBailout(game)); pass("BAIL-02")
+  check(api.house.canPawnHome(game)); pass("BAIL-02")
   game.save.coins, game.save.money = 0, 0; game.save.inventory.COIN_CASE = nil
-  check(not api.house.canClaimBailout(game)); eq(game.save.coins, 0); pass("BAIL-03")
-  game.save.inventory.COIN_CASE = 1
+  check(not api.house.canPawnHome(game)); eq(game.save.coins, 0)
+  game.save.inventory.COIN_CASE = 1; game.save.coins = 995000
+  check(not api.house.canPawnHome(game)); eq(game.save.coins, 995000); pass("BAIL-03")
+  game.save.coins, game.save.money = 250, 5000
   local homeBefore = copy(api.house.snapshot(game))
   -- NO means the service is never called; verify the live confirmation copy.
   U.teleport(game, "BLACKJACK_LOUNGE", 17, 12, "right")
   U.tap(game, "a"); U.wait(120); U.tap(game, "a"); U.wait(120); U.tap(game, "a"); U.wait(10)
   U.tap(game, "down"); U.tap(game, "a"); U.wait(40)
-  check(U.shot(game, shotDir .. "/last-resort-confirmation.png"))
+  check(U.shot(game, shotDir .. "/pawn-house-confirmation.png"))
   U.tap(game, "b"); U.wait(20)
   eq(api.house.snapshot(game).status, homeBefore.status, "NO changed home")
-  eq(game.save.coins, 0, "NO paid bailout")
+  eq(game.save.coins, 250, "NO paid house pawn")
   pass("BAIL-04")
-  check(api.house.claimBailout(game), "eligible bailout failed")
-  eq(game.save.coins, 10000); eq(api.house.snapshot(game).status, "ROCKET_OWNED")
+  check(api.house.pawnHome(game), "eligible house pawn failed")
+  eq(game.save.coins, 10250); eq(game.save.money, 5000)
+  eq(api.house.snapshot(game).status, "ROCKET_OWNED")
   pass("BAIL-05")
-  game.save.coins = 0
-  check(not api.house.claimBailout(game)); eq(game.save.coins, 0); pass("BAIL-06")
+  check(not api.house.pawnHome(game)); eq(game.save.coins, 10250); pass("BAIL-06")
   diskRoundTrip({
-    ["coins"] = 0,
+    ["coins"] = 10250,
     ["modData.blackjack_corner.gamble_campaign.house.status"] = "ROCKET_OWNED",
     ["modData.blackjack_corner.gamble_campaign.house.bailoutClaimed"] = true,
   })

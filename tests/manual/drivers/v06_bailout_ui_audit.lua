@@ -1,4 +1,4 @@
--- Drives the complete LAST RESORT confirmation through NO and YES.
+-- Drives the complete PAWN HOUSE confirmation through NO and YES.
 
 return function(game)
   local U = dofile("tests/drivers/util.lua")
@@ -11,7 +11,7 @@ return function(game)
   bucket.gamble_mode = true
   bucket.gamble_campaign = api.campaign_state.defaults()
   game.save.inventory = { COIN_CASE = 1 }
-  game.save.coins, game.save.money = 0, 0
+  game.save.coins, game.save.money = 250, 5000
 
   local function openBrokerMenu()
     U.teleport(game, "BLACKJACK_LOUNGE", 17, 12, "right")
@@ -20,8 +20,8 @@ return function(game)
     U.wait(240); U.tap(game, "a")
     U.wait(15)
   end
-  local function openBailoutChoice(tag)
-    U.tap(game, "down") -- TAKE 500 -> LAST RESORT
+  local function openPawnChoice(tag)
+    U.tap(game, "down") -- TAKE 500 -> PAWN HOUSE
     U.tap(game, "a")
     for page = 1, 4 do
       U.wait(180)
@@ -30,24 +30,24 @@ return function(game)
     end
     U.wait(20)
     assert(getmetatable(game.stack:top()) == ChoiceBox,
-      "LAST RESORT warning did not end in a YES/NO choice")
+      "PAWN HOUSE warning did not end in a YES/NO choice")
     assert(U.shot(game, shotDir .. "/" .. tag .. "-choice.png"))
   end
 
   openBrokerMenu()
-  openBailoutChoice("last-resort-no")
+  openPawnChoice("pawn-house-no")
   U.tap(game, "b")
   U.wait(30)
-  assert(game.save.coins == 0 and game.save.money == 0)
+  assert(game.save.coins == 250 and game.save.money == 5000)
   assert(api.house.snapshot(game).status == "FAMILY_HOME")
   U.log("PASS", "BAIL-04", "real NO left balances and home unchanged")
 
-  -- The NO callback reopens the menu; choose LAST RESORT again.
-  openBailoutChoice("last-resort-yes")
+  -- The NO callback reopens the menu; choose PAWN HOUSE again.
+  openPawnChoice("pawn-house-yes")
   U.tap(game, "a") -- defaults to YES
   U.wait(40)
-  assert(game.save.coins == 10000 and game.save.money == 0)
+  assert(game.save.coins == 10250 and game.save.money == 5000)
   assert(api.house.snapshot(game).status == "ROCKET_OWNED")
-  assert(U.shot(game, shotDir .. "/last-resort-accepted.png"))
-  U.log("PASS", "BAIL-05", "real YES paid exactly 10000 and transferred the home")
+  assert(U.shot(game, shotDir .. "/pawn-house-accepted.png"))
+  U.log("PASS", "BAIL-05", "real YES added exactly 10000 and transferred the home")
 end

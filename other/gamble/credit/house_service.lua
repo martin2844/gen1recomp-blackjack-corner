@@ -4,6 +4,8 @@ return function(mod, opts)
     BAILOUT_COINS = 10000,
     BUYBACK_COST = 30000,
   }
+  local coinCap = math.max(0,
+    math.floor(tonumber(opts.coinCap) or 1000000))
 
   local function load(create)
     local campaign = store.load(create)
@@ -38,37 +40,43 @@ return function(mod, opts)
     }
   end
 
-  local function bailoutEligibility(game, home)
+  local function pawnEligibility(game, home)
     if not home then return false, "GAMBLE MODE OFF" end
     if home.bailoutClaimed or home.status ~= "FAMILY_HOME" then
-      return false, "The last resort was\nalready used."
+      return false, "The family home was\nalready pawned."
     end
     if not (game.save.inventory and game.save.inventory.COIN_CASE) then
       return false, "You need a\nCOIN CASE."
     end
-    if coins(game) ~= 0 or money(game) ~= 0 then
-      return false, "Last resort needs\nzero money and coins."
+    if coins(game) + House.BAILOUT_COINS > coinCap then
+      return false, "The COIN CASE needs\n10000 free space."
     end
     return true
   end
 
-  function House.canClaimBailout(game)
+  function House.canPawnHome(game)
     local _, home = load(false)
-    return bailoutEligibility(game, home)
+    return pawnEligibility(game, home)
   end
 
-  function House.claimBailout(game)
+  function House.pawnHome(game)
     local campaign, home = load(false)
-    local allowed, message = bailoutEligibility(game, home)
+    local allowed, message = pawnEligibility(game, home)
     if not allowed then return false, message end
-    game.save.coins = House.BAILOUT_COINS
+    game.save.coins = coins(game) + House.BAILOUT_COINS
     home.bailoutClaimed = true
     home.status = "ROCKET_OWNED"
     home.buybackPaid = false
     home.rocketBattleWon = false
     save(campaign)
-    return true, "You got 10000 coins.\fTEAM ROCKET now owns\nyour Pallet home."
+    return true, "You gained 10000 coins.\fTEAM ROCKET now owns\nyour Pallet home."
   end
+
+  -- Preserve the v0.5 API used by older QA drivers and companion mods. The
+  -- persisted field also keeps its original name so existing saves migrate
+  -- without a schema-only rewrite.
+  House.canClaimBailout = House.canPawnHome
+  House.claimBailout = House.pawnHome
 
   function House.buyBack(game)
     local campaign, home = load(false)

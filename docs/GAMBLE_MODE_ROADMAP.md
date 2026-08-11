@@ -110,7 +110,7 @@ Current mod save key: `gamble_campaign`
 
 ```lua
 {
-  schema = 3,
+  schema = 4,
   reputation = {
     points = 0,
     rank = "ROOKIE",
@@ -148,6 +148,9 @@ Current mod save key: `gamble_campaign`
   },
   arena = {
     unlocked = false,
+    stairsRevealed = false,
+    heldParty = nil,       -- legacy development-save recovery only
+    securityExit = false,  -- legacy development-save recovery only
     reputation = 0,
     matchesPlayed = 0,
     wins = 0,
@@ -226,8 +229,10 @@ Goal: deliver the campaign's main spectacle and final High Roller unlock.
 
 Ships:
 
-- A concealed staircase beneath Celadon.
-- A gloomy Rocket-operated VIP lobby and spectator arena.
+- A Rocket status terminal and persistent, walkable staircase beneath Celadon.
+- Native-ROM Rocket Casino B1 and B2 floors with a guarded spectator arena.
+- Permanent Rocket staff and a physical pit door that leave the player's party
+  untouched.
 - AI-controlled Pokemon-versus-Pokemon matches.
 - Posted odds derived from species, levels, stats, moves, and type matchups.
 - Controlled randomness so the favorite is not guaranteed to win.
@@ -282,8 +287,10 @@ Implementation status on `feat/v0.6-rocket-credit`:
 
 Implementation status on `feat/v0.7-underground-arena`:
 
-- schema-three arena migration and KINGPIN progression: implemented;
-- concealed Lounge lift, Rocket VIP lobby, and spectator arena: implemented;
+- schema-four arena-route migration and KINGPIN progression: implemented;
+- concealed Lounge switch, physical staircase, native-ROM Rocket B1 lobby,
+  permanent Rocket staff, real B1/B2 door warps, Elite Four-style B2
+  walk-in, and native `GYM` spectator arena: implemented;
 - real-stat matchup model, posted odds, tiered fighter pools, and simulation:
   implemented;
 - persistent wagers, outcomes, animation plans, payouts, and High Roller

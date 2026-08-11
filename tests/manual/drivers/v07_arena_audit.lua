@@ -60,10 +60,9 @@ return function(game)
     for _, obj in ipairs(map.objects or {}) do
       if tostring(obj.name or ""):find("ARENA_", 1, true) == 1 then
         count = count + 1
-        if not tostring(obj.name):find("ARENA_RING_", 1, true) then
-          assert(type(obj.text) == "string" and obj.text ~= "",
-            obj.name .. " has no interaction text")
-        end
+        local name = tostring(obj.name)
+        assert(type(obj.text) == "string" and obj.text ~= "",
+          obj.name .. " has no interaction text")
       end
     end
     assert(count >= minimum, mapId .. " is missing arena actors")
@@ -80,11 +79,18 @@ return function(game)
     for _, badge in ipairs(api.reputation_rules.BADGES) do
       game.save.inventory[badge] = 1
     end
+    if #(game.save.party or {}) == 0 then
+      local Pokemon = require("src.pokemon.Pokemon")
+      game.save.party = { Pokemon.new(game.data, "PIKACHU", 24) }
+    end
     game.save.coins, game.save.money = 50000, 3000
     game.save.objectToggles = game.save.objectToggles or {}
   end
   local function openArena()
-    U.teleport(game, api.arena_world.ARENA, 9, 11, "up")
+    -- The bookie now occupies the head of the native League chamber, matching
+    -- the trainer position in an Elite Four room rather than floating beside
+    -- the old custom ring.
+    U.teleport(game, api.arena_world.ARENA, 9, 4, "up")
     U.tap(game, "a")
     for _ = 1, 48 do
       local top = game.stack:top()
@@ -122,8 +128,9 @@ return function(game)
   eq(kingpinBets[#kingpinBets], 10000)
   pass("LIMIT-01", "VIP has no ticket; KINGPIN reaches 10000")
 
-  -- Concealed lift, lobby, arena floor, and safe return routes.
-  U.teleport(game, "BLACKJACK_LOUNGE", 2, 11, "left")
+  -- Concealed terminal, revealed stairs, permanent staff, physical doors,
+  -- real reloads, and returns.
+  U.teleport(game, "BLACKJACK_LOUNGE", 3, 12, "up")
   settleMap("BLACKJACK_LOUNGE")
   local unlockedCoins = game.save.coins
   diskRoundTrip({
@@ -132,50 +139,73 @@ return function(game)
   })
   assert(api.arena.access(game) and game.save.coins == unlockedCoins)
   pass("UNLOCK-03", "disk reload keeps unlock without another reward")
-  assert(U.shot(game, shotDir .. "/arena-concealed-lift.png"))
-  U.tap(game, "a"); advanceToMap(api.arena_world.LOBBY)
+  assert(U.shot(game, shotDir .. "/arena-status-terminal.png"))
+  U.tap(game, "a")
+  for _ = 1, 300 do
+    if api.arena_security.snapshot().stairsRevealed then break end
+    U.tap(game, "a"); U.wait(3)
+  end
+  assert(api.arena_security.snapshot().stairsRevealed,
+    "status terminal did not reveal the staircase")
+  settleMap("BLACKJACK_LOUNGE")
+  assert(U.shot(game, shotDir .. "/arena-revealed-stairs.png"))
+  U.hold(game, "up", 24); advanceToMap(api.arena_world.LOBBY)
   assert(U.shot(game, shotDir .. "/arena-vip-lobby.png"))
-  assertMapObjects(api.arena_world.LOBBY, 5)
-  pass("WORLD-01", "concealed lift and Lounge path")
-  pass("WORLD-02", "lift entered the VIP lobby")
+  assertMapObjects(api.arena_world.LOBBY, 8)
+  diskRoundTrip({
+    ["player.map"] = api.arena_world.LOBBY,
+    ["modData.blackjack_corner.gamble_campaign.arena.stairsRevealed"] = true,
+  })
+  settleMap(api.arena_world.LOBBY)
+  pass("WORLD-01", "status terminal reveals a walkable staircase")
+  pass("WORLD-02", "walking onto the stairs entered the VIP lobby")
   pass("WORLD-03", "lobby actors are present and separately positioned")
   U.teleport(game, api.arena_world.LOBBY, 9, 5, "up")
-  U.tap(game, "a"); advanceToMap(api.arena_world.ARENA)
-  local ringPieces = 0
-  for _, npc in ipairs(game.overworld.npcs or {}) do
-    if npc.def and tostring(npc.def.name):find("ARENA_RING_", 1, true) == 1 then
-      ringPieces = ringPieces + 1
-    end
-  end
-  eq(ringPieces, 8, "spectator pit sprite count")
-  -- Walked-in cameras initially frame the exit. Move beside the pit for the
-  -- visual checkpoint so the complete eight-piece ring is inside the GB view.
+  local partyCount = #game.save.party
+  assert(#game.save.party == partyCount,
+    "the permanent B1 staff changed the player's party")
+  U.hold(game, "up", 120); advanceToMap(api.arena_world.ARENA)
+  pass("WORLD-04", "the physical B1 door preserves the live party")
+  eq(game.data.maps[api.arena_world.ARENA].tileset, "GYM",
+    "B2 must use the native Elite Four gym tileset")
+  -- Walked-in cameras initially frame the exit. Move beside the native
+  -- security floor for the complete arena checkpoint.
   U.teleport(game, api.arena_world.ARENA, 12, 10, "left")
   settleMap(api.arena_world.ARENA)
   assert(U.shot(game, shotDir .. "/arena-spectator-floor.png"))
-  assertMapObjects(api.arena_world.ARENA, 14)
-  pass("WORLD-04", "all eight pit pieces and arena actors are live")
-  pass("WORLD-05", "every interactive arena actor has registered text")
-  game:writeSave()
-  local arenaDisk = assert(SaveData.load(game.save.version))
-  eq(arenaDisk.player.map, api.arena_world.ARENA,
-    "arena map was not written to disk")
+  assertMapObjects(api.arena_world.ARENA, 9)
+  pass("WORLD-05", "native B2 pit blocks and arena actors are live")
+  pass("WORLD-06", "every interactive arena actor has registered text")
+  diskRoundTrip({ ["player.map"] = api.arena_world.ARENA })
+  settleMap(api.arena_world.ARENA)
   U.teleport(game, api.arena_world.ARENA, 9, 14, "down")
-  U.tap(game, "a"); advanceToMap(api.arena_world.LOBBY)
+  U.hold(game, "down", 120); advanceToMap(api.arena_world.LOBBY)
+  eq(#game.save.party, partyCount, "arena traversal changed the party")
   U.teleport(game, api.arena_world.LOBBY, 9, 14, "down")
-  U.tap(game, "a"); advanceToMap("BLACKJACK_LOUNGE")
-  pass("WORLD-06", "arena and lobby exits return safely")
-  game:writeSave()
-  local loungeDisk = assert(SaveData.load(game.save.version))
-  eq(loungeDisk.player.map, "BLACKJACK_LOUNGE",
-    "Lounge return map was not written to disk")
-  pass("WORLD-07", "custom maps and Lounge survive real save writes")
+  U.hold(game, "down", 120); advanceToMap("BLACKJACK_LOUNGE")
+  pass("WORLD-07", "physical doors preserve the party and lead upstairs")
+  diskRoundTrip({ ["player.map"] = "BLACKJACK_LOUNGE" })
+  settleMap("BLACKJACK_LOUNGE")
+  pass("WORLD-08", "Lounge, B1, and B2 survive true disk restores")
 
   -- Native board and pre-charge failure paths.
   local screen = openArena()
   assert(screen.phase == "bet" and screen.pending.status == "POSTED")
   assert(U.shot(game, shotDir .. "/arena-posted-odds.png"))
   pass("UI-01")
+  local fighter, wager = screen.selected, screen.betIndex
+  U.tap(game, "down"); U.wait(3)
+  eq(screen.selected, 3 - fighter, "down did not switch fighters")
+  eq(screen.betIndex, wager, "down changed the wager")
+  U.tap(game, "right"); U.wait(3)
+  eq(screen.selected, 3 - fighter, "right changed the fighter")
+  eq(screen.betIndex, wager < #screen.bets and wager + 1 or 1,
+    "right did not increase the wager")
+  assert(U.shot(game, shotDir .. "/arena-directional-controls.png"))
+  U.tap(game, "up"); U.tap(game, "left"); U.wait(3)
+  eq(screen.selected, fighter, "up did not restore the fighter")
+  eq(screen.betIndex, wager, "left did not restore the wager")
+  pass("UI-02", "up/down pick fighters; left/right change the wager")
   local firstId = screen.pending.match.id
   U.tap(game, "b"); U.wait(5)
   screen = openArena()
@@ -283,12 +313,18 @@ return function(game)
 
   -- Arena access begins at the final rank, so its own results cannot be the
   -- event that crosses into KINGPIN. Reproduce the real handoff from one of
-  -- the seven earlier games: present the queued rank-up, then enter the lift.
+  -- the seven earlier games: present the queued rank-up, then open the stairs.
   assert(api.arena.acknowledge())
   local rankRep = campaign().reputation
   rankRep.points, rankRep.rank = 4000, "KINGPIN"
   rankRep.pendingRankUps = { "KINGPIN" }
-  U.teleport(game, "BLACKJACK_LOUNGE", 2, 11, "left")
+  U.teleport(game, "BLACKJACK_LOUNGE", 3, 12, "up")
+  settleMap("BLACKJACK_LOUNGE")
+  -- Set up an unrevealed terminal only after leaving the underground route;
+  -- the compatibility guard correctly keeps stairs open for a player coming
+  -- from B1/B2 on a migrated save.
+  campaign().arena.stairsRevealed = false
+  api.arena_world.sync(game, api.arena_security, true)
   U.tap(game, "a")
   local rankScreen
   for _ = 1, 48 do
@@ -296,11 +332,16 @@ return function(game)
     if top and top.rankUp then rankScreen = top; break end
     U.tap(game, "a"); U.wait(3)
   end
-  assert(rankScreen, "lift did not present the pending Kingpin rank-up")
+  assert(rankScreen, "switch did not present the pending Kingpin rank-up")
   assert(rankScreen.rankUp and rankScreen.rankUp.id == "KINGPIN")
   assert(U.shot(game, shotDir .. "/arena-kingpin-rank-up.png"))
-  U.tap(game, "a"); advanceToMap(api.arena_world.LOBBY)
-  pass("RESULT-04", "lift presents KINGPIN before descending")
+  U.tap(game, "a")
+  for _ = 1, 300 do
+    if api.arena_security.snapshot().stairsRevealed then break end
+    U.tap(game, "a"); U.wait(3)
+  end
+  U.hold(game, "up", 24); advanceToMap(api.arena_world.LOBBY)
+  pass("RESULT-04", "switch presents KINGPIN before revealing the stairs")
 
   -- Select the longest real simulation produced by 500 deterministic cards
   -- and prove its complete animation resolves without a softlock.
@@ -384,7 +425,7 @@ return function(game)
     arena = { unlocked = false, reputation = 0 },
   }
   local migrated = api.reputation.ensure()
-  eq(migrated.schema, 3); eq(migrated.reputation.points, 777)
+  eq(migrated.schema, 4); eq(migrated.reputation.points, 777)
   eq(migrated.debt.principal, 321); eq(migrated.house.status, "ROCKET_OWNED")
   eq(migrated.arena.matchesPlayed, 0)
   pass("MIG-01")
@@ -398,7 +439,7 @@ return function(game)
   local expected = {
     "MODE-01", "UNLOCK-01", "UNLOCK-02", "UNLOCK-03", "LIMIT-01",
     "WORLD-01", "WORLD-02", "WORLD-03", "WORLD-04", "WORLD-05",
-    "WORLD-06", "WORLD-07", "UI-01", "ODDS-01", "ODDS-02",
+    "WORLD-06", "WORLD-07", "WORLD-08", "UI-01", "UI-02", "ODDS-01", "ODDS-02",
     "BET-01", "BET-02", "BET-03", "BET-04", "PERSIST-01",
     "PERSIST-02", "FIGHT-01", "FIGHT-02", "RESULT-01", "RESULT-02",
     "RESULT-03", "RESULT-04", "PARTY-01", "TIER-01", "TIER-02",

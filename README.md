@@ -11,15 +11,25 @@ Town gains its own gloomy casino. Celadon's expanded floor remains the main
 destination, with blackjack, house-banked Texas Hold'em, Crash, Tube Flyer,
 Prize Cases, animated horse racing, Plinko, Pokemon pawning, shinies, rare
 items, and a one-time Master Ball. Gamble Mode's final High Roller rank now
-opens a concealed Rocket lift into an underground Pokemon battle-betting arena.
+opens a Rocket status terminal that verifies KINGPIN clearance, retracts, and
+reveals a physical staircase into an underground Pokemon battle-betting arena.
 
-The v0.5 release is certified on Pokemon Red and Blue. Pokemon Yellow support
+The v0.5.1 release is certified on Pokemon Red and Blue. Pokemon Yellow support
 is available but remains experimental until its distinct one-ball Oak flow has
 its own native release gate. The mod contains no ROM or ROM-derived artwork;
 world and shiny graphics are generated locally from the player's imported game
 data.
 
-## Version 0.5 highlights
+## Version 0.5.1 polish
+
+This patch rebuilds the complete Underground Arena route from native ROM tiles:
+a Rocket status terminal reveals a physical staircase, B1 becomes a permanent
+casino checkpoint with six playable original slot seats, and B2 takes the form
+of Rocket's illicit fifth League chamber. It also redesigns the High Roller
+status panel, clarifies Arena controls, distinguishes clubs from spades, and
+keeps players upgrading from v0.5.0 out of the closed terminal.
+
+## Version 0.5 campaign highlights
 
 | Area | What the release adds |
 | --- | --- |
@@ -47,9 +57,11 @@ changing the always-available base casino expansion:
 - the Start menu exposes a compact High Roller panel with rank progress,
   results, lifetime wagers, and cold streaks;
 - casino patrons and staff react to rank and sustained losses;
-- a concealed lift in the Celadon Lounge opens at KINGPIN—4,000 REP and all
-  eight badges—and leads through a Rocket VIP lobby into a separate spectator
-  arena;
+- a native Rocket terminal in the Celadon Lounge grants clearance at
+  KINGPIN—4,000 REP and all eight badges—then reveals a staircase into Rocket
+  Casino B1;
+- permanent Rocket staff guard the physical pit door without taking or
+  modifying the player's party;
 - AI-controlled Pokemon fight using real species stats, levels, moves,
   accuracy, Gen I types, STAB, and physical/special rules;
 - posted decimal odds include a visible house margin while controlled
@@ -79,15 +91,15 @@ changing the always-available base casino expansion:
   relocated Mom upstairs who still heals the party;
 - reclaiming the home requires an explicit 30,000-coin deed buyback and a
   retryable Rocket battle, after which the original house is fully restored;
-- Red and Blue native runs verify the concealed lift, two new maps, readable
-  odds, live fight animation, result settlement, disk persistence, fighter
-  tiers, default behavior, and every return path.
+- Red and Blue native runs verify the switch and staircase, permanent staff,
+  two new maps, readable odds, live fight animation, result settlement, disk
+  persistence, fighter tiers, default behavior, and every return path.
 
 The implementation and internal milestone train are mapped in
 [docs/GAMBLE_MODE_ROADMAP.md](docs/GAMBLE_MODE_ROADMAP.md). Human UI/E2E signoff
 uses the supervised drivers and matrix in [`tests/manual`](tests/manual); the
 public release record is
-[tests/manual/releases/v0.5.0.md](tests/manual/releases/v0.5.0.md), with the
+[tests/manual/releases/v0.5.1.md](tests/manual/releases/v0.5.1.md), with the
 detailed Arena phase gate retained in
 [tests/manual/V0.7_IN_GAME_TESTING.md](tests/manual/V0.7_IN_GAME_TESTING.md).
 
@@ -97,11 +109,11 @@ detailed Arena phase gate retained in
 
 <table>
   <tr>
-    <td width="50%"><img src="assets/screenshots/underground-arena-concealed-lift.png" alt="The concealed Rocket Arena lift in the Celadon Lounge"><br><sub>KINGPIN reveals a concealed lift inside the expanded Lounge.</sub></td>
-    <td width="50%"><img src="assets/screenshots/underground-arena-vip-lobby.png" alt="The Rocket Arena VIP lobby"><br><sub>The lift descends into a separate Rocket-operated VIP lobby.</sub></td>
+    <td width="50%"><img src="assets/screenshots/underground-arena-concealed-lift.png" alt="Native Rocket status terminal concealing the Arena staircase"><br><sub>The terminal scans casino status before retracting to reveal the hidden route.</sub></td>
+    <td width="50%"><img src="assets/screenshots/underground-arena-vip-lobby.png" alt="Rocket Casino B1 built from native Celadon Game Corner tiles"><br><sub>The staircase descends into a native-tile Rocket casino checkpoint.</sub></td>
   </tr>
   <tr>
-    <td width="50%"><img src="assets/screenshots/underground-arena-spectator-floor.png" alt="The underground spectator floor and Pokemon battle pit"><br><sub>House fighters meet inside an eight-piece spectator pit.</sub></td>
+    <td width="50%"><img src="assets/screenshots/underground-arena-spectator-floor.png" alt="Rocket Casino B2 built as a native Elite Four chamber"><br><sub>House fighters meet inside Rocket's illicit fifth League chamber.</sub></td>
     <td width="50%"><img src="assets/screenshots/underground-arena-posted-odds.png" alt="Arena board showing two fighters and posted decimal odds"><br><sub>Choose a fighter and stake after reviewing the posted odds.</sub></td>
   </tr>
   <tr>
@@ -196,7 +208,7 @@ detailed Arena phase gate retained in
 
 ## Install
 
-1. Download `blackjack_corner-0.5.0.zip` from the
+1. Download `blackjack_corner-0.5.1.zip` from the
    [latest release](https://github.com/martin2844/gen1recomp-blackjack-corner/releases/latest).
    Use the named mod ZIP, not GitHub's automatic source-code archives.
 2. Open Gen1Recomp and choose **MODS > Import mod .zip**.
@@ -321,8 +333,26 @@ pickups reward looking down while everyone else watches the machines.
 ### Underground Battle Arena
 
 Gamble Mode players who reach **KINGPIN**—4,000 High Roller REP and all eight
-badges—can inspect a concealed lift on the west wall of the Celadon Lounge.
-It opens into a dedicated Rocket VIP lobby and a separate spectator floor:
+badges—can use a native Rocket status terminal on the west side of the Celadon
+Lounge. Its two-cabinet facade covers the entire route, scans the player's
+casino clearance, then retracts to reveal a walkable staircase into Rocket
+Casino B1 and its separate B2 spectator floor:
+
+- The lobby is a real checkpoint rather than a dialogue teleport. Permanent
+  Rocket staff flank the counter while the player walks through a physical
+  door into the pit; the player's party stays untouched.
+- Both underground maps now use unmodified ROM tilesets and block IDs. B1 uses
+  `LOBBY` blocks from the Celadon Game Corner and Diner for its machine banks,
+  seats, counters, signs and roulette tables; B2 uses the same `GYM` blocks as
+  Lorelei and Bruno for its ceremonial floor, spectator pockets, statues and
+  League-style south entrance. No custom VIP atlas, furniture sprite or ring
+  sprite is registered.
+- The guarded B1 threshold is a real ROM door/warp. B2 then uses the Elite
+  Four's familiar short walk-in pattern, so no invisible coordinate trigger can
+  double-transition or strand the player between basement floors.
+- Six B1 cabinet positions reuse the original Coin Case checks and native
+  `SlotMachine` screen from their native seat cells. Red and Blue recolor both
+  floors through Recomp's normal palette cycle on key `2`.
 
 - The arena posts two house-owned Pokemon, their levels, and decimal odds
   before any wager is accepted. The player's party is never eligible.
@@ -629,6 +659,7 @@ games/
   shared/       ui.lua
 other/
   gamble/       mode.lua  gym_cases.lua  state.lua  arena_world.lua
+                arena_security.lua
     reputation/ service.lua  screen.lua
     credit/     service.lua  ui.lua  world.lua  house_service.lua  house_world.lua
   pawn/         rules.lua

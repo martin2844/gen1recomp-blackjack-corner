@@ -2,6 +2,44 @@
 
 ## Unreleased
 
+## [0.5.1] - 2026-08-11
+
+### Changed
+
+- Replaced the hand-authored Arena lift, VIP furniture atlas, and overworld pit
+  with a native Rocket status terminal, a persistent walkable staircase, and
+  two underground floors built entirely from the imported `LOBBY` and `GYM`
+  tilesets.
+- Rebuilt B1 around permanent Rocket staff, native counters, roulette tables,
+  cabinet banks, six playable original slot-machine seats, and palette cycling
+  through Recomp's normal key-`2` control.
+- Rebuilt B2 as Rocket's illicit fifth League chamber, with solid spectator
+  islands, native statues, a real B1/B2 door, and the Elite Four's short
+  entrance walk.
+- Redesigned the High Roller status screen with fixed columns, abbreviated
+  late-game values, clearer progress and badge requirements, and a dedicated
+  favorite-game or banked-reward row.
+- Arena controls now use the original game's triangle glyphs: up/down select a
+  fighter and left/right change the wager.
+- Refined Blackjack and Hold'em card art with distinct club and spade
+  silhouettes, conventional inverted lower pips, and denser ten-card layouts.
+
+### Fixed
+
+- The complete Lounge-to-B1-to-B2 route now uses physical warps and valid
+  collision, preventing double transitions, basement exit loops, floating
+  patrons, and trapped return tiles.
+- Arena staff no longer remove or modify the player's party. Saves created by
+  the retired development check-in mechanic still recover an exact held party
+  once without overwriting a live team.
+- A v0.5.0 save already inside B1 or B2 now marks the replacement staircase as
+  revealed before returning upstairs, preventing the player from landing
+  inside the closed status terminal.
+- Static staff and spectator dialogue now consistently describe house-owned
+  fighters instead of the retired party-custody mechanic.
+- Release packaging excludes every new native QA driver, including the card
+  suit visual audit.
+
 ## [0.5.0] - 2026-08-10
 
 ### Added

@@ -13,6 +13,7 @@ local C = {
   paper = { 0.96, 0.91, 0.73 },
   paperShade = { 0.74, 0.66, 0.48 },
   red = { 0.66, 0.10, 0.17 },
+  club = { 0.04, 0.25, 0.21 },
   black = { 0.09, 0.10, 0.13 },
   back = { 0.38, 0.07, 0.15 },
   backLight = { 0.77, 0.27, 0.30 },
@@ -98,40 +99,99 @@ local function glyphWidth(text, scale)
   return #tostring(text) * 4 * (scale or 1)
 end
 
-local function suit(suit, x, y, c, scale)
+local LARGE_SUITS = {
+  H = { "11011", "11111", "11111", "01110", "00100" },
+  D = { "00100", "01110", "11111", "01110", "00100" },
+  -- Hand-authored instead of circle primitives so every lobe keeps a clean
+  -- one-pixel shoulder at the native Game Boy scale.
+  C = { "0000011100000", "0000111110000", "0001111111000",
+    "0001111111000", "0000111110000", "0111001001110",
+    "1111101011111",
+    "1111111111111", "0111101011110", "0011001001100",
+    "0000011100000", "0000011100000", "0001111111000" },
+  -- One continuous pointed canopy resolves into two lower lobes around a
+  -- central stem: the silhouette reads as a spade without internal cut-outs.
+  S = { "00000100000", "00001110000", "00011111000", "00111111100",
+    "01111111110", "11111111111", "11111111111", "11111111111",
+    "11110101111", "01100100110", "00000100000", "00001110000" },
+}
+
+local SMALL_SUITS = {
+  H = { "101", "111", "010" },
+  D = { "010", "111", "010" },
+  C = { "010", "111", "010" },
+  S = { "010", "111", "101" },
+}
+
+-- The red suits retain the established Gen 1 marks. Clubs and spades use
+-- separate micro-silhouettes: a club has a cross-body and flat foot, while a
+-- spade has a solid pointed body and a split lower edge.
+local NUMERIC_SUITS = {
+  H = SMALL_SUITS.H,
+  D = SMALL_SUITS.D,
+  C = SMALL_SUITS.C,
+  S = { "010", "101", "111", "010" },
+}
+
+local function drawPattern(pattern, x, y, c, scale, flipped)
   scale = scale or 1
   color(c)
-  local function p(px, py, w, h) rect("fill", x + px * scale, y + py * scale, w * scale, h * scale) end
-  if suit == "H" then
-    p(0, 0, 2, 2); p(3, 0, 2, 2); p(0, 1, 5, 2); p(1, 3, 3, 1); p(2, 4, 1, 1)
-  elseif suit == "D" then
-    p(2, 0, 1, 1); p(1, 1, 3, 1); p(0, 2, 5, 1); p(1, 3, 3, 1); p(2, 4, 1, 1)
-  elseif suit == "C" then
-    p(1, 0, 3, 2); p(0, 1, 5, 3); p(2, 3, 1, 2); p(1, 4, 3, 1)
-  else -- spade
-    p(2, 0, 1, 1); p(1, 1, 3, 1); p(0, 2, 5, 2); p(2, 3, 1, 2); p(1, 4, 3, 1)
+  for outputRow = 1, #pattern do
+    local row = flipped and (#pattern - outputRow + 1) or outputRow
+    local bits = pattern[row]
+    for column = 1, #bits do
+      if bits:sub(column, column) == "1" then
+        rect("fill", x + (column - 1) * scale,
+          y + (outputRow - 1) * scale, scale, scale)
+      end
+    end
   end
+end
+
+local function suit(suitName, x, y, c, scale)
+  drawPattern(LARGE_SUITS[suitName] or LARGE_SUITS.S, x, y, c, scale)
 end
 
 -- Card-body pips deliberately use a different, much smaller mark than the
 -- corner/ace suit. The old 5x5 marks touched each other and turned sevens,
 -- eights and tens into one large ink blob at the game's real scale.
-local function pip(suitName, x, y, c)
-  color(c)
-  if suitName == "H" then
-    rect("fill", x, y, 1, 1); rect("fill", x + 2, y, 1, 1)
-    rect("fill", x, y + 1, 3, 1); rect("fill", x + 1, y + 2, 1, 1)
-  elseif suitName == "D" then
-    rect("fill", x + 1, y, 1, 1); rect("fill", x, y + 1, 3, 1)
-    rect("fill", x + 1, y + 2, 1, 1)
-  elseif suitName == "C" then
-    rect("fill", x + 1, y, 1, 1); rect("fill", x, y + 1, 3, 1)
-    rect("fill", x + 1, y + 2, 1, 2)
-  else
-    rect("fill", x + 1, y, 1, 1); rect("fill", x, y + 1, 3, 1)
-    rect("fill", x + 1, y + 2, 1, 2)
-  end
+local function cornerSuit(suitName, x, y, c)
+  drawPattern(SMALL_SUITS[suitName] or SMALL_SUITS.S, x, y, c, 1)
 end
+
+local function pip(suitName, x, y, c, flipped)
+  drawPattern(NUMERIC_SUITS[suitName] or NUMERIC_SUITS.D,
+    x, y, c, 1, flipped)
+end
+
+local function aceClub(x, y, c)
+  local pattern = LARGE_SUITS.C
+  drawPattern(pattern, x + math.floor((20 - #pattern[1]) / 2),
+    y + 18 - math.floor(#pattern / 2), c, 1)
+end
+
+-- Balatro keeps conventional pip counts and placement even at its chunky
+-- pixel scale. Black cards follow the same grammar here instead of turning
+-- every number card into a second Ace. Coordinates are top-left positions;
+-- bottom-half pips are vertically inverted like a physical deck.
+local BLACK_PIPS = {
+  [2] = { {9, 7}, {9, 20, true} },
+  [3] = { {9, 7}, {9, 14}, {9, 20, true} },
+  [4] = { {7, 7}, {14, 7}, {7, 20, true}, {14, 20, true} },
+  [5] = { {7, 7}, {14, 7}, {10, 14},
+          {7, 20, true}, {14, 20, true} },
+  [6] = { {7, 7}, {14, 7}, {7, 14}, {14, 14},
+          {7, 20, true}, {14, 20, true} },
+  [7] = { {7, 7}, {14, 7}, {10, 11}, {7, 14}, {14, 14},
+          {7, 20, true}, {14, 20, true} },
+  [8] = { {7, 7}, {14, 7}, {10, 11}, {7, 14}, {14, 14},
+          {10, 17, true}, {7, 20, true}, {14, 20, true} },
+  [9] = { {7, 7}, {10, 7}, {14, 7}, {7, 14}, {10, 14},
+          {14, 14}, {7, 20, true}, {10, 20, true}, {14, 20, true} },
+  [10] = { {7, 7}, {14, 7}, {10, 10}, {7, 13}, {14, 13},
+           {7, 16, true}, {14, 16, true}, {10, 19, true},
+           {7, 22, true}, {14, 22, true} },
+}
 
 local PIPS = {
   [2] = { {9, 7}, {9, 20} },
@@ -182,21 +242,40 @@ function View.drawCard(card, x, y, hidden, emphasis)
     return
   end
 
-  local ink = (card.suit == "H" or card.suit == "D") and C.red or C.black
+  local ink = (card.suit == "H" or card.suit == "D") and C.red
+    or (card.suit == "C" and C.club or C.black)
   glyph(card.rank, x + 2, y + 2, ink)
-  pip(card.suit, x + 2, y + 8, ink)
+  cornerSuit(card.suit, x + 2, y + 8, ink)
   local numeric = tonumber(card.rank)
   if numeric then
-    for _, pt in ipairs(PIPS[numeric] or {}) do pip(card.suit, x + pt[1] - 1, y + pt[2], ink) end
+    if card.suit == "C" or card.suit == "S" then
+      for _, pt in ipairs(BLACK_PIPS[numeric] or {}) do
+        pip(card.suit, x + pt[1] - 1, y + pt[2], ink, pt[3])
+      end
+    else
+      for _, pt in ipairs(PIPS[numeric] or {}) do
+        pip(card.suit, x + pt[1] - 1, y + pt[2], ink)
+      end
+    end
   elseif card.rank == "A" then
-    suit(card.suit, x + 7, y + 10, ink, 2)
+    if card.suit == "C" then
+      aceClub(x, y, ink)
+      return
+    end
+    local pattern = LARGE_SUITS[card.suit] or LARGE_SUITS.S
+    local blackSuit = card.suit == "C" or card.suit == "S"
+    local suitScale = blackSuit and 1 or 2
+    local width, height = #pattern[1] * suitScale, #pattern * suitScale
+    local centerY = blackSuit and 18 or 15
+    suit(card.suit, x + math.floor((20 - width) / 2),
+      y + centerY - math.floor(height / 2), ink, suitScale)
   else
     -- A crisp court-card monogram reads much better than a tiny pseudo-face.
     color(C.gold); rect("fill", x + 6, y + 8, 8, 2); rect("fill", x + 7, y + 7, 1, 1)
     rect("fill", x + 10, y + 6, 1, 2); rect("fill", x + 13, y + 7, 1, 1)
     color(C.paperShade); rect("fill", x + 5, y + 10, 10, 12)
     glyph(card.rank, x + 7, y + 11, ink, 2)
-    pip(card.suit, x + 9, y + 22, ink)
+    cornerSuit(card.suit, x + 9, y + 22, ink)
   end
 end
 
@@ -310,5 +389,13 @@ end
 View.colors = C
 View.glyph = glyph
 View.glyphWidth = glyphWidth
+function View.suitSignature(suitName, compact)
+  local patterns = compact and SMALL_SUITS or LARGE_SUITS
+  return table.concat(patterns[suitName] or patterns.S, "/")
+end
+
+function View.pipSignature(suitName)
+  return table.concat(NUMERIC_SUITS[suitName] or NUMERIC_SUITS.D, "/")
+end
 
 return View

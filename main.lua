@@ -54,6 +54,7 @@ return function(mod)
   local HouseWorld = loadLocal(mod, "other/gamble/credit/house_world.lua")(WorldHelpers)
   local ArenaServiceFactory = loadLocal(mod, paths.arena .. "service.lua")
   local ArenaWorld = loadLocal(mod, "other/gamble/arena_world.lua")(WorldHelpers)
+  local ArenaSecurityFactory = loadLocal(mod, "other/gamble/arena_security.lua")
   local PalletCasino = loadLocal(mod, "other/pallet_casino.lua")(WorldHelpers)
   local Sound = require("src.core.Sound")
 
@@ -91,7 +92,7 @@ return function(mod)
 
   local Service = Services(mod, Catalog, Pawn, config)
   local UI = UIFactory(mod, Service, Catalog, Pawn, config)
-  local Progress, Credit, Arena
+  local Progress, Credit, Arena, ArenaSecurity
   local function play(game, name) Sound.play(game.data, name) end
   local common = {
     mod = mod, coins = Service.coins, coinCap = config.coinCap,
@@ -175,11 +176,16 @@ return function(mod)
     allowed = function(game) return Credit.luxuryAllowed(game) end,
     beginRound = common.beginRound, settleRound = common.settleRound,
   })
+  ArenaSecurity = ArenaSecurityFactory(mod, {
+    state = CampaignState, active = Gamble.active,
+    lobbyMap = ids.arenaLobby, arenaMap = ids.arenaMap,
+  })
   config.luxuryAllowed = Credit.luxuryAllowed
   local function syncCampaignWorld(game)
     local collectors = CreditWorld.sync(game, Credit)
     local occupied = HouseWorld.sync(game, House)
-    return collectors, occupied
+    local arena = ArenaWorld.sync(game, ArenaSecurity)
+    return collectors, occupied, arena
   end
   local CreditUI = CreditUIFactory(mod, {
     credit = Credit, rules = CreditRules, text = UI.text,
@@ -236,6 +242,31 @@ return function(mod)
       label = "HIGH ROLLER",
       onSelect = function() mod.ui.push(game, ids.highRoller) end,
     })
+  end)
+
+  local function reconcileArenaRoute(game, mapId, fromMapId)
+    if not game then return end
+    -- Recover saves made by the retired party-vault mechanic before doing any
+    -- active-campaign world work. New visits never remove the live party.
+    ArenaSecurity.entered(game, mapId, fromMapId)
+    if not Gamble.active() then return end
+    ArenaWorld.sync(game, ArenaSecurity)
+  end
+  -- Reconcile before the destination spawns so both permanent staff objects
+  -- are already visible on the first frame.
+  mod.events:on("map.exited", function(ev)
+    local game = require("src.core.Game")
+    reconcileArenaRoute(game, ev and ev.toMapId, ev and ev.mapId)
+  end)
+  -- Also reconcile boot/debug warps and old saves that begin inside the route.
+  mod.events:on("map.entered", function(ev)
+    local game = require("src.core.Game")
+    reconcileArenaRoute(game, ev and ev.mapId, ev and ev.fromMapId)
+  end)
+  mod.events:on("game.ready", function(ev)
+    local game = ev and ev.game
+    local current = mod.world:current()
+    if game and current then reconcileArenaRoute(game, current.mapId, nil) end
   end)
 
   for _, tableDef in ipairs({
@@ -365,16 +396,23 @@ return function(mod)
     TEXT_LOUNGE_LAST_CHIP = function(game, _, _, done)
       UI.text(game, "This is my last\nchip.\fI've said that\nthree times tonight.", done)
     end,
-    TEXT_ARENA_LIFT = function(game, _, _, done)
-      local allowed, reason = Arena.access(game)
-      if not allowed then
-        UI.text(game, "The black panel\nflickers.\f" .. reason, done)
+    TEXT_ARENA_TERMINAL = function(game, _, _, done)
+      local route = ArenaSecurity.snapshot()
+      if route and route.stairsRevealed then
+        UI.text(game, "The terminal has\nretracted.\fCold air climbs\nfrom below.", done)
         return
       end
-      local function descend()
-        UI.text(game, "A hidden lock\nclicks open.\fThe lift descends\nbelow CELADON.", function()
+      local allowed, reason = Arena.access(game)
+      if not allowed then
+        UI.text(game, "ROCKET STATUS\nTERMINAL\fSCANNING PLAYER...\fCLEARANCE DENIED.\f"
+          .. reason, done)
+        return
+      end
+      local function reveal()
+        UI.text(game, "ROCKET STATUS\nTERMINAL\fSCANNING PLAYER...\fKINGPIN VERIFIED.\fWELCOME, HIGH ROLLER.\fGears grind inside\nthe floor...\fA staircase opens\nbelow CELADON.", function()
+          ArenaSecurity.revealStairs()
           if done then done() end
-          mod.world:warpTo(ids.arenaLobby, 9, 14, "up")
+          ArenaWorld.sync(game, ArenaSecurity, true)
         end)
       end
       local function presentRankUps()
@@ -382,73 +420,145 @@ return function(mod)
         if progress and #progress.pendingRankUps > 0 then
           mod.ui.push(game, ids.highRoller, { onClose = presentRankUps })
         else
-          descend()
+          reveal()
         end
       end
       -- A badge ceiling can make KINGPIN become reachable at this exact
-      -- interaction. Never let the lift silently consume that one-time rank
+      -- interaction. Never let the terminal silently consume that one-time rank
       -- introduction before the player sees it.
       local progress = Progress.snapshot(game)
       if progress and #progress.pendingRankUps > 0 then
-        UI.text(game, "The black panel\nflashes gold.\fCLEARANCE UPDATE!", presentRankUps)
+        UI.text(game, "ROCKET STATUS\nTERMINAL\fCLEARANCE UPDATE!", presentRankUps)
       else
-        descend()
+        reveal()
       end
     end,
   } })
 
   mod.content.map_scripts:register(ids.arenaLobby, { talk = {
+    TEXT_ARENA_GREETER = function(game, _, _, done)
+      UI.text(game, "GREATNESS WAITS\nBELOW.\fWelcome, KINGPIN.", done)
+    end,
     TEXT_ARENA_DOORMAN = function(game, _, _, done)
-      UI.text(game, "KINGPIN confirmed.\fHouse fighters only.\nYour party stays out.", function()
-        if done then done() end
-        mod.world:warpTo(ids.arenaMap, 9, 14, "up")
-      end)
+      UI.text(game, "HOUSE FIGHTERS.\nONLY.\fThe betting floor is\nstraight ahead.", done)
     end,
     TEXT_ARENA_CASHIER = function(game, _, _, done)
       local state = Arena.snapshot(game)
-      UI.text(game, ("ARENA %s\fFIGHTS %d  WINS %d\nWAGER CAP %d")
+      UI.text(game, ("THE BOARD IS LIVE.\f%s CARD\nFIGHTS %d  WINS %d\fLIMIT %d COINS")
         :format(state.tier.label, state.matchesPlayed, state.wins,
           state.wagerLimit), done)
     end,
     TEXT_ARENA_EXIT = function(game, _, _, done)
-      UI.text(game, "Back to the bright\npart of CELADON?", function()
-        if done then done() end
-        mod.world:warpTo(ids.lounge, 2, 12, "right")
-      end)
+      UI.text(game, "Stairs lead back\nto the bright lie\nupstairs.", done)
     end,
     TEXT_ARENA_NERVOUS = function(game, _, _, done)
-      UI.text(game, "They post the odds.\fThe POKEMON never\nsee the board.", done)
+      UI.text(game, "I sold my NUGGET\non the favorite.\fThe favorite had\na glass jaw.", done)
     end,
     TEXT_ARENA_VETERAN = function(game, _, _, done)
-      UI.text(game, "Favorites lose.\fThat's why odds are\nnot promises.", done)
+      local state = Arena.snapshot(game)
+      if state.wins > state.losses then
+        UI.text(game, "This room knows you.\fThe house is\nstudying you too.", done)
+      else
+        UI.text(game, "Odds tell you what\nthe house fears.\fNot what it knows.", done)
+      end
+    end,
+    TEXT_ARENA_HOSTESS = function(game, _, _, done)
+      UI.text(game, "Complimentary tea.\fTastes expensive.\nFixes nothing.", done)
+    end,
+    TEXT_ARENA_SOCIALITE = function(game, _, _, done)
+      UI.text(game, "Upstairs they call\nthis bad taste.\fDown here: MA'AM.", done)
+    end,
+    TEXT_ARENA_BROKE_VIP = function(game, _, _, done)
+      UI.text(game, "This couch costs\nmore than a house.\fGood. I don't own\none anymore.", done)
+    end,
+    TEXT_ARENA_LOBBY_TABLE = function(game, _, _, done)
+      UI.text(game, "Crystal glasses.\fEach coaster bears\nTEAM ROCKET's R.", done)
+    end,
+    TEXT_ARENA_LOBBY_TROPHY = function(game, _, _, done)
+      UI.text(game, "CELADON CUP, 1988.\fThe winner's name\nwas filed off.", done)
+    end,
+    TEXT_ARENA_RECEPTION_TROPHY = function(game, _, _, done)
+      UI.text(game, "SOLID GOLD MEOWTH.\fThe eyes follow\nevery loose coin.", done)
+    end,
+    TEXT_ARENA_LOBBY_PAINTING = function(game, _, _, done)
+      UI.text(game, "GIOVANNI smiles\nwithout his eyes.\fThe brass plaque\nis newly polished.", done)
+    end,
+    TEXT_ARENA_LOBBY_PC = function(game, _, _, done)
+      local state = Arena.snapshot(game)
+      local pending = state and state.pending
+      if pending and pending.match then
+        UI.text(game, ("PRIVATE NETWORK\fMATCH %d: POSTED\nODDS ENCRYPTED.\fPROPERTY OF R.")
+          :format(pending.match.id), done)
+      else
+        UI.text(game, "PRIVATE NETWORK\fHOLDING ROOM FEED\nMedical records.\fACCESS DENIED.", done)
+      end
     end,
   } })
 
-  mod.content.map_scripts:register(ids.arenaMap, { talk = {
+  mod.content.map_scripts:register(ids.arenaMap, {
+    onEnter = function(game, ow, fromMapId)
+      -- Mirror the Elite Four entrance: the native south warp lands on its
+      -- mat, then the room itself walks the player clear of the doorway.
+      if fromMapId == ids.arenaLobby and ow.player.cellY >= 17 then
+        ow:scriptMove(ow.player, "up", 2)
+      end
+    end,
+    talk = {
     TEXT_ARENA_BOOKIE = function(game, _, _, done)
       local allowed, reason = Arena.access(game)
       if not allowed then UI.text(game, reason, done); return end
-      open(game, "ROCKET ARENA!\fPick one house\nfighter. Watch live.", ids.arena, done)
+      open(game, "NO TRAINER ORDERS.\nNO ITEMS.\nNO MERCY.\fPick the fighter.\nThe pit decides.", ids.arena, done)
     end,
     TEXT_ARENA_TO_LOBBY = function(game, _, _, done)
-      UI.text(game, "Leaving the pit?", function()
-        if done then done() end
-        mod.world:warpTo(ids.arenaLobby, 9, 14, "up")
-      end)
+      UI.text(game, "The lobby door is\nbehind you.", done)
     end,
     TEXT_ARENA_FAN_1 = function(game, _, _, done)
-      UI.text(game, "I backed a RAT.\fIt fought like a\nDRAGON. Almost.", done)
+      UI.text(game, "Backed a RATICATE.\fIt fought like a\nDRAGON.\fPaid like one too.", done)
     end,
     TEXT_ARENA_FAN_2 = function(game, _, _, done)
-      UI.text(game, "Stats set the line.\fLuck tears it up.", done)
+      UI.text(game, "Stats set the odds.\fFear, noise, luck\ntear them apart.", done)
     end,
     TEXT_ARENA_FAN_3 = function(game, _, _, done)
-      UI.text(game, "No party entries.\fRocket hates a\nfixed fight.", done)
+      UI.text(game, "House fighters only.\fNo trainer orders.\nNo excuses either.", done)
     end,
     TEXT_ARENA_FAN_4 = function(game, _, _, done)
-      UI.text(game, "Rare card tonight.\fI heard wings in\nthe holding room.", done)
+      UI.text(game, "Rare card tonight.\fI heard wings in\nthe holding room.\fBig wings.", done)
     end,
-  } })
+    TEXT_ARENA_FAN_5 = function(game, _, _, done)
+      UI.text(game, "Three losses.\fNext bet is rent.\nAfter that, pride.", done)
+    end,
+    TEXT_ARENA_FAN_6 = function(game, _, _, done)
+      UI.text(game, "They heal winners\nbehind curtains.\fNobody asks about\nthe loser.", done)
+    end,
+    TEXT_ARENA_FAN_7 = function(game, _, _, done)
+      UI.text(game, "Keep aisles clear.\fBoss hates spills,\ncheats, witnesses.", done)
+    end,
+    TEXT_ARENA_FAN_8 = function(game, _, _, done)
+      UI.text(game, "Came for one fight.\fFour BADGES ago,\ndear.", done)
+    end,
+    TEXT_ARENA_PIT_TABLE = function(game, _, _, done)
+      UI.text(game, "Cold tea.\nTorn tickets.\fTicket signed\nMR. FUJI.", done)
+    end,
+    TEXT_ARENA_PIT_TROPHY = function(game, _, _, done)
+      local state = Arena.snapshot(game)
+      UI.text(game, ("HOUSE CHAMPION\f%s DIVISION\nYOUR WINS: %d")
+        :format(state.tier.label, state.wins), done)
+    end,
+    TEXT_ARENA_PIT_PAINTING = function(game, _, _, done)
+      UI.text(game, "A volcanic island.\fThey scratched\nCINNABAR off the\nbrass frame.", done)
+    end,
+    TEXT_ARENA_PIT_PC = function(game, _, _, done)
+      local state = Arena.snapshot(game)
+      local last = state and state.pending and state.pending.match
+      if last then
+        UI.text(game, ("PIT CONTROL\fMATCH %d ARMED\nCAMERAS: 12\fDOORS: SEALED")
+          :format(last.id), done)
+      else
+        UI.text(game, "PIT CONTROL\fCAMERAS: 12\nCAGES: 6\fDOORS: SEALED", done)
+      end
+    end,
+    },
+  })
 
   mod.content.map_scripts:register("PALLET_TOWN", { talk = {
     TEXT_PALLET_CASINO_SIGN = function(game, _, _, done)
@@ -591,5 +701,6 @@ return function(mod)
   mod.exports.house_world = HouseWorld
   mod.exports.arena_rules = ArenaRules
   mod.exports.arena = Arena
+  mod.exports.arena_security = ArenaSecurity
   mod.exports.arena_world = ArenaWorld
 end

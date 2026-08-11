@@ -8,6 +8,7 @@ tests/reputation_test.lua
 tests/credit_test.lua
 tests/house_test.lua
 tests/arena_test.lua
+tests/arena_security_test.lua
 tests/shiny_fallback_test.lua
 tests/run_all.sh
 tests/support/headless_fs.lua
@@ -26,11 +27,13 @@ tests/manual/MATRIX.md
 tests/manual/V0.6_IN_GAME_TESTING.md
 tests/manual/V0.7_IN_GAME_TESTING.md
 tests/manual/releases/v0.5.0.md
+tests/manual/releases/v0.5.1.md
 tests/manual/releases/v0.6.0.md
 tests/manual/releases/v0.7.0.md
 tests/manual/evidence/README.md
 tests/manual/drivers/high_roller_fresh.lua
 tests/manual/drivers/high_roller_rank_up.lua
+tests/manual/drivers/high_roller_status_ui.lua
 tests/manual/drivers/high_roller_badge_ceiling.lua
 tests/manual/drivers/high_roller_migration.lua
 tests/manual/drivers/high_roller_mode_off.lua
@@ -48,6 +51,9 @@ tests/manual/drivers/v06_buyback_ui_audit.lua
 tests/manual/drivers/v06_credit_ui_audit.lua
 tests/manual/drivers/v06_games_ui_audit.lua
 tests/manual/drivers/v07_arena_audit.lua
+tests/manual/drivers/arena_palette_slots.lua
+tests/manual/drivers/arena_world_polish.lua
+tests/manual/drivers/card_suit_audit.lua
 assets/screenshots/blackjack-bet-selection.png
 assets/screenshots/blackjack-hand-actions.png
 assets/screenshots/blackjack-lounge.png

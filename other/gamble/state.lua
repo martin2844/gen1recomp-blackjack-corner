@@ -1,12 +1,26 @@
 local State = {}
 
 State.KEY = "gamble_campaign"
-State.SCHEMA = 4
+State.SCHEMA = 5
 
 local VALID_RANKS = {
   ROOKIE = true, REGULAR = true, HIGH_ROLLER = true,
   VIP = true, KINGPIN = true,
 }
+
+State.STORY_CLUES = {
+  FRAME = "CINNABAR_FRAME",
+  MANIFEST = "CAGE_MANIFEST",
+  CHART = "FUJI_CHART",
+}
+State.STORY_STAGES = {
+  RUMORS = "ARENA_RUMORS",
+  LEAD = "CINNABAR_LEAD",
+}
+
+local VALID_STORY_CLUES, VALID_STORY_STAGES = {}, {}
+for _, id in pairs(State.STORY_CLUES) do VALID_STORY_CLUES[id] = true end
+for _, id in pairs(State.STORY_STAGES) do VALID_STORY_STAGES[id] = true end
 
 local function number(value, fallback, minimum)
   value = tonumber(value)
@@ -224,6 +238,10 @@ function State.defaults()
       pending = nil,
       history = {},
     },
+    story = {
+      stage = State.STORY_STAGES.RUMORS,
+      clues = {},
+    },
   }
 end
 
@@ -267,6 +285,11 @@ State.MIGRATIONS = {
     if arena.stairsRevealed == nil then arena.stairsRevealed = false end
     if arena.securityExit == nil then arena.securityExit = false end
   end,
+  [5] = function(value)
+    local story = ensureTable(value, "story")
+    if story.stage == nil then story.stage = State.STORY_STAGES.RUMORS end
+    if type(story.clues) ~= "table" then story.clues = {} end
+  end,
 }
 
 function State.migrate(value)
@@ -293,6 +316,7 @@ function State.sanitize(value)
   local debt = ensureTable(out, "debt")
   local house = ensureTable(out, "house")
   local arena = ensureTable(out, "arena")
+  local story = ensureTable(out, "story")
 
   out.schema = savedSchema > State.SCHEMA and savedSchema or State.SCHEMA
   rep.points = number(rep.points, 0)
@@ -357,6 +381,20 @@ function State.sanitize(value)
     end
   end
   arena.history = history
+  if savedSchema <= State.SCHEMA or type(story.stage) ~= "string" then
+    story.stage = VALID_STORY_STAGES[story.stage]
+      and story.stage or State.STORY_STAGES.RUMORS
+  end
+  local clueAllowlist
+  if savedSchema <= State.SCHEMA then clueAllowlist = VALID_STORY_CLUES end
+  story.clues = sanitizeBooleanMap(story.clues, clueAllowlist)
+  local found = 0
+  for _, id in pairs(State.STORY_CLUES) do
+    if story.clues[id] then found = found + 1 end
+  end
+  if found == 3 and story.stage == State.STORY_STAGES.RUMORS then
+    story.stage = State.STORY_STAGES.LEAD
+  end
   return out
 end
 

@@ -55,6 +55,7 @@ return function(mod)
   local ArenaServiceFactory = loadLocal(mod, paths.arena .. "service.lua")
   local ArenaWorld = loadLocal(mod, "other/gamble/arena_world.lua")(WorldHelpers)
   local ArenaSecurityFactory = loadLocal(mod, "other/gamble/arena_security.lua")
+  local ArenaStoryFactory = loadLocal(mod, "other/gamble/arena_story.lua")
   local PalletCasino = loadLocal(mod, "other/pallet_casino.lua")(WorldHelpers)
   local Sound = require("src.core.Sound")
 
@@ -92,7 +93,7 @@ return function(mod)
 
   local Service = Services(mod, Catalog, Pawn, config)
   local UI = UIFactory(mod, Service, Catalog, Pawn, config)
-  local Progress, Credit, Arena, ArenaSecurity
+  local Progress, Credit, Arena, ArenaSecurity, ArenaStory
   local function play(game, name) Sound.play(game.data, name) end
   local common = {
     mod = mod, coins = Service.coins, coinCap = config.coinCap,
@@ -179,6 +180,9 @@ return function(mod)
   ArenaSecurity = ArenaSecurityFactory(mod, {
     state = CampaignState, active = Gamble.active,
     lobbyMap = ids.arenaLobby, arenaMap = ids.arenaMap,
+  })
+  ArenaStory = ArenaStoryFactory(mod, {
+    state = CampaignState, active = Gamble.active,
   })
   config.luxuryAllowed = Credit.luxuryAllowed
   local function syncCampaignWorld(game)
@@ -435,12 +439,37 @@ return function(mod)
     end,
   } })
 
+  local function arenaClue(game, clueId, foundText, waitingText, knownText, done)
+    local added, state, reason = ArenaStory.discover(game, clueId)
+    if reason == "NOT READY" or not state then
+      UI.text(game, waitingText, done)
+      return
+    end
+    local text = added and foundText or knownText
+    text = text .. ("\fCLUES %d OF %d."):format(
+      state.clueCount, state.clueTarget)
+    if reason == "LEAD COMPLETE" then
+      text = text .. "\fThe three records\nmatch.\fArena Pokemon came\nfrom CINNABAR.\fA Rocket seal marks\nLAB WEST WING."
+    end
+    UI.text(game, text, done)
+  end
+
   mod.content.map_scripts:register(ids.arenaLobby, { talk = {
     TEXT_ARENA_GREETER = function(game, _, _, done)
-      UI.text(game, "GREATNESS WAITS\nBELOW.\fWelcome, KINGPIN.", done)
+      local story = ArenaStory.snapshot(game)
+      if story and story.stage == ArenaStory.STAGES.LEAD then
+        UI.text(game, "A HANDLER EXPECTS\nYOU IN CINNABAR.\fAsk about the\nLAB WEST WING.\fForget who sent you.", done)
+      else
+        UI.text(game, "GREATNESS WAITS\nBELOW.\fWelcome, KINGPIN.", done)
+      end
     end,
     TEXT_ARENA_DOORMAN = function(game, _, _, done)
-      UI.text(game, "HOUSE FIGHTERS.\nONLY.\fThe betting floor is\nstraight ahead.", done)
+      local story = ArenaStory.snapshot(game)
+      if story and story.stage == ArenaStory.STAGES.LEAD then
+        UI.text(game, "WEST WING burned\ndown twice.\fCINNABAR still logs\nevery visitor.", done)
+      else
+        UI.text(game, "HOUSE FIGHTERS.\nONLY.\fThe betting floor is\nstraight ahead.", done)
+      end
     end,
     TEXT_ARENA_CASHIER = function(game, _, _, done)
       local state = Arena.snapshot(game)
@@ -481,7 +510,10 @@ return function(mod)
       UI.text(game, "SOLID GOLD MEOWTH.\fThe eyes follow\nevery loose coin.", done)
     end,
     TEXT_ARENA_LOBBY_PAINTING = function(game, _, _, done)
-      UI.text(game, "GIOVANNI smiles\nwithout his eyes.\fThe brass plaque\nis newly polished.", done)
+      arenaClue(game, ArenaStory.CLUES.FRAME,
+        "GIOVANNI smiles\nwithout his eyes.\fBehind the frame:\nTRANSFER SERIES 3.\fThe route begins at\nCINNABAR LAB.",
+        "GIOVANNI smiles\nwithout his eyes.\fThe brass plaque\nis newly polished.",
+        "Behind the painting:\nTRANSFER SERIES 3.\fRoute: CINNABAR\nto CELADON.", done)
     end,
     TEXT_ARENA_LOBBY_PC = function(game, _, _, done)
       local state = Arena.snapshot(game)
@@ -522,13 +554,19 @@ return function(mod)
       UI.text(game, "House fighters only.\fNo trainer orders.\nNo excuses either.", done)
     end,
     TEXT_ARENA_FAN_4 = function(game, _, _, done)
-      UI.text(game, "Rare card tonight.\fI heard wings in\nthe holding room.\fBig wings.", done)
+      arenaClue(game, ArenaStory.CLUES.MANIFEST,
+        "Rare card tonight.\fI heard wings in\nthe holding room.\fA crate tag fell:\nCINNABAR WEST.",
+        "Rare card tonight.\fI heard wings in\nthe holding room.\fBig wings.",
+        "The crate tag reads:\nCINNABAR WEST.\fLIVE SPECIMEN.\nDO NOT OPEN.", done)
     end,
     TEXT_ARENA_FAN_5 = function(game, _, _, done)
       UI.text(game, "Three losses.\fNext bet is rent.\nAfter that, pride.", done)
     end,
     TEXT_ARENA_FAN_6 = function(game, _, _, done)
-      UI.text(game, "They heal winners\nbehind curtains.\fNobody asks about\nthe loser.", done)
+      arenaClue(game, ArenaStory.CLUES.CHART,
+        "They heal winners\nbehind curtains.\fA torn chart says:\nCELL GROWTH TRIAL.\fDR. FUJI signed it.",
+        "They heal winners\nbehind curtains.\fNobody asks about\nthe loser.",
+        "The chart names\nDR. FUJI.\fIts subject number\nmatches the crate.", done)
     end,
     TEXT_ARENA_FAN_7 = function(game, _, _, done)
       UI.text(game, "Keep aisles clear.\fBoss hates spills,\ncheats, witnesses.", done)
@@ -703,4 +741,5 @@ return function(mod)
   mod.exports.arena = Arena
   mod.exports.arena_security = ArenaSecurity
   mod.exports.arena_world = ArenaWorld
+  mod.exports.arena_story = ArenaStory
 end

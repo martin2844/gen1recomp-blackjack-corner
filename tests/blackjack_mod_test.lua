@@ -145,7 +145,7 @@ T.check(api and api.rules and api.holdem_rules and api.holdem_view and api.catal
     and api.credit_rules and api.credit and api.credit_world
     and api.house and api.house_world and api.arena_rules and api.arena
     and api.arena_security
-    and api.arena_world,
+    and api.arena_world and api.arena_story,
   "games, prizes, coin exchange, pawning, and arcade rules are exported")
 T.check(api.roulette_view.RESULT_BUTTON_Y
     + api.roulette_view.RESULT_BUTTON_HEIGHT <= api.roulette_view.FRAME_CONTENT_BOTTOM,

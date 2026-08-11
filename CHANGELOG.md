@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Added
+
+- Began the final Gamble Mode chapter with a schema-five Arena rumor trail:
+  three one-time records unlock through Arena participation and converge into a
+  persistent Cinnabar lead with reactive Rocket staff dialogue.
+- Added a dedicated final-stage implementation plan, Red/Blue manual matrix,
+  future-schema preservation coverage, and a native story-foundation driver.
+
 ## [0.5.2] - 2026-08-11
 
 ### Changed

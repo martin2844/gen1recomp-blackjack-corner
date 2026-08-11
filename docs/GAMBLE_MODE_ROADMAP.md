@@ -1,9 +1,9 @@
 # Gamble Mode Campaign Roadmap
 
-Status: APPROVED  
-Target branch: `feat/v0.7-underground-arena`  
-Public target release: `v0.5.0` (bundles the internal v0.5-v0.7 phases)  
-Last updated: 2026-08-10
+Status: FINAL STAGE IN PROGRESS  
+Target branch: `feat/v0.6-arena-story`  
+Public target release: `v0.6.0` (built on public `v0.5.2`)  
+Last updated: 2026-08-11
 
 ## Product shape
 
@@ -110,7 +110,7 @@ Current mod save key: `gamble_campaign`
 
 ```lua
 {
-  schema = 4,
+  schema = 5,
   reputation = {
     points = 0,
     rank = "ROOKIE",
@@ -160,6 +160,10 @@ Current mod save key: `gamble_campaign`
     nextMatchId = 0,
     pending = nil,
     history = {},
+  },
+  story = {
+    stage = "ARENA_RUMORS",
+    clues = {},
   },
 }
 ```
@@ -243,7 +247,7 @@ Ships:
 - Pending-match persistence before animation begins.
 - No wagering or entry using the player's own Pokemon.
 
-### v0.8.0: Cinnabar Underworld
+### Public v0.6.0 / internal v0.8.0: Cinnabar Underworld
 
 Goal: turn the arena into a campaign with a conclusion.
 

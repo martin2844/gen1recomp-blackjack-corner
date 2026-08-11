@@ -35,7 +35,7 @@ return function(mod, opts)
               current.offer.coins + current.offer.fee)
           or "You're clear.\fNew ROCKET credit\nis closed to you."
         text(game, copy .. homePage, nextStep)
-      else
+      elseif current.total > 0 then
         local due = current.dueBadge > 8 and "FINAL NOTICE"
           or ("BEFORE BADGE %d"):format(current.dueBadge)
         text(game, ("%s\fPRINCIPAL %d\nFEES %d\fOWED %d\n%s")
@@ -181,7 +181,7 @@ return function(mod, opts)
                 end,
               }))
           end }
-      else
+      elseif current.total > 0 then
         rows[#rows + 1] = { label = "PAY COINS",
           onSelect = function() payCoins(openMenu) end }
         rows[#rows + 1] = { label = "PAY MONEY",

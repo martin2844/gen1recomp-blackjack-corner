@@ -101,6 +101,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Checkout Gen1Recomp release packer
+        uses: actions/checkout@v4
+        with:
+          repository: bryanthaboi/gen1recomp
+          ref: 6f75a64c461070b07af1f89ad97fcf2473694eb8
+          path: .release-host
+
       - name: Determine version
         id: ver
         env:
@@ -188,10 +195,6 @@ jobs:
 
           git archive HEAD | tar -x -C "$staging"
 
-          rm -rf "$staging/.github" "$staging/.gitattributes" \
-                 "$staging/.gitignore" "$staging/.luarc.json" \
-                 "$staging/.modkitignore" "$staging/tests" "$staging/assets"
-
           python3 - "$staging/manifest.json" "$VERSION" <<'PY'
           import json, sys
           path, version = sys.argv[1], sys.argv[2]
@@ -204,7 +207,13 @@ jobs:
           PY
 
           zip_path="$out/${MOD_ID}-${VERSION}.zip"
-          (cd "$staging" && zip -qr "$zip_path" .)
+          python3 "$GITHUB_WORKSPACE/.release-host/tools/modkit.py" pack \
+            "$staging" --base fixture --output "$zip_path"
+          unzip -t "$zip_path"
+          if unzip -Z1 "$zip_path" | grep -E '(^|/)(tests|assets)/'; then
+            echo "::error::development-only files leaked into the release"
+            exit 1
+          fi
           unzip -l "$zip_path"
 
           unzip -p "$zip_path" manifest.json > "$RUNNER_TEMP/packed-manifest.json"

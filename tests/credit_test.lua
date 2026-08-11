@@ -10,6 +10,7 @@ local State = loadModule("other/gamble/state.lua")
 local ReputationRules = loadModule("other/gamble/reputation/rules.lua")
 local CreditRules = loadModule("other/gamble/credit/rules.lua")
 local CreditFactory = loadModule("other/gamble/credit/service.lua")
+local CreditUIFactory = loadModule("other/gamble/credit/ui.lua")
 
 T.eq(CreditRules.offer("ROOKIE").coins, 500,
   "Rookie credit begins with a controlled small offer")
@@ -149,6 +150,26 @@ game.save.coins = 100
 ok = exposedCredit.repayCoins(game, 100)
 T.check(ok and exposedCredit.snapshot(game).total == 0,
   "EXPOSE still allows every existing debt to be repaid")
+
+local menu
+local uiGame = { save = game.save, stack = {
+  push = function(_, screen) menu = screen end,
+} }
+local uiMod = { ui = { Menu = {
+  new = function(_, rows) return { items = rows } end,
+} } }
+local exposedUI = CreditUIFactory(uiMod, {
+  credit = exposedCredit,
+  rules = CreditRules,
+  text = function(_, _, nextStep) if nextStep then nextStep() end end,
+})
+exposedUI.broker(uiGame)
+T.eq(#menu.items, 2,
+  "a debt-free exposed account offers no impossible repayment actions")
+T.eq(menu.items[1].label, "STATEMENT",
+  "a debt-free exposed account retains its statement")
+T.eq(menu.items[2].label, "LEAVE",
+  "a debt-free exposed account always remains dismissible")
 
 enabled = false
 T.eq(service.snapshot(game), nil, "base mode never exposes Rocket Credit")

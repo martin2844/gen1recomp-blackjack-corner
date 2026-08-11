@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Fixed
+
+- Future-schema ending choices and metadata now survive an older build's
+  load/write cycle without being allowlisted away or reconciled by schema-nine
+  story rules.
+- Explicit EXPOSE or CHAMPION choices now remain authoritative when repairing
+  a partially written save whose derived stage conflicts with that choice.
+- Durable Arena tickets can resume the story, payout, and result phases when
+  their shared reputation receipt committed immediately before an interrupted
+  save boundary.
+- The Rocket broker no longer offers impossible repayment actions after EXPOSE
+  when the player's old debt is already clear.
+- The final-stage native driver now performs the promised mid-animation disk
+  restore and a real Series 3 loss, acknowledgement, retry, and duplicate
+  ledger audit instead of simulating those outcomes through story service calls.
+- GitHub releases are now built by the same Modkit packer used by validation,
+  so the tested and published archive shapes cannot drift.
+
 ## [0.6.0] - 2026-08-11
 
 ### Added

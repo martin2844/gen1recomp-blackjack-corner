@@ -174,8 +174,14 @@ end
 local function settleRound(_, token, result, returned)
   local value = State.sanitize(saved.gamble_campaign)
   local pending = value.reputation.pendingRounds[token]
-  if not pending then return false end
+  if not pending then
+    for _, settled in ipairs(value.reputation.settledRounds) do
+      if settled == token then return false, "ALREADY SETTLED" end
+    end
+    return false, "UNKNOWN ROUND"
+  end
   value.reputation.pendingRounds[token] = nil
+  value.reputation.settledRounds[#value.reputation.settledRounds + 1] = token
   value.reputation.completedGames = value.reputation.completedGames + 1
   value.reputation.byGame.arena = value.reputation.byGame.arena or {
     played = 0, wins = 0, losses = 0, draws = 0, wagered = 0, returned = 0,
@@ -250,6 +256,27 @@ T.check(ok and game.save.coins == coinsAfter and settledCalls == 1,
   "reopening a result cannot duplicate payout or reputation")
 T.check(service.acknowledge(), "acknowledging a result retires its ticket")
 T.eq(service.snapshot(game).pending, nil, "the next visit is ready for a new card")
+
+local interrupted = assert(service.current(game, deterministic))
+local interruptedWinner, interruptedStake = interrupted.match.winner, 100
+local interruptedBefore = game.save.coins
+ok, ticket = service.placeBet(game, interruptedWinner, interruptedStake)
+T.check(ok, "a second durable ticket can model an interrupted settlement")
+local interruptedPayout = Rules.payout(interruptedStake,
+  interruptedWinner, interrupted.match)
+local settledBeforeResume = settledCalls
+T.check(settleRound(game, ticket.roundToken, "win", interruptedPayout),
+  "the shared reputation receipt can commit before the Arena result")
+ok, ticket = service.settle(game)
+T.check(ok and ticket.status == "RESULT" and ticket.won,
+  "a BET ticket resumes after its reputation receipt already committed")
+T.eq(settledCalls, settledBeforeResume + 1,
+  "resuming a partial commit cannot settle reputation twice")
+T.eq(game.save.coins,
+  interruptedBefore - interruptedStake + interruptedPayout,
+  "resuming a partial commit credits its Arena payout exactly once")
+T.check(service.acknowledge(),
+  "a recovered partial settlement remains acknowledgeable")
 
 local story = StoryFactory(mod, {
   state = State, active = function() return enabled end,

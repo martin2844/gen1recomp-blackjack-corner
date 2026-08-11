@@ -11,6 +11,15 @@ return function(mod, opts)
     return opts.rank and opts.rank(game) or "ROOKIE"
   end
 
+  local function roundWasSettled(value, token)
+    local settled = value and value.reputation
+      and value.reputation.settledRounds or {}
+    for _, candidate in ipairs(settled) do
+      if candidate == token then return true end
+    end
+    return false
+  end
+
   local function syncUnlock(game)
     local rank = currentRank(game)
     local value = campaign(false)
@@ -144,7 +153,18 @@ return function(mod, opts)
     local roundToken = pending.roundToken
     local settled, progress = opts.settleRound(game, roundToken,
       won and "win" or "loss", payout)
-    if not settled then return false, "ROUND SETTLEMENT FAILED" end
+    if not settled then
+      local settleReason = progress
+      value = campaign(true)
+      if settleReason ~= "ALREADY SETTLED"
+          or not roundWasSettled(value, roundToken) then
+        return false, settleReason or "ROUND SETTLEMENT FAILED"
+      end
+      -- The durable Arena ticket is still BET, but its shared reputation
+      -- receipt already committed. Resume the remaining story/payout phases
+      -- instead of permanently stranding the wager after an interrupted save.
+      progress = nil
+    end
     -- settleRound writes reputation into the same save object. Work from that
     -- fresh value before finalizing the arena result and payout ledger.
     value = campaign(true)

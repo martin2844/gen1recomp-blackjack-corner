@@ -452,11 +452,15 @@ function State.sanitize(value)
   if exhibition.wins > exhibition.attempts then
     exhibition.attempts = exhibition.wins
   end
-  ending.choice = ({ EXPOSE = true, CHAMPION = true })[ending.choice]
-    and ending.choice or nil
+  if savedSchema <= State.SCHEMA then
+    ending.choice = ({ EXPOSE = true, CHAMPION = true })[ending.choice]
+      and ending.choice or nil
+  elseif type(ending.choice) ~= "string" then
+    ending.choice = nil
+  end
   ending.rewardPending = number(ending.rewardPending, 0)
   ending.rewardClaimed = ending.rewardClaimed == true
-  if savedSchema <= State.SCHEMA or VALID_STORY_STAGES[story.stage] then
+  if savedSchema <= State.SCHEMA then
     local arenaFound = 0
     for _, id in ipairs({ State.STORY_CLUES.FRAME,
         State.STORY_CLUES.MANIFEST, State.STORY_CLUES.CHART }) do
@@ -495,14 +499,14 @@ function State.sanitize(value)
       story.stage = State.STORY_STAGES.CHOICE
       order = STORY_STAGE_ORDER[story.stage]
     end
-    if story.stage == State.STORY_STAGES.EXPOSED then
-      ending.choice = State.STORY_ENDINGS.EXPOSE
-    elseif story.stage == State.STORY_STAGES.CHAMPION then
-      ending.choice = State.STORY_ENDINGS.CHAMPION
-    elseif ending.choice == State.STORY_ENDINGS.EXPOSE then
+    if ending.choice == State.STORY_ENDINGS.EXPOSE then
       story.stage = State.STORY_STAGES.EXPOSED
     elseif ending.choice == State.STORY_ENDINGS.CHAMPION then
       story.stage = State.STORY_STAGES.CHAMPION
+    elseif story.stage == State.STORY_STAGES.EXPOSED then
+      ending.choice = State.STORY_ENDINGS.EXPOSE
+    elseif story.stage == State.STORY_STAGES.CHAMPION then
+      ending.choice = State.STORY_ENDINGS.CHAMPION
     end
     if ending.choice and exhibition.wins == 0 then
       exhibition.wins = 1

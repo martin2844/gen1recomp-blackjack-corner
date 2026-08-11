@@ -14,13 +14,20 @@ items, and a one-time Master Ball. Gamble Mode's final High Roller rank now
 opens a Rocket status terminal that verifies KINGPIN clearance, retracts, and
 reveals a physical staircase into an underground Pokemon battle-betting arena.
 
-The v0.5.1 release is certified on Pokemon Red and Blue. Pokemon Yellow support
+The v0.5.2 release is certified on Pokemon Red and Blue. Pokemon Yellow support
 is available but remains experimental until its distinct one-ball Oak flow has
 its own native release gate. The mod contains no ROM or ROM-derived artwork;
 world and shiny graphics are generated locally from the player's imported game
 data.
 
-## Version 0.5.1 polish
+## Version 0.5.2 economy polish
+
+The Celadon Rocket broker now lets Gamble Mode players pawn the Pallet family
+home once at any balance. The deal adds 10,000 coins instead of replacing the
+current Coin Case balance, requires room for the full payout, and retains the
+30,000-coin buyback plus Rocket battle recovery route.
+
+## Version 0.5.1 Arena polish
 
 This patch rebuilds the complete Underground Arena route from native ROM tiles:
 a Rocket status terminal reveals a physical staircase, B1 becomes a permanent
@@ -84,8 +91,9 @@ changing the always-available base casino expansion:
 - default brings Rocket collectors to Pallet and Celadon and freezes only paid
   Prize Cases and the luxury prize counters—games, travel, healing, story,
   clerks, and pawn redemption remain available;
-- the Pallet family home can be pawned once at any money or casino balance for
-  10,000 additional coins, in exchange for Team Rocket taking possession;
+- the Pallet family home can be pawned once at any money or casino balance with
+  10,000 free Coin Case space, adding 10,000 coins in exchange for Team Rocket
+  taking possession;
 - the occupied home gains Rocket tenants, surveillance dialogue, authentic
   Rocket Hideout/Silph Co equipment derived from the imported game, and a
   relocated Mom upstairs who still heals the party;
@@ -99,7 +107,7 @@ The implementation and internal milestone train are mapped in
 [docs/GAMBLE_MODE_ROADMAP.md](docs/GAMBLE_MODE_ROADMAP.md). Human UI/E2E signoff
 uses the supervised drivers and matrix in [`tests/manual`](tests/manual); the
 public release record is
-[tests/manual/releases/v0.5.1.md](tests/manual/releases/v0.5.1.md), with the
+[tests/manual/releases/v0.5.2.md](tests/manual/releases/v0.5.2.md), with the
 detailed Arena phase gate retained in
 [tests/manual/V0.7_IN_GAME_TESTING.md](tests/manual/V0.7_IN_GAME_TESTING.md).
 
@@ -208,7 +216,7 @@ detailed Arena phase gate retained in
 
 ## Install
 
-1. Download `blackjack_corner-0.5.1.zip` from the
+1. Download `blackjack_corner-0.5.2.zip` from the
    [latest release](https://github.com/martin2844/gen1recomp-blackjack-corner/releases/latest).
    Use the named mod ZIP, not GitHub's automatic source-code archives.
 2. Open Gen1Recomp and choose **MODS > Import mod .zip**.

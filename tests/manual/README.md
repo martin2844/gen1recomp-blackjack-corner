@@ -33,7 +33,7 @@ collectors, luxury freeze, `PAWN & PAY`, and full recovery checks.
 
 The completed v0.6 campaign also provides focused setup drivers:
 
-- `rocket_credit_bailout.lua` opens the zero-balance `LAST RESORT` flow;
+- `rocket_credit_bailout.lua` opens the anytime `PAWN HOUSE` flow;
 - `rocket_house_repossessed.lua` prepares the occupied house and displaced Mom;
 - `rocket_house_buyback.lua` prepares the paid-deed Rocket battle.
 
@@ -46,7 +46,7 @@ the deterministic Red/Blue gate and captures every required visual checkpoint. T
 complete human-readable matrix and launch commands live in
 [`V0.7_IN_GAME_TESTING.md`](V0.7_IN_GAME_TESTING.md).
 The current cumulative public results are recorded in
-[`releases/v0.5.1.md`](releases/v0.5.1.md); the v0.5.0 and internal milestone records remain
+[`releases/v0.5.2.md`](releases/v0.5.2.md); earlier public and internal milestone records remain
 available for detailed evidence.
 
 Before signing off a release:

@@ -1064,11 +1064,11 @@ do
   local previousMode, previousCampaign = bucket.gamble_mode, bucket.gamble_campaign
   bucket.gamble_mode = true
   bucket.gamble_campaign = api.campaign_state.defaults()
-  local game = gameWith(0, 0)
+  local game = gameWith(250, 5000)
   game.save.inventory.COIN_CASE = 1
-  local ok = api.house.claimBailout(game)
-  T.check(ok, "the integrated campaign can claim the zero-balance bailout")
-  T.eq(game.save.coins, 10000, "the integrated bailout pays exactly ten thousand")
+  local ok = api.house.pawnHome(game)
+  T.check(ok, "the integrated campaign can pawn the home at any balance")
+  T.eq(game.save.coins, 10250, "the integrated house pawn adds exactly ten thousand")
   api.house_world.sync(game, api.house)
   local down = game.save.objectToggles.REDS_HOUSE_1F
   local up = game.save.objectToggles.REDS_HOUSE_2F

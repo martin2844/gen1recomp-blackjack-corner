@@ -210,9 +210,9 @@ Ships:
 - Repayment using coins, money, or voluntary Pokemon pawning.
 - Collectors appearing in selected towns while the player is in default.
 - Restrictions limited to luxury casino services and new credit.
-- The one-time zero-money bailout:
-  - Available only when money and coins are both zero.
-  - Pays 10,000 coins.
+- The one-time family-home pawn:
+  - Available at any money or casino balance with 10,000 free Coin Case space.
+  - Adds 10,000 coins to the current balance.
   - Transfers the Pallet family home to Team Rocket.
   - Moves Mom from downstairs into Red's upstairs bedroom.
   - Replaces the downstairs furniture with Rocket Hideout pieces.
@@ -220,7 +220,7 @@ Ships:
 - A 30,000-coin buyback quest followed by a Rocket battle.
 - Restoration of the family home after both requirements are complete.
 
-The bailout cannot be repeated and cannot make the stairs, PC, town exits, Oak's
+The house pawn cannot be repeated and cannot make the stairs, PC, town exits, Oak's
 Lab, or required story interactions inaccessible.
 
 ### v0.7.0: Underground Arena
@@ -280,7 +280,7 @@ Implementation status on `feat/v0.6-rocket-credit`:
 - badge-milestone default and idempotent late fees: implemented;
 - voluntary pawn-to-debt flow and default-only luxury restrictions: implemented;
 - recoverable Pallet/Celadon collector presence: implemented;
-- zero-balance bailout, repossession, buyback, and restoration: implemented;
+- anytime house pawning, repossession, buyback, and restoration: implemented;
 - complete automated suite and supervised Red/Blue release gate: passed.
 
 ## v0.7 implementation status

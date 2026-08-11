@@ -10,7 +10,7 @@ return function(game)
   bucket.gamble_campaign = exports.campaign_state.defaults()
   game.save.inventory = game.save.inventory or {}
   game.save.inventory.COIN_CASE = 1
-  game.save.coins, game.save.money = 0, 0
+  game.save.coins, game.save.money = 250, 5000
   exports.house_world.sync(game, exports.house)
 
   U.teleport(game, "BLACKJACK_LOUNGE", 17, 12, "right")
@@ -23,12 +23,12 @@ return function(game)
   U.tap(game, "down")
   U.wait(5)
   local shotDir = os.getenv("SHOT_DIR") or "/tmp/blackjack-corner-v06/bailout"
-  U.shot(game, shotDir .. "/last-resort-menu.png")
+  U.shot(game, shotDir .. "/pawn-house-menu.png")
   U.tap(game, "a")
   U.wait(180)
-  U.shot(game, shotDir .. "/last-resort-confirmation.png")
-  U.log("Zero money / zero coins prepared with LAST RESORT highlighted.")
-  U.log("Test NO first, then YES. Verify exactly 10000 coins and one-time use.")
+  U.shot(game, shotDir .. "/pawn-house-confirmation.png")
+  U.log("Nonzero money and coins prepared with PAWN HOUSE highlighted.")
+  U.log("Test NO first, then YES. Verify the balance increases by exactly 10000.")
   U.log("MANUAL CONTROL READY")
   while true do coroutine.yield() end
 end

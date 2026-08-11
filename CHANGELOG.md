@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+## [0.5.2] - 2026-08-11
+
+### Changed
+
+- The Celadon Rocket broker now offers `PAWN HOUSE` at any money or casino
+  balance, provided the Coin Case has room for the complete payout.
+- Pawning the Pallet family home adds 10,000 coins to the current balance
+  instead of replacing it. The one-use transfer, 30,000-coin buyback, Rocket
+  battle, and house restoration remain unchanged.
+- Confirmation and manual-testing copy now describe the transaction directly;
+  the previous service names remain as compatibility aliases and existing save
+  fields migrate without a rewrite.
+
+### Fixed
+
+- Custom Coin Case caps below 10,000 now refuse the house transaction rather
+  than silently exceeding the configured limit.
+
 ## [0.5.1] - 2026-08-11
 
 ### Changed

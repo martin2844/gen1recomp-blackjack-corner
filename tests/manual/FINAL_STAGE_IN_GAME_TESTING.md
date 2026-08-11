@@ -60,15 +60,15 @@ dialogue, presentation, pacing, save/reload, and story continuity.
 
 ## Final signoff
 
-- [ ] Every implemented row passes on Pokemon Red.
-- [ ] Every implemented row passes on Pokemon Blue.
-- [ ] All new dialogue fits native text boxes with no clipped choice.
-- [ ] Schema-four migration and future-schema preservation pass.
-- [ ] No Arena, casino, town, Gym, Lab, Mansion, healing, PC, or travel route is blocked.
-- [ ] Complete automated suite, fixture/imported validation, ROM-content lint,
-  release package inspection, and published checksum verification pass.
+- [x] Every implemented row passes on Pokemon Red.
+- [x] Every implemented row passes on Pokemon Blue.
+- [x] All new dialogue fits native text boxes with no clipped choice.
+- [x] Schema-four migration and future-schema preservation pass.
+- [x] No Arena, casino, town, Gym, Lab, Mansion, healing, PC, or travel route is blocked.
+- [x] Complete automated suite, fixture/imported validation, ROM-content lint,
+  release package inspection, and local checksum verification pass.
 
-## 2026-08-11 focused final-stage smoke
+## 2026-08-11 final-stage release gate
 
 The focused `final_story_foundation.lua` driver passed on imported Pokemon Red
 and Blue. It physically read the B1 painting, persisted the complete lead
@@ -79,17 +79,19 @@ native interactions passed `STORY-03`, `STORY-09`, `STORY-10`, `CIN-03`, and
 winner, watched the battle settle, and met the summoned Giovanni, passing
 `EXH-04` and `EXH-05` in both ROMs. Evidence is under:
 
-- Red complete path: `/tmp/blackjack-corner-v060/final-red`
-- Blue complete path: `/tmp/blackjack-corner-v060/final-blue`
+- Red complete path: `/tmp/blackjack-corner-v060/release-red`
+- Blue complete path: `/tmp/blackjack-corner-v060/release-blue`
 
-The same driver selected EXPOSE on Red and CHAMPION on Blue, displayed the
-branch-specific consequence copy, and passed `END-03` for both branches. Red
-also proved that new Rocket Credit closes while luxury access stays open;
-Blue proved the complete 25,000-coin reward is delivered exactly once. Both
-runs captured the ending-specific High Roller title and reactive B1 dialogue,
-passing the focused `END-04` and `END-05` checks.
+The same driver exercised all 34 rows above across the two branches. It first
+cancelled Giovanni's consequence confirmation, then selected EXPOSE on Red and
+CHAMPION on Blue. Red carried and repaid an old Rocket debt after exposure;
+Blue entered at 990,000 coins, credited 10,000, banked 15,000, later delivered
+the remainder, and proved the reward could not repeat. Both endings survived a
+real disk restore, refused the opposite choice, kept Arena/luxury access, and
+opened reactive dialogue in Pallet, Celadon, Cinnabar, B1, B2, and the occupied
+family home.
 
-The complete automated suite passes 1,671 assertions. The remaining fan
-dialogue, participation pacing, repeat-contact, palette, route-integrity, and
-economy permutations plus the native loss/reload exhibition paths stay open
-until the cumulative release gate is complete.
+The complete automated suite passes 1,671 assertions. The 49-case credit/home
+and 37-case Arena regression drivers also passed independently on Red and Blue.
+Fixture/imported validation, ROM-content lint, and the 64-file release-shaped
+package passed without development-file leakage.

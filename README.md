@@ -13,12 +13,32 @@ Prize Cases, animated horse racing, Plinko, Pokemon pawning, shinies, rare
 items, and a one-time Master Ball. Gamble Mode's final High Roller rank now
 opens a Rocket status terminal that verifies KINGPIN clearance, retracts, and
 reveals a physical staircase into an underground Pokemon battle-betting arena.
+The final chapter follows evidence from that pit to Cinnabar, returns for a
+fixed Dragonite-versus-Mewtwo exhibition, and ends with an irreversible choice
+to expose Rocket or become the house champion.
 
-The v0.5.2 release is certified on Pokemon Red and Blue. Pokemon Yellow support
+The v0.6.0 release is certified on Pokemon Red and Blue. Pokemon Yellow support
 is available but remains experimental until its distinct one-ball Oak flow has
 its own native release gate. The mod contains no ROM or ROM-derived artwork;
 world and shiny graphics are generated locally from the player's imported game
 data.
+
+## Version 0.6.0 final Gamble Mode chapter
+
+The Arena is now the start of Gamble Mode's ending rather than its last
+standalone table. Arena participation reveals three persistent records, a
+Cinnabar Lab handler and Mansion researcher authenticate Series 3, and the
+return match posts a fixed Dragonite L62 versus Mewtwo L65 card. Its complete
+odds, result, wager, and animation are committed before the fight, so reloads
+cannot reroll a loss.
+
+Winning summons Giovanni in the physical B2 chamber. EXPOSE and CHAMPION each
+show their consequences and require a second confirmation. EXPOSE closes only
+future Rocket loans; CHAMPION awards 25,000 coins once, banking any amount that
+does not fit under the 1,000,000 Coin Case cap. Both endings permanently change
+the High Roller title and selected dialogue across Pallet, Celadon, Cinnabar,
+the underground floors, and an occupied family home while keeping all games,
+prizes, routes, healing, pawns, old-debt repayment, and house recovery open.
 
 ## Version 0.5.2 economy polish
 
@@ -107,11 +127,28 @@ The implementation and internal milestone train are mapped in
 [docs/GAMBLE_MODE_ROADMAP.md](docs/GAMBLE_MODE_ROADMAP.md). Human UI/E2E signoff
 uses the supervised drivers and matrix in [`tests/manual`](tests/manual); the
 public release record is
-[tests/manual/releases/v0.5.2.md](tests/manual/releases/v0.5.2.md), with the
+[tests/manual/releases/v0.6.0.md](tests/manual/releases/v0.6.0.md), with the
 detailed Arena phase gate retained in
 [tests/manual/V0.7_IN_GAME_TESTING.md](tests/manual/V0.7_IN_GAME_TESTING.md).
 
 ## Screenshots
+
+### Final Gamble Mode chapter
+
+<table>
+  <tr>
+    <td width="50%"><img src="assets/screenshots/gamble-story-rumor-clue.png" alt="A hidden Arena record pointing toward Cinnabar"><br><sub>Arena participation unlocks persistent records hidden in native props and dialogue.</sub></td>
+    <td width="50%"><img src="assets/screenshots/gamble-story-cinnabar-handler.png" alt="The Cinnabar Lab Rocket handler"><br><sub>A Lab handler and Mansion researcher authenticate the engineered exhibition.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="assets/screenshots/gamble-story-series-3.png" alt="Series 3 Dragonite versus Mewtwo betting card"><br><sub>Series 3 commits Dragonite, Mewtwo, posted odds, and its full result before animation.</sub></td>
+    <td width="50%"><img src="assets/screenshots/gamble-story-giovanni-choice.png" alt="Giovanni's EXPOSE or CHAMPION ending choice"><br><sub>Giovanni offers two irreversible endings, each behind a separate consequence confirmation.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="assets/screenshots/gamble-story-expose-status.png" alt="High Roller panel after exposing Rocket"><br><sub>EXPOSE becomes a permanent High Roller title and changes the casino's response.</sub></td>
+    <td width="50%"><img src="assets/screenshots/gamble-story-champion-reward.png" alt="Giovanni transferring the Champion reward"><br><sub>CHAMPION transfers 25,000 coins exactly once and banks any cap overflow.</sub></td>
+  </tr>
+</table>
 
 ### Underground Arena
 
@@ -216,7 +253,7 @@ detailed Arena phase gate retained in
 
 ## Install
 
-1. Download `blackjack_corner-0.5.2.zip` from the
+1. Download `blackjack_corner-0.6.0.zip` from the
    [latest release](https://github.com/martin2844/gen1recomp-blackjack-corner/releases/latest).
    Use the named mod ZIP, not GitHub's automatic source-code archives.
 2. Open Gen1Recomp and choose **MODS > Import mod .zip**.
@@ -667,7 +704,7 @@ games/
   shared/       ui.lua
 other/
   gamble/       mode.lua  gym_cases.lua  state.lua  arena_world.lua
-                arena_security.lua
+                arena_security.lua  arena_story.lua  story_world.lua
     reputation/ service.lua  screen.lua
     credit/     service.lua  ui.lua  world.lua  house_service.lua  house_world.lua
   pawn/         rules.lua

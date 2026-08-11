@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [0.6.0] - 2026-08-11
+
 ### Added
 
 - Began the final Gamble Mode chapter with a schema-five Arena rumor trail:

@@ -1,6 +1,6 @@
 # Final Gamble Mode Stage
 
-Status: IN PROGRESS  
+Status: COMPLETE — RELEASE GATE PASSED  
 Branch: `feat/v0.6-arena-story`  
 Public target: `v0.6.0`  
 Base release: `v0.5.2`
@@ -95,14 +95,16 @@ passed CHAMPION through the physical B2 actor.
 - Rebalance Arena/story rewards against the 1,000,000 Coin Case cap.
 - Complete supervised Red and Blue playthroughs and package validation.
 
-Chunk E is implemented on the feature branch. EXPOSE closes only future
+Chunk E is implemented and release-tested. EXPOSE closes only future
 Rocket loans while preserving repayment, every game, every prize service, and
 all routes. CHAMPION grants a one-time 25,000-coin reward that credits only
 available Coin Case space and keeps the remainder banked. Both endings now
 change the High Roller title and selected dialogue in Pallet, Celadon,
-Cinnabar, the Arena floors, and an occupied family home. The focused Red
-EXPOSE and Blue CHAMPION paths have passed natively; the cumulative release
-matrix and package gate remain before public v0.6.0.
+Cinnabar, the Arena floors, and an occupied family home. Red completed EXPOSE
+with an old debt and Blue completed CHAMPION at the Coin Case boundary. Both
+branches passed cancellation, reload, immutable-choice, reactive-world, and
+service-access checks alongside the cumulative 49-case credit/home and 37-case
+Arena regressions on both ROMs.
 
 ## Persistent state
 
@@ -186,3 +188,14 @@ their complete transition and recovery behavior.
 7. Neither ending disables a game or required Pokemon route.
 8. Every chunk adds automated tests and updates the manual matrix.
 9. Red and Blue native UI/E2E signoff is mandatory before `v0.6.0`.
+
+## Completed release gate
+
+- 1,671 automated Lua assertions.
+- 34 final-stage matrix rows exercised across Red and Blue, including every
+  story transition and both ending-specific economy paths.
+- 49 credit/home regression cases and 37 Arena regression cases passed per ROM.
+- Fixture and imported Red/Blue validation, ROM-derived-content lint, and a
+  64-file release-shaped package passed.
+- Six final-stage screenshots are cataloged in `assets/screenshots/` and kept
+  out of the install archive.

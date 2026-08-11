@@ -142,6 +142,7 @@ return function(game)
   local GameVersion = require("src.core.GameVersion")
   local expected = GameVersion.isBlue() and api.arena_story.ENDINGS.CHAMPION
     or api.arena_story.ENDINGS.EXPOSE
+  local coinsBeforeChoice = game.save.coins
   if expected == api.arena_story.ENDINGS.CHAMPION then
     U.tap(game, "down")
     U.wait(5)
@@ -162,4 +163,43 @@ return function(game)
   assert(state.stage == expectedStage)
   assert(U.shot(game, shotDir .. "/story-giovanni-ending.png"))
   U.log("PASS", "END-03", expected .. " committed after consequence copy")
+
+  if expected == api.arena_story.ENDINGS.CHAMPION then
+    assert(game.save.coins == coinsBeforeChoice
+      + api.arena_story.CHAMPION_REWARD)
+    assert(state.ending.rewardPending == 0 and state.ending.rewardClaimed)
+    assert(api.credit.snapshot(game).newLoansAllowed)
+    local endingBox = game.stack:top()
+    assert(endingBox and endingBox.pages and #endingBox.pages >= 3)
+    while endingBox.pageIndex < #endingBox.pages do
+      while not endingBox.waiting do U.wait(1) end
+      U.tap(game, "a")
+      U.wait(2)
+    end
+    while not endingBox.done do U.wait(1) end
+    assert(U.shot(game, shotDir .. "/story-ending-reward.png"))
+    U.log("PASS", "END-04", "CHAMPION reward credited exactly once")
+  else
+    assert(game.save.coins == coinsBeforeChoice)
+    assert(not api.credit.snapshot(game).newLoansAllowed)
+    local borrowed, reason = api.credit.borrow(game)
+    assert(not borrowed and reason:find("CLOSED", 1, true))
+    U.log("PASS", "END-04", "EXPOSE closed new Rocket credit")
+  end
+  assert(api.credit.luxuryAllowed(game))
+
+  for _ = 1, 10 do U.tap(game, "a"); U.wait(3) end
+  while api.reputation.consumeRankUp() do end
+  require("src.ui.Screens").push(game, "BlackjackCornerHighRoller")
+  U.wait(40)
+  assert(U.shot(game, shotDir .. "/story-ending-status.png"))
+  U.tap(game, "b")
+  U.wait(30)
+
+  U.teleport(game, api.arena_world.LOBBY, 7, 3, "up")
+  U.wait(20)
+  U.tap(game, "a")
+  U.wait(120)
+  assert(U.shot(game, shotDir .. "/story-ending-world.png"))
+  U.log("PASS", "END-05", "ending changed status and world dialogue")
 end

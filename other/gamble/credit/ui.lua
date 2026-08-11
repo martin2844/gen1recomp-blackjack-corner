@@ -29,9 +29,12 @@ return function(mod, opts)
         homePage = "\fHOME: " .. (labels[home.status] or home.status)
       end
       if current.total == 0 then
-        text(game, ("You're clear.\f%s rank gets\n%d coins for %d.")
-          :format(current.rank:gsub("_", " "), current.offer.coins,
-            current.offer.coins + current.offer.fee) .. homePage, nextStep)
+        local copy = current.newLoansAllowed
+          and ("You're clear.\f%s rank gets\n%d coins for %d.")
+            :format(current.rank:gsub("_", " "), current.offer.coins,
+              current.offer.coins + current.offer.fee)
+          or "You're clear.\fNew ROCKET credit\nis closed to you."
+        text(game, copy .. homePage, nextStep)
       else
         local due = current.dueBadge > 8 and "FINAL NOTICE"
           or ("BEFORE BADGE %d"):format(current.dueBadge)
@@ -163,7 +166,7 @@ return function(mod, opts)
     function openMenu()
       local current = Credit.snapshot(game)
       local rows = {}
-      if current.total == 0 then
+      if current.total == 0 and current.newLoansAllowed then
         rows[#rows + 1] = { label = "TAKE " .. current.offer.coins,
           onSelect = function()
             game.stack:push(mod.ui.TextBox.new(game,
@@ -210,7 +213,9 @@ return function(mod, opts)
       }))
     end
 
-    text(game, state.status == "DEFAULT"
+    text(game, not state.newLoansAllowed and state.total == 0
+      and "You exposed ROCKET.\fNo new loans.\nOld business stands."
+      or state.status == "DEFAULT"
       and "Rocket credit.\fYou're late.\nLet's talk numbers."
       or "Rocket credit.\fFast coins. Fixed\nfee. No surprises.", openMenu)
   end

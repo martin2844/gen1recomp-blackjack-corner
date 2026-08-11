@@ -33,6 +33,8 @@ return function(mod, opts)
       loansTaken = debt.loansTaken,
       totalRepaid = debt.totalRepaid,
       collectorsTriggered = debt.collectorsTriggered,
+      newLoansAllowed = not opts.newLoansAllowed
+        or opts.newLoansAllowed(game) ~= false,
     }
   end
 
@@ -41,6 +43,9 @@ return function(mod, opts)
     if not campaign then return false, "GAMBLE MODE OFF" end
     if not (game.save.inventory and game.save.inventory.COIN_CASE) then
       return false, "You need a\nCOIN CASE."
+    end
+    if opts.newLoansAllowed and opts.newLoansAllowed(game) == false then
+      return false, "ROCKET CREDIT CLOSED\nAFTER THE EXPOSURE."
     end
     if Rules.total(debt) > 0 or debt.status ~= "CLEAR" then
       return false, "Settle your old\ndebt first."

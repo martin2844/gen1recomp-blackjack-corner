@@ -1,7 +1,8 @@
 local State = {}
 
 State.KEY = "gamble_campaign"
-State.SCHEMA = 8
+State.SCHEMA = 9
+State.CHAMPION_REWARD = 25000
 
 local VALID_RANKS = {
   ROOKIE = true, REGULAR = true, HIGH_ROLLER = true,
@@ -268,7 +269,9 @@ function State.defaults()
       exhibition = {
         attempts = 0, wins = 0, lastMatchId = 0,
       },
-      ending = { choice = nil },
+      ending = {
+        choice = nil, rewardPending = 0, rewardClaimed = false,
+      },
     },
   }
 end
@@ -330,6 +333,18 @@ State.MIGRATIONS = {
   [8] = function(value)
     local story = ensureTable(value, "story")
     ensureTable(story, "ending")
+  end,
+  [9] = function(value)
+    local story = ensureTable(value, "story")
+    local ending = ensureTable(story, "ending")
+    local champion = ending.choice == State.STORY_ENDINGS.CHAMPION
+      or story.stage == State.STORY_STAGES.CHAMPION
+    if ending.rewardPending == nil then
+      ending.rewardPending = champion and State.CHAMPION_REWARD or 0
+    end
+    if ending.rewardClaimed == nil then
+      ending.rewardClaimed = not champion
+    end
   end,
 }
 
@@ -439,6 +454,8 @@ function State.sanitize(value)
   end
   ending.choice = ({ EXPOSE = true, CHAMPION = true })[ending.choice]
     and ending.choice or nil
+  ending.rewardPending = number(ending.rewardPending, 0)
+  ending.rewardClaimed = ending.rewardClaimed == true
   if savedSchema <= State.SCHEMA or VALID_STORY_STAGES[story.stage] then
     local arenaFound = 0
     for _, id in ipairs({ State.STORY_CLUES.FRAME,
@@ -490,6 +507,13 @@ function State.sanitize(value)
     if ending.choice and exhibition.wins == 0 then
       exhibition.wins = 1
       exhibition.attempts = math.max(exhibition.attempts, 1)
+    end
+    if ending.choice == State.STORY_ENDINGS.CHAMPION then
+      if not ending.rewardClaimed and ending.rewardPending == 0 then
+        ending.rewardPending = State.CHAMPION_REWARD
+      end
+    elseif ending.choice == State.STORY_ENDINGS.EXPOSE then
+      ending.rewardPending, ending.rewardClaimed = 0, true
     end
   end
   return out

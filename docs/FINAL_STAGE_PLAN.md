@@ -95,11 +95,21 @@ passed CHAMPION through the physical B2 actor.
 - Rebalance Arena/story rewards against the 1,000,000 Coin Case cap.
 - Complete supervised Red and Blue playthroughs and package validation.
 
+Chunk E is implemented on the feature branch. EXPOSE closes only future
+Rocket loans while preserving repayment, every game, every prize service, and
+all routes. CHAMPION grants a one-time 25,000-coin reward that credits only
+available Coin Case space and keeps the remainder banked. Both endings now
+change the High Roller title and selected dialogue in Pallet, Celadon,
+Cinnabar, the Arena floors, and an occupied family home. The focused Red
+EXPOSE and Blue CHAMPION paths have passed natively; the cumulative release
+matrix and package gate remain before public v0.6.0.
+
 ## Persistent state
 
 Schema five adds the Arena rumor trail; schema six extends the same sibling
 document for the Cinnabar investigation; schema seven adds the exhibition
-ledger; schema eight records the irreversible Giovanni decision:
+ledger; schema eight records the irreversible Giovanni decision; schema nine
+adds cap-safe, exactly-once ending reward delivery:
 
 ```lua
 story = {
@@ -116,7 +126,11 @@ story = {
     wins = 1,
     lastMatchId = 42,
   },
-  ending = { choice = "EXPOSE" },
+  ending = {
+    choice = "EXPOSE",
+    rewardPending = 0,
+    rewardClaimed = true,
+  },
 }
 ```
 

@@ -127,6 +127,29 @@ T.check(not ok, "credit never overflows the one-million Coin Case")
 T.eq(service.snapshot(game).total, 0,
   "a refused oversized loan does not mutate debt")
 
+local exposedCredit = CreditFactory(mod, {
+  state = State, rules = CreditRules, active = function() return enabled end,
+  coinCap = 1000000, badgeCount = ReputationRules.badgeCount,
+  rank = function() return currentRank end,
+  newLoansAllowed = function() return false end,
+})
+game.save.coins = 0
+local debtBefore = exposedCredit.snapshot(game).total
+ok, message = exposedCredit.borrow(game)
+T.check(not ok and message:find("EXPOSURE", 1, true),
+  "EXPOSE closes new Rocket loans at the service boundary")
+T.eq(exposedCredit.snapshot(game).total, debtBefore,
+  "a refused post-ending loan cannot mutate the debt ledger")
+saved.gamble_campaign.debt = {
+  principal = 100, fees = 0, status = "ACTIVE", dueBadge = 9,
+  lastBadgeFee = 8, loansTaken = 1, totalRepaid = 0,
+  collectorsTriggered = {},
+}
+game.save.coins = 100
+ok = exposedCredit.repayCoins(game, 100)
+T.check(ok and exposedCredit.snapshot(game).total == 0,
+  "EXPOSE still allows every existing debt to be repaid")
+
 enabled = false
 T.eq(service.snapshot(game), nil, "base mode never exposes Rocket Credit")
 T.check(service.luxuryAllowed(game), "base mode never inherits campaign restrictions")

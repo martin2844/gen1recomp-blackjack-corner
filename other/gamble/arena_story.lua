@@ -5,6 +5,7 @@ return function(mod, opts)
     ENDINGS = assert(opts.state.STORY_ENDINGS),
     TARGET = 3,
     CINNABAR_TARGET = 2,
+    CHAMPION_REWARD = assert(opts.state.CHAMPION_REWARD),
   }
   local store = opts.state.new(mod, opts.active)
   local requirements = {
@@ -149,10 +150,30 @@ return function(mod, opts)
       return false, snapshot(campaign), "GIOVANNI IS NOT READY"
     end
     campaign.story.ending.choice = choice
+    campaign.story.ending.rewardPending = choice == Story.ENDINGS.CHAMPION
+      and Story.CHAMPION_REWARD or 0
+    campaign.story.ending.rewardClaimed = choice ~= Story.ENDINGS.CHAMPION
     campaign.story.stage = choice == Story.ENDINGS.EXPOSE
       and Story.STAGES.EXPOSED or Story.STAGES.CHAMPION
     store.save(campaign)
     return true, snapshot(campaign), choice
+  end
+
+  function Story.deliverEndingReward(game)
+    local campaign = store.load(false)
+    if not campaign or not game or not game.save then return 0, 0 end
+    local ending = campaign.story.ending
+    if ending.choice ~= Story.ENDINGS.CHAMPION or ending.rewardClaimed then
+      return 0, ending.rewardPending or 0
+    end
+    local coins = math.max(0, math.floor(tonumber(game.save.coins) or 0))
+    local room = math.max(0, (opts.coinCap or 1000000) - coins)
+    local credited = math.min(room, ending.rewardPending)
+    game.save.coins = coins + credited
+    ending.rewardPending = ending.rewardPending - credited
+    ending.rewardClaimed = ending.rewardPending == 0
+    store.save(campaign)
+    return credited, ending.rewardPending
   end
 
   function Story.resetForQA()

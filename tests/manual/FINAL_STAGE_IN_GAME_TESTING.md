@@ -53,9 +53,10 @@ dialogue, presentation, pacing, save/reload, and story continuity.
 | END-03 | Confirm EXPOSE on Red and CHAMPION on Blue | The selected ending and stage save exactly once, with readable ending copy | Image + values |
 | END-04 | Say NO, leave, reopen, then confirm | Cancellation is non-mutating and the full choice remains available | Values + navigation |
 | END-05 | Attempt to select the other ending after confirmation and reload | Giovanni gives ending-specific repeat copy; the first choice cannot change | Image + values |
-
-Ending-specific world reactions, service changes, rewards, and ordinary-story
-route checks remain reserved for Chunk E.
+| END-06 | Confirm EXPOSE, then visit Rocket Credit with and without old debt | New loans are closed; existing debt remains payable and every game, prize counter, route, healing service, pawn, and house recovery remains available | Image + values + navigation |
+| END-07 | Confirm CHAMPION below and near the Coin Case cap | Exactly 25,000 coins are granted once; only available room is credited and the remainder stays banked until room exists | Image + values |
+| END-08 | Open High Roller and revisit Pallet, Celadon, Cinnabar, B1, B2, and an occupied family home after each ending | The title and selected NPC dialogue consistently reflect EXPOSE or CHAMPION without rewriting house/debt state | Image + values |
+| END-09 | Save/reload after either ending and replay every casino entry point | Ending, reward ledger, access, games, services, and ordinary Pokemon routes persist with no duplicate reward or new restriction | Values + navigation |
 
 ## Final signoff
 
@@ -67,7 +68,7 @@ route checks remain reserved for Chunk E.
 - [ ] Complete automated suite, fixture/imported validation, ROM-content lint,
   release package inspection, and published checksum verification pass.
 
-## 2026-08-11 foundation smoke
+## 2026-08-11 focused final-stage smoke
 
 The focused `final_story_foundation.lua` driver passed on imported Pokemon Red
 and Blue. It physically read the B1 painting, persisted the complete lead
@@ -78,15 +79,17 @@ native interactions passed `STORY-03`, `STORY-09`, `STORY-10`, `CIN-03`, and
 winner, watched the battle settle, and met the summoned Giovanni, passing
 `EXH-04` and `EXH-05` in both ROMs. Evidence is under:
 
-- Red: `/tmp/blackjack-corner-v060/story-red`
-- Blue: `/tmp/blackjack-corner-v060/story-blue`
-- Red exhibition: `/tmp/blackjack-corner-v060/exhibition-red`
-- Blue exhibition: `/tmp/blackjack-corner-v060/exhibition-blue`
+- Red complete path: `/tmp/blackjack-corner-v060/final-red`
+- Blue complete path: `/tmp/blackjack-corner-v060/final-blue`
 
 The same driver selected EXPOSE on Red and CHAMPION on Blue, displayed the
-branch-specific consequence copy, and passed `END-03` for both branches.
+branch-specific consequence copy, and passed `END-03` for both branches. Red
+also proved that new Rocket Credit closes while luxury access stays open;
+Blue proved the complete 25,000-coin reward is delivered exactly once. Both
+runs captured the ending-specific High Roller title and reactive B1 dialogue,
+passing the focused `END-04` and `END-05` checks.
 
-The complete automated suite passes 1,659 assertions. The remaining fan
+The complete automated suite passes 1,671 assertions. The remaining fan
 dialogue, participation pacing, repeat-contact, palette, route-integrity, and
 economy permutations plus the native loss/reload exhibition paths stay open
-until the ending-world and balance pass is complete.
+until the cumulative release gate is complete.

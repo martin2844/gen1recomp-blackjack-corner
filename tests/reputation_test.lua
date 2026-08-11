@@ -11,8 +11,8 @@ local State = loadModule("other/gamble/state.lua")
 local Rules = loadModule("other/gamble/reputation/rules.lua")
 local ServiceFactory = loadModule("other/gamble/reputation/service.lua")
 
-T.eq(State.SCHEMA, 8,
-  "the Giovanni decision advances the campaign schema explicitly")
+T.eq(State.SCHEMA, 9,
+  "the ending-world reward advances the campaign schema explicitly")
 local clean = State.sanitize({ reputation = {
   points = -50, completedGames = "4", currentLossStreak = 0 / 0,
   byGame = { blackjack = { played = "2", wins = 1 } },
@@ -34,18 +34,18 @@ T.eq(migratedDebt.house.status, "ROCKET_OWNED",
   "legacy repossession state survives the schema-two migration")
 
 local future = State.sanitize({
-  schema = 9,
+  schema = 10,
   futureChapter = { enabled = true },
   reputation = { rank = "BOGUS", futureStat = 42 },
   debt = { balance = 7, principal = 99 },
 })
-T.eq(future.schema, 9, "newer campaign schemas are never downgraded")
+T.eq(future.schema, 10, "newer campaign schemas are never downgraded")
 T.check(future.futureChapter.enabled and future.reputation.futureStat == 42,
   "unknown future campaign fields survive sanitation")
 T.eq(future.debt.principal, 99, "unknown nested debt fields survive sanitation")
 T.eq(future.reputation.rank, "ROOKIE", "invalid saved ranks are rejected")
 local futureAgain = State.sanitize(future)
-T.eq(futureAgain.schema, 9, "repeated future-schema loading is idempotent")
+T.eq(futureAgain.schema, 10, "repeated future-schema loading is idempotent")
 T.eq(futureAgain.debt.principal, 99,
   "repeated sanitation preserves unknown nested fields")
 

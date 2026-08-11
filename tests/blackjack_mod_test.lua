@@ -1695,7 +1695,15 @@ do
     "record counters remain inside their reserved status columns")
   T.check(Font.width(statusModel.favorite) <= 80,
     "favorite game names fit their dedicated status row")
+  local endingModel = status:viewModel(stressState, {
+    ending = { choice = "CHAMPION", rewardPending = 15000 },
+  })
+  T.check(endingModel.ending == "CHAMPION" and endingModel.hasEndingBank,
+    "the High Roller panel exposes the permanent champion title and reward bank")
+  T.eq(endingModel.endingBank, "15K",
+    "the champion reward uses the panel's bounded value formatting")
   status.snapshot, status.rankUp = stressState, nil
+  status.story = { ending = { choice = "CHAMPION", rewardPending = 15000 } }
   status:draw()
   T.check(true,
     "the High Roller status panel renders large values without an engine error")

@@ -144,7 +144,7 @@ local migrated = State.sanitize({
   schema = 4,
   arena = { stairsRevealed = true, matchesPlayed = 9 },
 })
-T.eq(migrated.schema, 8, "schema four campaigns migrate into story state")
+T.eq(migrated.schema, 9, "schema four campaigns migrate into story state")
 T.eq(migrated.story.stage, story.STAGES.RUMORS,
   "an upgraded campaign starts the rumor trail without skipping content")
 T.eq(migrated.arena.matchesPlayed, 9,
@@ -162,13 +162,13 @@ T.eq(repaired.story.stage, story.STAGES.LEAD,
   "complete clues repair a partially written chapter transition")
 
 local future = State.sanitize({
-  schema = 9,
+  schema = 10,
   story = { stage = "GIOVANNI_FINALE", clues = {
     FUTURE_DOSSIER = true,
     [story.CLUES.LAB_ARCHIVE] = true,
   } },
 })
-T.eq(future.schema, 9, "a future campaign schema is never downgraded")
+T.eq(future.schema, 10, "a future campaign schema is never downgraded")
 T.eq(future.story.stage, "GIOVANNI_FINALE",
   "a future story chapter survives an older build")
 T.check(future.story.clues.FUTURE_DOSSIER,
@@ -186,11 +186,30 @@ T.check(ok and reason == story.ENDINGS.CHAMPION,
   "CHAMPION commits through the same explicit boundary")
 T.eq(state.stage, story.STAGES.CHAMPION,
   "CHAMPION advances to its permanent ending stage")
+T.eq(state.ending.rewardPending, story.CHAMPION_REWARD,
+  "the champion's one-time reward is banked with the ending")
+game.save.coins = 990000
+local credited, pending = story.deliverEndingReward(game)
+T.eq(credited, 10000,
+  "the champion reward credits only available Coin Case room")
+T.eq(pending, story.CHAMPION_REWARD - 10000,
+  "the undelivered champion reward remains banked")
+game.save.coins = 900000
+credited, pending = story.deliverEndingReward(game)
+T.eq(credited, story.CHAMPION_REWARD - 10000,
+  "the banked champion reward delivers when room becomes available")
+T.eq(pending, 0, "the champion reward ledger closes after full delivery")
+local coinsAfterReward = game.save.coins
+credited = story.deliverEndingReward(game)
+T.check(credited == 0 and game.save.coins == coinsAfterReward,
+  "the champion reward cannot be claimed twice")
 local repairedEnding = State.sanitize({ schema = 8,
   story = { stage = story.STAGES.CHAMPION, ending = {} },
 })
 T.eq(repairedEnding.story.ending.choice, story.ENDINGS.CHAMPION,
   "ending sanitation repairs a partially written champion transition")
+T.eq(repairedEnding.story.ending.rewardPending, State.CHAMPION_REWARD,
+  "schema-nine migration restores an undelivered champion reward")
 
 T.check(story.resetForQA(), "the story service exposes a deterministic QA reset")
 T.eq(story.snapshot(game).clueCount, 0, "QA reset clears only story progress")

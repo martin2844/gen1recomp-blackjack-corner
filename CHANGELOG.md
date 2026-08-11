@@ -17,6 +17,13 @@
 - Added Giovanni's schema-eight finale decision with native EXPOSE, CHAMPION,
   and LEAVE controls, branch-specific consequence copy, a second YES/NO
   confirmation, irreversible persistence, and ending-specific repeat dialogue.
+- Completed the schema-nine ending world: EXPOSE closes only new Rocket loans,
+  while CHAMPION grants a cap-safe, exactly-once 25,000-coin reward with any
+  overflow banked for later delivery.
+- Both endings now change the High Roller title and selected dialogue across
+  Pallet, Celadon, Cinnabar, both Arena floors, and an occupied family home;
+  games, prize services, pawns, old-debt repayment, healing, and routes remain
+  available in either branch.
 - Added a dedicated final-stage implementation plan, Red/Blue manual matrix,
   future-schema preservation coverage, and a native story-foundation driver.
 

@@ -45,8 +45,8 @@ The internal Arena milestone driver, `drivers/v07_arena_audit.lua`, executes
 the deterministic Red/Blue gate and captures every required visual checkpoint. The
 complete human-readable matrix and launch commands live in
 [`V0.7_IN_GAME_TESTING.md`](V0.7_IN_GAME_TESTING.md).
-The cumulative public results are recorded in
-[`releases/v0.5.0.md`](releases/v0.5.0.md); internal milestone records remain
+The current cumulative public results are recorded in
+[`releases/v0.5.1.md`](releases/v0.5.1.md); the v0.5.0 and internal milestone records remain
 available for detailed evidence.
 
 Before signing off a release:

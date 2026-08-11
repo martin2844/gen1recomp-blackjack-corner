@@ -14,13 +14,22 @@ items, and a one-time Master Ball. Gamble Mode's final High Roller rank now
 opens a Rocket status terminal that verifies KINGPIN clearance, retracts, and
 reveals a physical staircase into an underground Pokemon battle-betting arena.
 
-The v0.5 release is certified on Pokemon Red and Blue. Pokemon Yellow support
+The v0.5.1 release is certified on Pokemon Red and Blue. Pokemon Yellow support
 is available but remains experimental until its distinct one-ball Oak flow has
 its own native release gate. The mod contains no ROM or ROM-derived artwork;
 world and shiny graphics are generated locally from the player's imported game
 data.
 
-## Version 0.5 highlights
+## Version 0.5.1 polish
+
+This patch rebuilds the complete Underground Arena route from native ROM tiles:
+a Rocket status terminal reveals a physical staircase, B1 becomes a permanent
+casino checkpoint with six playable original slot seats, and B2 takes the form
+of Rocket's illicit fifth League chamber. It also redesigns the High Roller
+status panel, clarifies Arena controls, distinguishes clubs from spades, and
+keeps players upgrading from v0.5.0 out of the closed terminal.
+
+## Version 0.5 campaign highlights
 
 | Area | What the release adds |
 | --- | --- |
@@ -90,7 +99,7 @@ The implementation and internal milestone train are mapped in
 [docs/GAMBLE_MODE_ROADMAP.md](docs/GAMBLE_MODE_ROADMAP.md). Human UI/E2E signoff
 uses the supervised drivers and matrix in [`tests/manual`](tests/manual); the
 public release record is
-[tests/manual/releases/v0.5.0.md](tests/manual/releases/v0.5.0.md), with the
+[tests/manual/releases/v0.5.1.md](tests/manual/releases/v0.5.1.md), with the
 detailed Arena phase gate retained in
 [tests/manual/V0.7_IN_GAME_TESTING.md](tests/manual/V0.7_IN_GAME_TESTING.md).
 
@@ -199,7 +208,7 @@ detailed Arena phase gate retained in
 
 ## Install
 
-1. Download `blackjack_corner-0.5.0.zip` from the
+1. Download `blackjack_corner-0.5.1.zip` from the
    [latest release](https://github.com/martin2844/gen1recomp-blackjack-corner/releases/latest).
    Use the named mod ZIP, not GitHub's automatic source-code archives.
 2. Open Gen1Recomp and choose **MODS > Import mod .zip**.

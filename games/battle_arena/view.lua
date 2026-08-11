@@ -1,6 +1,27 @@
 return function(UI)
   local View, C = {}, UI.colors
   local theme = { base = { 0.12, 0.10, 0.16 }, header = C.red, action = C.gold }
+  local ARROW_CODE = 0xED
+
+  -- Gen I ships one solid triangle glyph. Rotating that exact font tile keeps
+  -- all four directions crisp and native instead of falling back to letters
+  -- or unsupported Unicode arrows.
+  local function arrow(Font, x, y, angle)
+    love.graphics.push()
+    love.graphics.translate(x + 4, y + 4)
+    love.graphics.rotate(angle)
+    Font.drawCode(ARROW_CODE, -4, -4)
+    love.graphics.pop()
+  end
+
+  local function controlHint(Font)
+    arrow(Font, 24, 130, -math.pi / 2)
+    arrow(Font, 32, 130, math.pi / 2)
+    Font.draw("PICK", 44, 130)
+    arrow(Font, 92, 130, math.pi)
+    arrow(Font, 100, 130, 0)
+    Font.draw("BET", 112, 130)
+  end
 
   local function drawCrowd()
     UI.color({ 0.07, 0.06, 0.10 }); UI.rect("fill", 7, 56, 146, 14)
@@ -101,7 +122,8 @@ return function(UI)
       UI.button(Font, "A BET " .. bet, 106, coinCount >= bet, theme)
       UI.color(C.blueLight); UI.rect("fill", 8, 128, 144, 12)
       UI.color(C.ink)
-      UI.centered(Font, state.notice or "L R PICK  U D BET", 130)
+      if state.notice then UI.centered(Font, state.notice, 130)
+      else controlHint(Font) end
     elseif state.phase == "intro" then
       matchup(state, Font, Rules, false)
       UI.color(C.blueLight); UI.rect("fill", 8, 115, 144, 25)

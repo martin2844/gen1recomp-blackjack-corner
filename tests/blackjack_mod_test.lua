@@ -13,8 +13,27 @@ local data = T.fixtures.fresh()
 local lobby = {}
 for key, value in pairs(data.tilesets[T.fixtures.ids.tileset]) do lobby[key] = value end
 lobby.id = "LOBBY"
+local lobbySeed = lobby.blocks[1]
+for index = #lobby.blocks + 1, 79 do
+  lobby.blocks[index] = {}
+  for tile, value in ipairs(lobbySeed) do lobby.blocks[index][tile] = value end
+end
 data.tilesets.LOBBY = lobby
 data.tilesets.OVERWORLD = lobby
+local facility = {}
+for key, value in pairs(lobby) do facility[key] = value end
+facility.id = "FACILITY"
+facility.blocks = {}
+for index = 1, 128 do
+  local source = lobby.blocks[((index - 1) % #lobby.blocks) + 1]
+  facility.blocks[index] = {}
+  for tile, value in ipairs(source) do facility.blocks[index][tile] = value end
+end
+data.tilesets.FACILITY = facility
+local gym = {}
+for key, value in pairs(facility) do gym[key] = value end
+gym.id = "GYM"
+data.tilesets.GYM = gym
 local blocks = {}
 for i = 1, 90 do blocks[i] = 31 end
 data.maps.GAME_CORNER = {
@@ -125,6 +144,7 @@ T.check(api and api.rules and api.holdem_rules and api.holdem_view and api.catal
     and api.reputation_rules and api.reputation
     and api.credit_rules and api.credit and api.credit_world
     and api.house and api.house_world and api.arena_rules and api.arena
+    and api.arena_security
     and api.arena_world,
   "games, prizes, coin exchange, pawning, and arcade rules are exported")
 T.check(api.roulette_view.RESULT_BUTTON_Y
@@ -498,6 +518,140 @@ do
     "a Rocket loan shark occupies the lower Lounge")
   T.check(contributedTalk("TEXT_ROCKET_CREDIT"),
     "the Rocket loan shark opens the credit service")
+  T.eq(#lounge.warps, 3,
+    "the revealed stairwell has a reciprocal route into the VIP lobby")
+  for piece = 1, 4 do
+    local terminal = objects[("ARENA_STATUS_TERMINAL_%02d"):format(piece)]
+    T.check(terminal ~= nil,
+      "the native Rocket status terminal covers piece " .. piece)
+  end
+  T.eq(objects.ARENA_STATUS_TERMINAL_03.text, "TEXT_ARENA_TERMINAL",
+    "the terminal can scan status from its left approach")
+  T.eq(objects.ARENA_STATUS_TERMINAL_04.text, "TEXT_ARENA_TERMINAL",
+    "the terminal can scan status from its right approach")
+  T.eq(lounge.blocks[52], 67,
+    "the terminal covers Celadon's complete native secret-stair block")
+  T.eq(objects.ARENA_STAIR, nil,
+    "the native secret staircase needs no artificial object sprite")
+  T.eq(lounge.warps[3].x, 3,
+    "the arena route enters through the native secret-stair cell")
+  T.eq(lounge.warps[3].y, 10,
+    "the arena route triggers on the visible staircase rather than below it")
+end
+
+do
+  local lobby, pit = run.data.maps.ROCKET_ARENA_LOBBY,
+    run.data.maps.ROCKET_BATTLE_ARENA
+  T.check(lobby and pit, "the two underground casino floors are registered")
+  T.eq(lobby.tileset, "LOBBY",
+    "B1 uses the unmodified Celadon Game Corner tileset")
+  T.eq(pit.tileset, "GYM",
+    "B2 uses the unmodified Elite Four gym tileset")
+  T.check(run.data.tilesets.ROCKET_VIP_LOBBY == nil,
+    "the underground casino does not register a derived tileset")
+  T.eq(lobby.label, "RocketCasinoB1F", "the first room is identified as B1")
+  T.eq(pit.label, "RocketCasinoB2F", "the arena is identified as B2")
+  T.eq(#lobby.warps, 3,
+    "B1 has a two-cell stair exit and a physical B2 door route")
+  T.eq(lobby.warps[1].destMap, "ROCKET_BATTLE_ARENA",
+    "walking through B1's guarded door enters B2")
+  T.eq(pit.warps[1].destMap, "ROCKET_ARENA_LOBBY",
+    "walking through B2's exit returns to B1 security")
+
+  local function inspect(map, tileset)
+    local byName, indices = {}, {}
+    T.eq(#map.blocks, map.width * map.height,
+      map.id .. " fills its complete block grid")
+    for _, block in ipairs(map.blocks) do
+      T.check(block >= 0 and block < #tileset.blocks,
+        map.id .. " references only blocks from its stock ROM tileset")
+    end
+    for _, row in ipairs(map.objects or {}) do
+      byName[row.name] = row
+      T.check(not indices[row.index], map.id .. " object indices remain unique")
+      indices[row.index] = true
+      T.check(row.x >= 0 and row.x < map.width * 2
+          and row.y >= 0 and row.y < map.height * 2,
+        row.name .. " stays inside " .. map.id)
+      T.check(not tostring(row.sprite or ""):find("SPRITE_ARENA_", 1, true),
+        row.name .. " uses a native ROM object sprite")
+    end
+    return byName
+  end
+  local lobbyObjects = inspect(lobby, run.data.tilesets.LOBBY)
+  local pitObjects = inspect(pit, run.data.tilesets.GYM)
+
+  T.eq(lobby.blocks[1], 15, "B1 opens with the native Game Corner wall")
+  T.eq(lobby.blocks[5], 12, "B1's north route begins with a native door")
+  T.eq(lobby.blocks[6], 13, "B1's north route keeps its native door pair")
+  T.eq(lobby.blocks[54], 57, "B1's left slot bank uses native cabinets")
+  T.eq(lobby.blocks[57], 57, "B1 mirrors its native cabinets on the right")
+  T.eq(lobby.blocks[74], 56, "B1 finishes the left cabinet bank natively")
+  T.eq(lobby.blocks[77], 56, "B1 finishes the right cabinet bank natively")
+  T.eq(lobby.blocks[31], 29, "B1 uses a native roulette-table top")
+  T.eq(lobby.blocks[35], 32, "B1 preserves the open central promenade")
+  T.eq(lobby.blocks[85], 40, "B1 exits through a native LOBBY doorway")
+  T.eq(lobby.blocks[86], 41, "B1's south doorway has its native companion")
+
+  T.eq(pit.blocks[1], 33, "B2 begins with a native Elite Four wall")
+  T.eq(pit.blocks[5], 36, "B2's north dais uses the native League barrier")
+  T.eq(pit.blocks[23], 5, "B2's upper islands replace Lorelei ice with League flooring")
+  T.eq(pit.blocks[33], 50, "B2's left island keeps its statue on solid flooring")
+  T.eq(pit.blocks[38], 49, "B2 mirrors the right island statue on solid flooring")
+  T.eq(pit.blocks[64], 5, "B2 closes the central stage without an ice pocket")
+  T.eq(pit.blocks[85], 5, "B2's return aisle uses native League flooring")
+
+  local vipSlots = run.data.field.slotMachines
+    and run.data.field.slotMachines.ROCKET_ARENA_LOBBY or {}
+  T.eq(#vipSlots, 6,
+    "B1 registers six playable native slot-machine seats")
+  local expectedSlots = {
+    ["7,10"] = true, ["7,12"] = true, ["7,14"] = true,
+    ["12,10"] = true, ["12,12"] = true, ["12,14"] = true,
+  }
+  for _, slot in ipairs(vipSlots) do
+    T.check(slot.state == "ok" and expectedSlots[slot.x .. "," .. slot.y],
+      "each B1 slot event matches a native cabinet cell")
+  end
+
+  T.check(lobbyObjects.ARENA_DOORMAN and lobbyObjects.ARENA_DOORMAN_WING,
+    "two permanent Rocket staff members flank the B1 pit entrance")
+  T.eq(lobbyObjects.ARENA_RETURN_CLERK, nil,
+    "the retired party-custody clerk is not staged behind the counter")
+  T.eq(lobbyObjects.ARENA_DOORMAN.text, "TEXT_ARENA_GREETER",
+    "B1's first Rocket welcomes the player instead of duplicating custody")
+  T.eq(lobbyObjects.ARENA_DOORMAN_WING.text, "TEXT_ARENA_DOORMAN",
+    "B1's second Rocket guards the physical pit door")
+  for _, name in ipairs({ "ARENA_CASHIER", "ARENA_HOSTESS" }) do
+    T.eq(lobbyObjects[name].y, 4,
+      "B1 counter staff stands behind, not on, the native counter: " .. name)
+  end
+  T.eq(lobbyObjects.ARENA_DOORMAN.x, 7,
+    "B1's left Rocket is inset toward the central aisle")
+  T.eq(lobbyObjects.ARENA_DOORMAN_WING.x, 12,
+    "B1's right Rocket mirrors the inset left guard")
+  T.eq(lobbyObjects.ARENA_DOORMAN.y, 2,
+    "B1's left Rocket works from the upper reception counter")
+  T.eq(lobbyObjects.ARENA_DOORMAN_WING.y, 2,
+    "B1's right Rocket works from the upper reception counter")
+  T.eq(lobbyObjects.ARENA_CASHIER.x, 4,
+    "B1's cashier is centered behind the left counter")
+  T.eq(lobbyObjects.ARENA_HOSTESS.x, 15,
+    "B1's hostess mirrors the cashier behind the right counter")
+  T.check(pitObjects.ARENA_BOOKIE ~= nil,
+    "the native B2 floor retains the arena bookie")
+  local function objectBlock(map, object)
+    return map.blocks[math.floor(object.y / 2) * map.width
+      + math.floor(object.x / 2) + 1]
+  end
+  for index = 1, 8 do
+    local fan = pitObjects["ARENA_FAN_" .. index]
+    T.check(fan ~= nil,
+      "the native B2 floor includes fan voice " .. index)
+    local block = objectBlock(pit, fan)
+    T.check(block == 5 or block == 24,
+      "B2 fan " .. index .. " stands on a native floor block instead of Lorelei ice")
+  end
 end
 
 do
@@ -669,6 +823,28 @@ do
   for i = 2, #crowded do
     T.check(crowded[i] > crowded[i - 1], "overlapped cards keep a readable order")
   end
+  T.eq(api.view.suitSignature("C", true), "010/111/010",
+    "corner clubs keep the compact cross silhouette")
+  T.eq(api.view.suitSignature("S", true), "010/111/101",
+    "corner spades keep their proven pointed split-body silhouette")
+  T.eq(api.view.suitSignature("S", true), "010/111/101",
+    "compact spades preserve a pointed crown and split lower lobes")
+  T.check(api.view.suitSignature("C", true)
+      ~= api.view.suitSignature("S", true),
+    "compact club and spade pips are not pixel-identical")
+  T.eq(api.view.pipSignature("C"), "010/111/010",
+    "numeric clubs use the compact cross pip from the preferred layout")
+  T.eq(api.view.pipSignature("S"), "010/101/111/010",
+    "numeric spades use the former pointed club pip")
+  T.eq(api.view.suitSignature("C", false),
+    "0000011100000/0000111110000/0001111111000/0001111111000/0000111110000/0111001001110/1111101011111/1111111111111/0111101011110/0011001001100/0000011100000/0000011100000/0001111111000",
+    "ace clubs use three notched lobes, a short stem, and a flared base")
+  T.eq(api.view.suitSignature("S", false),
+    "00000100000/00001110000/00011111000/00111111100/01111111110/11111111111/11111111111/11111111111/11110101111/01100100110/00000100000/00001110000",
+    "ace spades keep a detailed pointed crown, lower lobes, and narrow stem")
+  T.check(api.view.suitSignature("C", false)
+      ~= api.view.suitSignature("S", false),
+    "large club and spade emblems remain distinguishable")
 end
 
 local function contains(rows, species)
@@ -1482,6 +1658,29 @@ do
   local status = run.data.screens.BlackjackCornerHighRoller.new(game, {})
   status:draw()
   T.check(true, "the High Roller status panel renders without an engine error")
+  local stressState = {
+    rank = "REGULAR", rankLabel = "REGULAR", points = 999999,
+    nextRank = api.reputation_rules.RANKS[3], badges = 2,
+    wins = 999999, losses = 123456, draws = 87654,
+    lifetimeWagered = 999999999, currentLossStreak = 999999,
+    favoriteGame = { label = "TUBE FLYER" }, pendingRewardCoins = 999999,
+  }
+  local statusModel = status:viewModel(stressState)
+  local Font = require("src.render.Font")
+  T.eq(statusModel.wins, "999K",
+    "the High Roller panel abbreviates late-game win counts")
+  T.eq(statusModel.wagered, "999M",
+    "the High Roller panel abbreviates late-game wager totals")
+  T.check(Font.width(statusModel.wins) <= 32
+      and Font.width(statusModel.losses) <= 32
+      and Font.width(statusModel.draws) <= 32,
+    "record counters remain inside their reserved status columns")
+  T.check(Font.width(statusModel.favorite) <= 80,
+    "favorite game names fit their dedicated status row")
+  status.snapshot, status.rankUp = stressState, nil
+  status:draw()
+  T.check(true,
+    "the High Roller status panel renders large values without an engine error")
 
   local campaign = run.loader.modSave.blackjack_corner.gamble_campaign
   campaign.reputation.points = 99

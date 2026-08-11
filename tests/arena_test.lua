@@ -9,6 +9,7 @@ end
 local Rules = loadModule("games/battle_arena/rules.lua")
 local State = loadModule("other/gamble/state.lua")
 local ServiceFactory = loadModule("games/battle_arena/service.lua")
+local ScreenFactory = loadModule("games/battle_arena/screen.lua")
 -- Keep the unit suite ROM-free. Imported-data validation separately checks
 -- these public IDs against a real Red/Blue cache; the rules test only needs a
 -- complete deterministic model with the same species and move keys.
@@ -99,6 +100,39 @@ for _, fighter in ipairs(Rules.FIGHTERS) do
     T.check(data.moves[move] ~= nil,
       fighter.species .. " move " .. move .. " exists in the imported move data")
   end
+end
+
+do
+  local pressed
+  local input = { wasPressed = function(_, key) return key == pressed end }
+  local Screen = ScreenFactory({
+    mod = {}, rules = Rules, view = {}, service = {},
+    play = function() end,
+  })
+  local screen = setmetatable({
+    game = { input = input }, phase = "bet", selected = 1,
+    betIndex = 1, bets = { 50, 100, 500 }, notice = "OLD NOTICE",
+  }, Screen)
+  local function press(key)
+    pressed = key
+    screen:update(0)
+    pressed = nil
+  end
+  press("down")
+  T.eq(screen.selected, 2, "down selects the other arena fighter")
+  T.eq(screen.betIndex, 1, "fighter selection does not change the wager")
+  press("right")
+  T.eq(screen.betIndex, 2, "right increases the arena wager")
+  T.eq(screen.selected, 2, "wager changes do not change the fighter")
+  press("up")
+  T.eq(screen.selected, 1, "up selects the other arena fighter")
+  press("left")
+  T.eq(screen.betIndex, 1, "left decreases the arena wager")
+  press("left")
+  T.eq(screen.betIndex, 3, "left wraps from the smallest arena wager")
+  press("right")
+  T.eq(screen.betIndex, 1, "right wraps from the largest arena wager")
+  T.eq(screen.notice, nil, "directional input clears stale arena notices")
 end
 
 local sameRollMatch = Rules.newMatch(data, 0, 2, function() return 1 end)

@@ -85,13 +85,13 @@ return function(ctx)
   function Screen:update(dt)
     local input = self.game.input
     if self.phase == "bet" then
-      if input:wasPressed("left") or input:wasPressed("right") then
+      if input:wasPressed("up") or input:wasPressed("down") then
         self.selected = 3 - self.selected; self.notice = nil
         ctx.play(self.game, "Press_AB")
-      elseif input:wasPressed("up") then
+      elseif input:wasPressed("right") then
         self.betIndex = self.betIndex < #self.bets and self.betIndex + 1 or 1
         self.notice = nil; ctx.play(self.game, "Press_AB")
-      elseif input:wasPressed("down") then
+      elseif input:wasPressed("left") then
         self.betIndex = self.betIndex > 1 and self.betIndex - 1 or #self.bets
         self.notice = nil; ctx.play(self.game, "Press_AB")
       elseif input:wasPressed("a") then self:startBattle()

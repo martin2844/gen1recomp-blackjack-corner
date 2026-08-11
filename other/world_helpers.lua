@@ -42,18 +42,48 @@ function World.casinoFloorBlocks()
   return blocks
 end
 
-function World.arenaFloorBlocks(topDoor, bottomDoor)
+local function flattenRows(rows)
   local blocks = {}
-  for row = 1, 9 do
-    for col = 1, 10 do
-      local block = 32
-      if row == 1 or row == 9 then block = 27 end
-      if topDoor and row == 1 and col == 5 then block = 61 end
-      if bottomDoor and row == 9 and col == 5 then block = 61 end
-      blocks[#blocks + 1] = block
-    end
+  for _, row in ipairs(rows) do
+    for _, block in ipairs(row) do blocks[#blocks + 1] = block end
   end
   return blocks
+end
+
+-- B1 is a deliberate remix of the stock GAME CORNER, DINER and CELADON MART
+-- vocabulary. The room keeps a strong central promenade: reception and the
+-- arena terminal sit on its axis, while real cabinet banks and smaller social
+-- pockets occupy the wings.
+function World.vipCasinoBlocks()
+  return flattenRows({
+    { 15, 15, 15, 15, 12, 13, 15, 15, 15, 15 },
+    { 10, 10, 10, 51, 32, 32, 51, 10, 10, 10 },
+    { 47, 47, 47, 51, 32, 32, 51, 47, 47, 47 },
+    { 29, 32, 33, 29, 32, 32, 29, 32, 33, 29 },
+    { 58, 32, 32, 58, 32, 32, 58, 32, 32, 58 },
+    { 57, 31, 33, 57, 32, 32, 57, 31, 33, 57 },
+    { 57, 31, 33, 57, 32, 32, 57, 31, 33, 57 },
+    { 56, 31, 33, 56, 32, 32, 56, 31, 33, 56 },
+    { 27, 27, 27, 27, 40, 41, 27, 27, 27, 27 },
+  })
+end
+
+-- B2 is TEAM ROCKET's illicit fifth Elite Four chamber. Every block belongs
+-- to the stock GYM tileset used by Lorelei and Bruno: a ceremonial center
+-- aisle, a raised fighting floor, rock-lined spectator pockets and the real
+-- south-room warp geometry used by those encounters.
+function World.rocketArenaBlocks()
+  return flattenRows({
+    { 33, 33, 33, 33, 36, 36, 33, 33, 33, 33 },
+    { 2, 24, 24, 24, 24, 24, 24, 24, 24, 2 },
+    { 2, 24, 5, 5, 5, 5, 5, 5, 24, 2 },
+    { 2, 24, 50, 5, 5, 5, 5, 49, 24, 2 },
+    { 2, 24, 5, 5, 5, 5, 5, 5, 24, 2 },
+    { 2, 24, 50, 5, 5, 5, 5, 49, 24, 2 },
+    { 2, 24, 24, 5, 5, 5, 5, 24, 24, 2 },
+    { 2, 32, 32, 32, 5, 5, 32, 32, 32, 2 },
+    { 2, 2, 2, 68, 5, 5, 68, 2, 2, 2 },
+  })
 end
 
 function World.setObjectVisible(save, mapId, name, visible)

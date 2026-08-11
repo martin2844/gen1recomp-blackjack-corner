@@ -1,7 +1,7 @@
 local State = {}
 
 State.KEY = "gamble_campaign"
-State.SCHEMA = 3
+State.SCHEMA = 4
 
 local VALID_RANKS = {
   ROOKIE = true, REGULAR = true, HIGH_ROLLER = true,
@@ -166,6 +166,17 @@ local function sanitizeArenaPending(value)
   return out
 end
 
+local function sanitizeHeldParty(value)
+  local party = {}
+  for _, pokemon in ipairs(tableOrEmpty(value)) do
+    if type(pokemon) == "table" and type(pokemon.species) == "string"
+        and pokemon.species ~= "" and #party < 6 then
+      party[#party + 1] = deepCopy(pokemon)
+    end
+  end
+  return #party > 0 and party or nil
+end
+
 function State.defaults()
   return {
     schema = State.SCHEMA,
@@ -200,6 +211,9 @@ function State.defaults()
     },
     arena = {
       unlocked = false,
+      stairsRevealed = false,
+      heldParty = nil,
+      securityExit = false,
       reputation = 0,
       matchesPlayed = 0,
       wins = 0,
@@ -247,6 +261,11 @@ State.MIGRATIONS = {
     if arena.lifetimeReturned == nil then arena.lifetimeReturned = 0 end
     if arena.nextMatchId == nil then arena.nextMatchId = 0 end
     if type(arena.history) ~= "table" then arena.history = {} end
+  end,
+  [4] = function(value)
+    local arena = ensureTable(value, "arena")
+    if arena.stairsRevealed == nil then arena.stairsRevealed = false end
+    if arena.securityExit == nil then arena.securityExit = false end
   end,
 }
 
@@ -320,6 +339,9 @@ function State.sanitize(value)
     house.bailoutClaimed = true
   end
   arena.unlocked = arena.unlocked == true
+  arena.stairsRevealed = arena.stairsRevealed == true
+  arena.heldParty = sanitizeHeldParty(arena.heldParty)
+  arena.securityExit = arena.securityExit == true
   arena.reputation = number(arena.reputation, 0)
   arena.matchesPlayed = number(arena.matchesPlayed, 0)
   arena.wins = number(arena.wins, 0)
@@ -337,6 +359,8 @@ function State.sanitize(value)
   arena.history = history
   return out
 end
+
+State.copy = deepCopy
 
 function State.new(mod, active)
   local api = {}

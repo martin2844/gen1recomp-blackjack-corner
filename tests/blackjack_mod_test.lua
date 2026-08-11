@@ -145,7 +145,7 @@ T.check(api and api.rules and api.holdem_rules and api.holdem_view and api.catal
     and api.credit_rules and api.credit and api.credit_world
     and api.house and api.house_world and api.arena_rules and api.arena
     and api.arena_security
-    and api.arena_world and api.arena_story,
+    and api.arena_world and api.arena_story and api.story_world,
   "games, prizes, coin exchange, pawning, and arcade rules are exported")
 T.check(api.roulette_view.RESULT_BUTTON_Y
     + api.roulette_view.RESULT_BUTTON_HEIGHT <= api.roulette_view.FRAME_CONTENT_BOTTOM,
@@ -656,18 +656,32 @@ end
 
 do
   local function collector(mapId, name)
-    for _, object in ipairs(run.data.maps[mapId].objects or {}) do
+    local map = run.data.maps[mapId]
+    if not map then return nil end
+    for _, object in ipairs(map.objects or {}) do
       if object.name == name then return object end
     end
   end
   local palletCollector = collector("PALLET_TOWN", "PALLETTOWN_ROCKET_COLLECTOR")
   local celadonCollector = collector("CELADON_CITY", "CELADONCITY_ROCKET_COLLECTOR")
+  local cinnabarHandler = collector("CINNABAR_LAB_METRONOME_ROOM",
+    "BLACKJACK_CORNER_CINNABAR_HANDLER")
+  local mansionResearcher = collector("POKEMON_MANSION_B1F",
+    "BLACKJACK_CORNER_MANSION_RESEARCHER")
   T.check(palletCollector and palletCollector.hidden,
     "Pallet's Rocket collector remains hidden until a default")
   T.check(celadonCollector and celadonCollector.hidden,
     "Celadon's Rocket collector remains hidden until a default")
   T.check(palletCollector.index > 3 and celadonCollector.index > 8,
     "collector additions preserve existing map object indices")
+  local hasStoryMaps = run.data.maps.CINNABAR_LAB_METRONOME_ROOM
+    and run.data.maps.POKEMON_MANSION_B1F
+  T.check(not hasStoryMaps or (cinnabarHandler and cinnabarHandler.hidden
+      and mansionResearcher and mansionResearcher.hidden),
+    "final-stage contacts remain absent before the Cinnabar lead")
+  T.check(not hasStoryMaps
+      or (cinnabarHandler.index > 2 and mansionResearcher.index > 8),
+    "story contacts allocate indices after every native map object")
 end
 
 do

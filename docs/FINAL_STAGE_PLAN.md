@@ -33,7 +33,7 @@ leave saves loadable, the Arena playable, and all vanilla story routes open.
 - Completing all three records opens the `CINNABAR_LEAD` stage and changes
   permanent staff dialogue.
 
-This chunk is the foundation currently under implementation.
+This chunk is implemented on the final-stage branch.
 
 ### B. Cinnabar contact
 
@@ -44,6 +44,10 @@ This chunk is the foundation currently under implementation.
 - Require the Arena lead before the handler reveals anything.
 - Use two short investigative beats: a lab archive and a Mansion specimen log.
 - Return the player to Celadon with an authenticated exhibition invitation.
+
+Chunks A and B now have their state, services, native contacts, dialogue, and
+automated coverage on the feature branch. Full physical Red/Blue investigation
+signoff remains open while Chunk C is built.
 
 ### C. Engineered exhibition
 
@@ -79,15 +83,18 @@ This chunk is the foundation currently under implementation.
 
 ## Persistent state
 
-Schema five adds one sibling document:
+Schema five adds the Arena rumor trail; schema six extends the same sibling
+document for the Cinnabar investigation:
 
 ```lua
 story = {
-  stage = "ARENA_RUMORS",
+  stage = "CINNABAR_INVESTIGATION",
   clues = {
     CINNABAR_FRAME = true,
     CAGE_MANIFEST = true,
     FUJI_CHART = true,
+    LAB_ARCHIVE = true,
+    MANSION_LOG = true,
   },
 }
 ```
@@ -105,6 +112,10 @@ ARENA_RUMORS
     | three unique records + six Arena matches
     v
 CINNABAR_LEAD
+    |
+    | meet the Lab handler and recover the Mansion log
+    v
+EXHIBITION_INVITATION
 ```
 
 Later stage names and their fields are added only in the chunk that implements

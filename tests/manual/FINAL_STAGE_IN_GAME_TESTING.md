@@ -22,8 +22,15 @@ dialogue, presentation, pacing, save/reload, and story continuity.
 
 ## Cinnabar contact
 
-Reserved for Chunk B: handler access, Lab/Mansion clues, vanilla-route
-regressions, invitation persistence, and return to Celadon.
+| ID | State and action | Expected result | Evidence |
+| --- | --- | --- | --- |
+| CIN-01 | Visit the Lab and Mansion before `CINNABAR_LEAD` | Both story contacts are absent; native NPCs, items, trainers, signs, and routes are unchanged | Navigation + values |
+| CIN-02 | Enter the Metronome Room after completing the lead | A native Rocket handler appears without blocking either exit or the room's scientists/PC | Image + navigation |
+| CIN-03 | Talk to the handler | Stage becomes `CINNABAR_INVESTIGATION`; authenticated `LAB_ARCHIVE` is recorded once | Image + values |
+| CIN-04 | Enter Mansion B1 after handler contact | A native scientist contact appears near the diary without blocking the Secret Key, items, trainer, diary, or exit | Image + navigation |
+| CIN-05 | Talk to the Mansion contact | `MANSION_LOG` is recorded and stage becomes `EXHIBITION_INVITATION` exactly once | Image + values |
+| CIN-06 | Revisit both contacts and save/reload on each map | Repeat dialogue appears; stage and both records persist with no duplicated transition | Image + values |
+| CIN-07 | Complete the investigation with the family home in every state and with clear/active/default debt | Story progression does not rewrite debt, house, party, Bag, PC, pawns, or coins | Values |
 
 ## Engineered exhibition
 
@@ -49,12 +56,14 @@ choices, ending world reactions, services, rewards, and ordinary story access.
 
 The focused `final_story_foundation.lua` driver passed on imported Pokemon Red
 and Blue. It physically read the B1 painting, persisted the complete lead
-through a real disk save/restore, and opened the completed-lead greeter
-dialogue. Evidence is under:
+through a real disk save/restore, opened the completed-lead greeter dialogue,
+met the Cinnabar Lab handler, and recovered the Mansion B1 specimen log. The
+native interactions passed `STORY-03`, `STORY-09`, `STORY-10`, `CIN-03`, and
+`CIN-05` in both ROMs. Evidence is under:
 
 - Red: `/tmp/blackjack-corner-v060/story-red`
 - Blue: `/tmp/blackjack-corner-v060/story-blue`
 
-The complete automated suite passes 1,588 assertions. The remaining fan
-dialogue, participation pacing, palette, and navigation rows stay open until
-the whole Cinnabar chapter is present.
+The complete automated suite passes 1,602 assertions. The remaining fan
+dialogue, participation pacing, repeat-contact, palette, route-integrity, and
+economy permutations stay open until the whole Cinnabar chapter is present.

@@ -1,7 +1,7 @@
 local State = {}
 
 State.KEY = "gamble_campaign"
-State.SCHEMA = 5
+State.SCHEMA = 6
 
 local VALID_RANKS = {
   ROOKIE = true, REGULAR = true, HIGH_ROLLER = true,
@@ -12,15 +12,25 @@ State.STORY_CLUES = {
   FRAME = "CINNABAR_FRAME",
   MANIFEST = "CAGE_MANIFEST",
   CHART = "FUJI_CHART",
+  LAB_ARCHIVE = "LAB_ARCHIVE",
+  MANSION_LOG = "MANSION_LOG",
 }
 State.STORY_STAGES = {
   RUMORS = "ARENA_RUMORS",
   LEAD = "CINNABAR_LEAD",
+  INVESTIGATION = "CINNABAR_INVESTIGATION",
+  INVITATION = "EXHIBITION_INVITATION",
 }
 
 local VALID_STORY_CLUES, VALID_STORY_STAGES = {}, {}
 for _, id in pairs(State.STORY_CLUES) do VALID_STORY_CLUES[id] = true end
 for _, id in pairs(State.STORY_STAGES) do VALID_STORY_STAGES[id] = true end
+local STORY_STAGE_ORDER = {
+  [State.STORY_STAGES.RUMORS] = 1,
+  [State.STORY_STAGES.LEAD] = 2,
+  [State.STORY_STAGES.INVESTIGATION] = 3,
+  [State.STORY_STAGES.INVITATION] = 4,
+}
 
 local function number(value, fallback, minimum)
   value = tonumber(value)
@@ -290,6 +300,11 @@ State.MIGRATIONS = {
     if story.stage == nil then story.stage = State.STORY_STAGES.RUMORS end
     if type(story.clues) ~= "table" then story.clues = {} end
   end,
+  [6] = function(value)
+    local story = ensureTable(value, "story")
+    if story.stage == nil then story.stage = State.STORY_STAGES.RUMORS end
+    if type(story.clues) ~= "table" then story.clues = {} end
+  end,
 }
 
 function State.migrate(value)
@@ -388,12 +403,37 @@ function State.sanitize(value)
   local clueAllowlist
   if savedSchema <= State.SCHEMA then clueAllowlist = VALID_STORY_CLUES end
   story.clues = sanitizeBooleanMap(story.clues, clueAllowlist)
-  local found = 0
-  for _, id in pairs(State.STORY_CLUES) do
-    if story.clues[id] then found = found + 1 end
-  end
-  if found == 3 and story.stage == State.STORY_STAGES.RUMORS then
-    story.stage = State.STORY_STAGES.LEAD
+  if savedSchema <= State.SCHEMA or VALID_STORY_STAGES[story.stage] then
+    local arenaFound = 0
+    for _, id in ipairs({ State.STORY_CLUES.FRAME,
+        State.STORY_CLUES.MANIFEST, State.STORY_CLUES.CHART }) do
+      if story.clues[id] then arenaFound = arenaFound + 1 end
+    end
+    if arenaFound == 3 and story.stage == State.STORY_STAGES.RUMORS then
+      story.stage = State.STORY_STAGES.LEAD
+    end
+    local order = STORY_STAGE_ORDER[story.stage] or 1
+    if order >= STORY_STAGE_ORDER[State.STORY_STAGES.INVESTIGATION] then
+      story.clues[State.STORY_CLUES.LAB_ARCHIVE] = true
+    end
+    if story.clues[State.STORY_CLUES.LAB_ARCHIVE]
+        and order < STORY_STAGE_ORDER[State.STORY_STAGES.INVESTIGATION] then
+      story.stage = State.STORY_STAGES.INVESTIGATION
+      order = STORY_STAGE_ORDER[story.stage]
+    end
+    if story.clues[State.STORY_CLUES.MANSION_LOG]
+        and order < STORY_STAGE_ORDER[State.STORY_STAGES.INVESTIGATION] then
+      story.stage = State.STORY_STAGES.INVESTIGATION
+      story.clues[State.STORY_CLUES.LAB_ARCHIVE] = true
+      order = STORY_STAGE_ORDER[story.stage]
+    end
+    if order >= STORY_STAGE_ORDER[State.STORY_STAGES.INVITATION]
+        or (story.clues[State.STORY_CLUES.LAB_ARCHIVE]
+          and story.clues[State.STORY_CLUES.MANSION_LOG]) then
+      story.stage = State.STORY_STAGES.INVITATION
+      story.clues[State.STORY_CLUES.LAB_ARCHIVE] = true
+      story.clues[State.STORY_CLUES.MANSION_LOG] = true
+    end
   end
   return out
 end

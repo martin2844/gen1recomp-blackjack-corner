@@ -56,4 +56,27 @@ return function(game)
   U.wait(120)
   assert(U.shot(game, shotDir .. "/story-cinnabar-greeter.png"))
   U.log("PASS", "STORY-09", "greeter reacted to the completed lead")
+  for _ = 1, 8 do U.tap(game, "a"); U.wait(3) end
+
+  U.teleport(game, "CINNABAR_LAB_METRONOME_ROOM", 5, 6, "up")
+  U.wait(20)
+  U.tap(game, "a")
+  U.wait(120)
+  assert(U.shot(game, shotDir .. "/story-cinnabar-handler.png"))
+  for _ = 1, 12 do U.tap(game, "a"); U.wait(3) end
+  state = api.arena_story.snapshot(game)
+  assert(state.stage == api.arena_story.STAGES.INVESTIGATION)
+  assert(state.clues[api.arena_story.CLUES.LAB_ARCHIVE])
+  U.log("PASS", "CIN-03", "Lab handler opened the investigation")
+
+  U.teleport(game, "POKEMON_MANSION_B1F", 15, 19, "right")
+  U.wait(20)
+  U.tap(game, "a")
+  U.wait(120)
+  assert(U.shot(game, shotDir .. "/story-mansion-researcher.png"))
+  for _ = 1, 12 do U.tap(game, "a"); U.wait(3) end
+  state = api.arena_story.snapshot(game)
+  assert(state.stage == api.arena_story.STAGES.INVITATION)
+  assert(state.clues[api.arena_story.CLUES.MANSION_LOG])
+  U.log("PASS", "CIN-05", "Mansion log authenticated the invitation")
 end

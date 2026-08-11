@@ -56,6 +56,7 @@ return function(mod)
   local ArenaWorld = loadLocal(mod, "other/gamble/arena_world.lua")(WorldHelpers)
   local ArenaSecurityFactory = loadLocal(mod, "other/gamble/arena_security.lua")
   local ArenaStoryFactory = loadLocal(mod, "other/gamble/arena_story.lua")
+  local StoryWorld = loadLocal(mod, "other/gamble/story_world.lua")(WorldHelpers)
   local PalletCasino = loadLocal(mod, "other/pallet_casino.lua")(WorldHelpers)
   local Sound = require("src.core.Sound")
 
@@ -189,7 +190,8 @@ return function(mod)
     local collectors = CreditWorld.sync(game, Credit)
     local occupied = HouseWorld.sync(game, House)
     local arena = ArenaWorld.sync(game, ArenaSecurity)
-    return collectors, occupied, arena
+    local story = StoryWorld.sync(game, ArenaStory)
+    return collectors, occupied, arena, story
   end
   local CreditUI = CreditUIFactory(mod, {
     credit = Credit, rules = CreditRules, text = UI.text,
@@ -255,6 +257,7 @@ return function(mod)
     ArenaSecurity.entered(game, mapId, fromMapId)
     if not Gamble.active() then return end
     ArenaWorld.sync(game, ArenaSecurity)
+    StoryWorld.sync(game, ArenaStory)
   end
   -- Reconcile before the destination spawns so both permanent staff objects
   -- are already visible on the first frame.
@@ -304,6 +307,7 @@ return function(mod)
   CreditWorld.register(mod)
   HouseWorld.register(mod)
   ArenaWorld.register(mod, ids.lounge)
+  StoryWorld.register(mod)
 
   mod.content.map_scripts:register("GAME_CORNER", { talk = {
     TEXT_GAMECORNER_CLERK1 = UI.coinClerk,
@@ -598,6 +602,42 @@ return function(mod)
     },
   })
 
+  mod.content.map_scripts:register("CINNABAR_LAB_METRONOME_ROOM", { talk = {
+    TEXT_BLACKJACK_CORNER_CINNABAR_HANDLER = function(game, _, _, done)
+      local state = ArenaStory.snapshot(game)
+      if state and state.stage == ArenaStory.STAGES.LEAD then
+        local advanced = ArenaStory.beginCinnabar(game)
+        StoryWorld.sync(game, ArenaStory)
+        if advanced then
+          UI.text(game, "KINGPIN.\nYou read too much.\fThis copy came from\nLAB ARCHIVE 3.\fFind its specimen\nlog in the MANSION\nbasement.", done)
+          return
+        end
+      end
+      if state and state.stage == ArenaStory.STAGES.INVESTIGATION then
+        UI.text(game, "The matching log is\nin MANSION B1.\fA researcher waits\nnear the old diary.", done)
+      elseif state and state.stage == ArenaStory.STAGES.INVITATION then
+        UI.text(game, "Your invitation is\nauthenticated.\fReturn to the pit.\nDo not be late.", done)
+      else
+        UI.text(game, "Wrong room.\fWrong questions.", done)
+      end
+    end,
+  } })
+
+  mod.content.map_scripts:register("POKEMON_MANSION_B1F", { talk = {
+    TEXT_BLACKJACK_CORNER_MANSION_RESEARCHER = function(game, _, _, done)
+      local added, state, reason = ArenaStory.discover(game,
+        ArenaStory.CLUES.MANSION_LOG)
+      StoryWorld.sync(game, ArenaStory)
+      if added and reason == "INVITATION READY" then
+        UI.text(game, "I kept one page:\nSERIES 3.\fADAPTIVE COMBAT\nRESPONSE.\fTRANSFER:\nCELADON PIT.\fYour exhibition\ninvitation is real.", done)
+      elseif state and state.stage == ArenaStory.STAGES.INVITATION then
+        UI.text(game, "I was never here.\fThe invitation takes\nyou back to CELADON.", done)
+      else
+        UI.text(game, "The basement keeps\nold failures.\fBring an authenticated\narchive request.", done)
+      end
+    end,
+  } })
+
   mod.content.map_scripts:register("PALLET_TOWN", { talk = {
     TEXT_PALLET_CASINO_SIGN = function(game, _, _, done)
       UI.text(game, "PALLET CASINO\nLuck starts here.\fRegret starts\ninside.", done)
@@ -742,4 +782,5 @@ return function(mod)
   mod.exports.arena_security = ArenaSecurity
   mod.exports.arena_world = ArenaWorld
   mod.exports.arena_story = ArenaStory
+  mod.exports.story_world = StoryWorld
 end

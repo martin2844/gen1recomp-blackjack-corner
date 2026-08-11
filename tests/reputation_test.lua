@@ -11,8 +11,8 @@ local State = loadModule("other/gamble/state.lua")
 local Rules = loadModule("other/gamble/reputation/rules.lua")
 local ServiceFactory = loadModule("other/gamble/reputation/service.lua")
 
-T.eq(State.SCHEMA, 5,
-  "the Arena rumor trail advances the campaign schema explicitly")
+T.eq(State.SCHEMA, 6,
+  "the Cinnabar investigation advances the campaign schema explicitly")
 local clean = State.sanitize({ reputation = {
   points = -50, completedGames = "4", currentLossStreak = 0 / 0,
   byGame = { blackjack = { played = "2", wins = 1 } },

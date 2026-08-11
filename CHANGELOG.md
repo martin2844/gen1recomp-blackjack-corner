@@ -7,6 +7,9 @@
 - Began the final Gamble Mode chapter with a schema-five Arena rumor trail:
   three one-time records unlock through Arena participation and converge into a
   persistent Cinnabar lead with reactive Rocket staff dialogue.
+- Extended the lead into a schema-six Cinnabar investigation with a hidden Lab
+  handler, a Mansion researcher, two persistent records, and an authenticated
+  exhibition invitation back to Celadon.
 - Added a dedicated final-stage implementation plan, Red/Blue manual matrix,
   future-schema preservation coverage, and a native story-foundation driver.
 

@@ -67,8 +67,8 @@ return function(UI)
     UI.rect("fill", 8, 27, 144, 13)
     UI.color(interactive and state.selected == 2 and C.goldLight or C.blueLight)
     UI.rect("fill", 8, 42, 144, 13)
-    local leftLabel = "1 " .. left.name:sub(1, 8)
-    local rightLabel = "2 " .. right.name:sub(1, 8)
+    local leftLabel = "1 " .. left.name:sub(1, 9)
+    local rightLabel = "2 " .. right.name:sub(1, 9)
     UI.color(C.ink)
     Font.draw(leftLabel, 10, 29)
     Font.draw(rightLabel, 10, 44)
@@ -108,7 +108,9 @@ return function(UI)
   end
 
   function View.draw(state, Font, coinCount, Rules)
-    UI.frame("ROCKET ARENA", Font, coinCount, theme)
+    local exhibition = state.pending and state.pending.kind == "EXHIBITION"
+    UI.frame(exhibition and "SERIES 3" or "ROCKET ARENA", Font, coinCount,
+      theme)
     if not state.pending then
       UI.panel(10, 35, 140, 70, C.paper)
       UI.color(C.ink); UI.centered(Font, state.notice or "NO MATCH POSTED", 62)
@@ -127,8 +129,9 @@ return function(UI)
     elseif state.phase == "intro" then
       matchup(state, Font, Rules, false)
       UI.color(C.blueLight); UI.rect("fill", 8, 115, 144, 25)
-      UI.color(C.ink); UI.centered(Font, "MATCH START", 119)
-      UI.centered(Font, "NO REFUNDS", 130)
+      UI.color(C.ink); UI.centered(Font,
+        exhibition and "ENGINEERED CARD" or "MATCH START", 119)
+      UI.centered(Font, exhibition and "GIOVANNI WATCHES" or "NO REFUNDS", 130)
     elseif state.phase == "battle" then
       matchup(state, Font, Rules, false)
       local action = state.currentAction
@@ -152,8 +155,10 @@ return function(UI)
       UI.color(C.ink); UI.centered(Font, winner .. " WINS", 93)
       UI.centered(Font, state.pending.won and ("PAID " .. state.pending.payout)
         or "WAGER LOST", 105)
-      UI.centered(Font, state.pending.won and "THE HOUSE NOTICED" or "NEXT FIGHT?", 117)
-      UI.centered(Font, "A NEXT  B EXIT", 128)
+      local storyWin = exhibition and state.pending.won
+      UI.centered(Font, storyWin and "GIOVANNI WAITS"
+        or state.pending.won and "THE HOUSE NOTICED" or "NEXT FIGHT?", 117)
+      UI.centered(Font, storyWin and "A LEAVE B EXIT" or "A NEXT  B EXIT", 128)
     end
     love.graphics.setColor(1, 1, 1, 1)
   end

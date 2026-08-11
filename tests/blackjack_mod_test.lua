@@ -145,7 +145,7 @@ T.check(api and api.rules and api.holdem_rules and api.holdem_view and api.catal
     and api.credit_rules and api.credit and api.credit_world
     and api.house and api.house_world and api.arena_rules and api.arena
     and api.arena_security
-    and api.arena_world,
+    and api.arena_world and api.arena_story and api.story_world,
   "games, prizes, coin exchange, pawning, and arcade rules are exported")
 T.check(api.roulette_view.RESULT_BUTTON_Y
     + api.roulette_view.RESULT_BUTTON_HEIGHT <= api.roulette_view.FRAME_CONTENT_BOTTOM,
@@ -656,18 +656,36 @@ end
 
 do
   local function collector(mapId, name)
-    for _, object in ipairs(run.data.maps[mapId].objects or {}) do
+    local map = run.data.maps[mapId]
+    if not map then return nil end
+    for _, object in ipairs(map.objects or {}) do
       if object.name == name then return object end
     end
   end
   local palletCollector = collector("PALLET_TOWN", "PALLETTOWN_ROCKET_COLLECTOR")
   local celadonCollector = collector("CELADON_CITY", "CELADONCITY_ROCKET_COLLECTOR")
+  local cinnabarHandler = collector("CINNABAR_LAB_METRONOME_ROOM",
+    "BLACKJACK_CORNER_CINNABAR_HANDLER")
+  local mansionResearcher = collector("POKEMON_MANSION_B1F",
+    "BLACKJACK_CORNER_MANSION_RESEARCHER")
+  local giovanni = collector("ROCKET_BATTLE_ARENA",
+    "BLACKJACK_CORNER_GIOVANNI")
   T.check(palletCollector and palletCollector.hidden,
     "Pallet's Rocket collector remains hidden until a default")
   T.check(celadonCollector and celadonCollector.hidden,
     "Celadon's Rocket collector remains hidden until a default")
   T.check(palletCollector.index > 3 and celadonCollector.index > 8,
     "collector additions preserve existing map object indices")
+  local hasStoryMaps = run.data.maps.CINNABAR_LAB_METRONOME_ROOM
+    and run.data.maps.POKEMON_MANSION_B1F
+  T.check(not hasStoryMaps or (cinnabarHandler and cinnabarHandler.hidden
+      and mansionResearcher and mansionResearcher.hidden),
+    "final-stage contacts remain absent before the Cinnabar lead")
+  T.check(not hasStoryMaps
+      or (cinnabarHandler.index > 2 and mansionResearcher.index > 8),
+    "story contacts allocate indices after every native map object")
+  T.check(giovanni and giovanni.hidden and giovanni.index > 9,
+    "Giovanni is staged after the native Arena cast and remains hidden")
 end
 
 do
@@ -1677,7 +1695,15 @@ do
     "record counters remain inside their reserved status columns")
   T.check(Font.width(statusModel.favorite) <= 80,
     "favorite game names fit their dedicated status row")
+  local endingModel = status:viewModel(stressState, {
+    ending = { choice = "CHAMPION", rewardPending = 15000 },
+  })
+  T.check(endingModel.ending == "CHAMPION" and endingModel.hasEndingBank,
+    "the High Roller panel exposes the permanent champion title and reward bank")
+  T.eq(endingModel.endingBank, "15K",
+    "the champion reward uses the panel's bounded value formatting")
   status.snapshot, status.rankUp = stressState, nil
+  status.story = { ending = { choice = "CHAMPION", rewardPending = 15000 } }
   status:draw()
   T.check(true,
     "the High Roller status panel renders large values without an engine error")

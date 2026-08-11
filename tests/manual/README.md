@@ -1,6 +1,6 @@
 # Manual Gamble Mode QA
 
-The v0.5 campaign systems need human review as well as Lua assertions. These
+The v0.6 campaign systems need human review as well as Lua assertions. These
 drivers prepare a deterministic save, move the player to the feature under
 test, capture a baseline screenshot, and then stop automating. The game keeps
 running so a tester can take the keyboard and judge the complete E2E flow.
@@ -45,9 +45,12 @@ The internal Arena milestone driver, `drivers/v07_arena_audit.lua`, executes
 the deterministic Red/Blue gate and captures every required visual checkpoint. The
 complete human-readable matrix and launch commands live in
 [`V0.7_IN_GAME_TESTING.md`](V0.7_IN_GAME_TESTING.md).
+The final story driver, `drivers/final_story_foundation.lua`, executes all 34
+final-stage rows across Red EXPOSE and Blue CHAMPION, including cancellation,
+disk persistence, cap-safe reward delivery, and ending-reactive world dialogue.
 The current cumulative public results are recorded in
-[`releases/v0.5.2.md`](releases/v0.5.2.md); earlier public and internal milestone records remain
-available for detailed evidence.
+[`releases/v0.6.0.md`](releases/v0.6.0.md); earlier public and internal
+milestone records remain available for detailed evidence.
 
 Before signing off a release:
 

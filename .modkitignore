@@ -9,6 +9,7 @@ tests/credit_test.lua
 tests/house_test.lua
 tests/arena_test.lua
 tests/arena_security_test.lua
+tests/arena_story_test.lua
 tests/shiny_fallback_test.lua
 tests/run_all.sh
 tests/support/headless_fs.lua
@@ -26,6 +27,7 @@ tests/manual/README.md
 tests/manual/MATRIX.md
 tests/manual/V0.6_IN_GAME_TESTING.md
 tests/manual/V0.7_IN_GAME_TESTING.md
+tests/manual/FINAL_STAGE_IN_GAME_TESTING.md
 tests/manual/releases/v0.5.0.md
 tests/manual/releases/v0.5.1.md
 tests/manual/releases/v0.5.2.md
@@ -55,6 +57,7 @@ tests/manual/drivers/v07_arena_audit.lua
 tests/manual/drivers/arena_palette_slots.lua
 tests/manual/drivers/arena_world_polish.lua
 tests/manual/drivers/card_suit_audit.lua
+tests/manual/drivers/final_story_foundation.lua
 assets/screenshots/blackjack-bet-selection.png
 assets/screenshots/blackjack-hand-actions.png
 assets/screenshots/blackjack-lounge.png
@@ -83,3 +86,9 @@ assets/screenshots/underground-arena-spectator-floor.png
 assets/screenshots/underground-arena-street-card.png
 assets/screenshots/underground-arena-vip-lobby.png
 assets/screenshots/underground-arena-winning-result.png
+assets/screenshots/gamble-story-rumor-clue.png
+assets/screenshots/gamble-story-cinnabar-handler.png
+assets/screenshots/gamble-story-series-3.png
+assets/screenshots/gamble-story-giovanni-choice.png
+assets/screenshots/gamble-story-expose-status.png
+assets/screenshots/gamble-story-champion-reward.png

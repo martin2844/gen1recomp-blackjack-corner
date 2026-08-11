@@ -1,9 +1,9 @@
 # Gamble Mode Campaign Roadmap
 
-Status: APPROVED  
-Target branch: `feat/v0.7-underground-arena`  
-Public target release: `v0.5.0` (bundles the internal v0.5-v0.7 phases)  
-Last updated: 2026-08-10
+Status: v0.6.0 FINAL STAGE COMPLETE  
+Target branch: `feat/v0.6-arena-story`  
+Public target release: `v0.6.0` (built on public `v0.5.2`)  
+Last updated: 2026-08-11
 
 ## Product shape
 
@@ -110,7 +110,7 @@ Current mod save key: `gamble_campaign`
 
 ```lua
 {
-  schema = 4,
+  schema = 9,
   reputation = {
     points = 0,
     rank = "ROOKIE",
@@ -160,6 +160,10 @@ Current mod save key: `gamble_campaign`
     nextMatchId = 0,
     pending = nil,
     history = {},
+  },
+  story = {
+    stage = "ARENA_RUMORS",
+    clues = {},
   },
 }
 ```
@@ -243,7 +247,7 @@ Ships:
 - Pending-match persistence before animation begins.
 - No wagering or entry using the player's own Pokemon.
 
-### v0.8.0: Cinnabar Underworld
+### Public v0.6.0: Cinnabar Underworld
 
 Goal: turn the arena into a campaign with a conclusion.
 
@@ -256,7 +260,8 @@ Ships:
 - A final choice:
   - Expose the operation and damage Rocket control of the casinos.
   - Become the arena champion and inherit its best rewards.
-- Ending-specific NPCs, dialogue, cases, cosmetics, and casino atmosphere.
+- Ending-specific NPC dialogue, High Roller titles, reward behavior, and
+  casino atmosphere.
 - Final economy and progression rebalance.
 
 ## v0.5 implementation plan
@@ -669,7 +674,4 @@ For this mod, the best test loop is:
 - Betting the player's party Pokemon in arena matches.
 - Real-time or play-time-based debt interest.
 - Permanent story softlocks for defaulting.
-- House repossession before `v0.6.0`.
-- Cinnabar underworld content before `v0.8.0`.
-- Giovanni and Cinnabar campaign content before `v0.8.0`.
 - TCG features.

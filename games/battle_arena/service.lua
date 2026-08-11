@@ -24,10 +24,15 @@ return function(mod, opts)
 
   local function makeMatch(game, value, random)
     value.arena.nextMatchId = value.arena.nextMatchId + 1
+    local exhibition = opts.exhibition and opts.exhibition(game) == true
+    local match = exhibition
+      and Rules.newExhibition(game.data, value.arena.nextMatchId, random)
+      or Rules.newMatch(game.data, value.arena.reputation,
+        value.arena.nextMatchId, random)
     value.arena.pending = {
       status = "POSTED",
-      match = Rules.newMatch(game.data, value.arena.reputation,
-        value.arena.nextMatchId, random),
+      kind = exhibition and "EXHIBITION" or "STANDARD",
+      match = match,
     }
     State.save(value)
     return value.arena.pending
@@ -67,6 +72,7 @@ return function(mod, opts)
       pending = value.arena.pending,
       rank = rank,
       wagerLimit = Rules.wagerLimit(rank),
+      exhibitionAvailable = opts.exhibition and opts.exhibition(game) == true,
     }
   end
 
@@ -74,6 +80,13 @@ return function(mod, opts)
     local allowed, reason = Service.access(game)
     if not allowed then return nil, reason end
     local value = campaign(true)
+    local pending = value.arena.pending
+    if opts.exhibition and opts.exhibition(game) == true and pending
+        and pending.status == "POSTED" and pending.kind ~= "EXHIBITION" then
+      value.arena.pending = nil
+      State.save(value)
+      value = campaign(true)
+    end
     return value.arena.pending or makeMatch(game, value, random)
   end
 
@@ -138,6 +151,17 @@ return function(mod, opts)
     pending = value.arena.pending
     if not pending or pending.status ~= "BET"
         or pending.roundToken ~= roundToken then return false, "MATCH CHANGED" end
+    if pending.kind == "EXHIBITION" and opts.settleExhibition then
+      local storySettled, _, storyReason = opts.settleExhibition(game,
+        pending.match.id, won)
+      if not storySettled and storyReason ~= "ALREADY SETTLED" then
+        return false, storyReason or "STORY SETTLEMENT FAILED"
+      end
+      value = campaign(true)
+      pending = value.arena.pending
+      if not pending or pending.status ~= "BET"
+          or pending.roundToken ~= roundToken then return false, "MATCH CHANGED" end
+    end
     game.save.coins = coins + payout
     local arena = value.arena
     arena.matchesPlayed = arena.matchesPlayed + 1

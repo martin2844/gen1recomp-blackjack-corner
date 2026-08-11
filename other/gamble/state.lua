@@ -1,11 +1,46 @@
 local State = {}
 
 State.KEY = "gamble_campaign"
-State.SCHEMA = 4
+State.SCHEMA = 9
+State.CHAMPION_REWARD = 25000
 
 local VALID_RANKS = {
   ROOKIE = true, REGULAR = true, HIGH_ROLLER = true,
   VIP = true, KINGPIN = true,
+}
+
+State.STORY_CLUES = {
+  FRAME = "CINNABAR_FRAME",
+  MANIFEST = "CAGE_MANIFEST",
+  CHART = "FUJI_CHART",
+  LAB_ARCHIVE = "LAB_ARCHIVE",
+  MANSION_LOG = "MANSION_LOG",
+}
+State.STORY_STAGES = {
+  RUMORS = "ARENA_RUMORS",
+  LEAD = "CINNABAR_LEAD",
+  INVESTIGATION = "CINNABAR_INVESTIGATION",
+  INVITATION = "EXHIBITION_INVITATION",
+  CHOICE = "GIOVANNI_CHOICE",
+  EXPOSED = "ROCKET_EXPOSED",
+  CHAMPION = "HOUSE_CHAMPION",
+}
+State.STORY_ENDINGS = {
+  EXPOSE = "EXPOSE",
+  CHAMPION = "CHAMPION",
+}
+
+local VALID_STORY_CLUES, VALID_STORY_STAGES = {}, {}
+for _, id in pairs(State.STORY_CLUES) do VALID_STORY_CLUES[id] = true end
+for _, id in pairs(State.STORY_STAGES) do VALID_STORY_STAGES[id] = true end
+local STORY_STAGE_ORDER = {
+  [State.STORY_STAGES.RUMORS] = 1,
+  [State.STORY_STAGES.LEAD] = 2,
+  [State.STORY_STAGES.INVESTIGATION] = 3,
+  [State.STORY_STAGES.INVITATION] = 4,
+  [State.STORY_STAGES.CHOICE] = 5,
+  [State.STORY_STAGES.EXPOSED] = 6,
+  [State.STORY_STAGES.CHAMPION] = 6,
 }
 
 local function number(value, fallback, minimum)
@@ -119,8 +154,12 @@ local function sanitizeArenaPending(value)
   local out = deepCopy(value)
   out.match.id = number(match.id, 0)
   if out.match.id < 1 then return nil end
-  out.match.tier = ({ STREET = true, ELITE = true, RARE = true })[match.tier]
+  out.match.tier = ({ STREET = true, ELITE = true, RARE = true,
+      EXHIBITION = true })[match.tier]
     and match.tier or "STREET"
+  out.match.kind = match.kind == "EXHIBITION" and "EXHIBITION" or "STANDARD"
+  out.match.reward = type(match.reward) == "string" and match.reward or nil
+  out.kind = value.kind == "EXHIBITION" and "EXHIBITION" or out.match.kind
   for index = 1, 2 do
     local fighter = out.match.fighters[index]
     if type(fighter.species) ~= "string" or fighter.species == "" then return nil end
@@ -224,6 +263,16 @@ function State.defaults()
       pending = nil,
       history = {},
     },
+    story = {
+      stage = State.STORY_STAGES.RUMORS,
+      clues = {},
+      exhibition = {
+        attempts = 0, wins = 0, lastMatchId = 0,
+      },
+      ending = {
+        choice = nil, rewardPending = 0, rewardClaimed = false,
+      },
+    },
   }
 end
 
@@ -267,6 +316,36 @@ State.MIGRATIONS = {
     if arena.stairsRevealed == nil then arena.stairsRevealed = false end
     if arena.securityExit == nil then arena.securityExit = false end
   end,
+  [5] = function(value)
+    local story = ensureTable(value, "story")
+    if story.stage == nil then story.stage = State.STORY_STAGES.RUMORS end
+    if type(story.clues) ~= "table" then story.clues = {} end
+  end,
+  [6] = function(value)
+    local story = ensureTable(value, "story")
+    if story.stage == nil then story.stage = State.STORY_STAGES.RUMORS end
+    if type(story.clues) ~= "table" then story.clues = {} end
+  end,
+  [7] = function(value)
+    local story = ensureTable(value, "story")
+    ensureTable(story, "exhibition")
+  end,
+  [8] = function(value)
+    local story = ensureTable(value, "story")
+    ensureTable(story, "ending")
+  end,
+  [9] = function(value)
+    local story = ensureTable(value, "story")
+    local ending = ensureTable(story, "ending")
+    local champion = ending.choice == State.STORY_ENDINGS.CHAMPION
+      or story.stage == State.STORY_STAGES.CHAMPION
+    if ending.rewardPending == nil then
+      ending.rewardPending = champion and State.CHAMPION_REWARD or 0
+    end
+    if ending.rewardClaimed == nil then
+      ending.rewardClaimed = not champion
+    end
+  end,
 }
 
 function State.migrate(value)
@@ -293,6 +372,9 @@ function State.sanitize(value)
   local debt = ensureTable(out, "debt")
   local house = ensureTable(out, "house")
   local arena = ensureTable(out, "arena")
+  local story = ensureTable(out, "story")
+  local exhibition = ensureTable(story, "exhibition")
+  local ending = ensureTable(story, "ending")
 
   out.schema = savedSchema > State.SCHEMA and savedSchema or State.SCHEMA
   rep.points = number(rep.points, 0)
@@ -357,6 +439,83 @@ function State.sanitize(value)
     end
   end
   arena.history = history
+  if savedSchema <= State.SCHEMA or type(story.stage) ~= "string" then
+    story.stage = VALID_STORY_STAGES[story.stage]
+      and story.stage or State.STORY_STAGES.RUMORS
+  end
+  local clueAllowlist
+  if savedSchema <= State.SCHEMA then clueAllowlist = VALID_STORY_CLUES end
+  story.clues = sanitizeBooleanMap(story.clues, clueAllowlist)
+  exhibition.attempts = number(exhibition.attempts, 0)
+  exhibition.wins = number(exhibition.wins, 0)
+  exhibition.lastMatchId = number(exhibition.lastMatchId, 0)
+  if exhibition.wins > exhibition.attempts then
+    exhibition.attempts = exhibition.wins
+  end
+  ending.choice = ({ EXPOSE = true, CHAMPION = true })[ending.choice]
+    and ending.choice or nil
+  ending.rewardPending = number(ending.rewardPending, 0)
+  ending.rewardClaimed = ending.rewardClaimed == true
+  if savedSchema <= State.SCHEMA or VALID_STORY_STAGES[story.stage] then
+    local arenaFound = 0
+    for _, id in ipairs({ State.STORY_CLUES.FRAME,
+        State.STORY_CLUES.MANIFEST, State.STORY_CLUES.CHART }) do
+      if story.clues[id] then arenaFound = arenaFound + 1 end
+    end
+    if arenaFound == 3 and story.stage == State.STORY_STAGES.RUMORS then
+      story.stage = State.STORY_STAGES.LEAD
+    end
+    local order = STORY_STAGE_ORDER[story.stage] or 1
+    if order >= STORY_STAGE_ORDER[State.STORY_STAGES.INVESTIGATION] then
+      story.clues[State.STORY_CLUES.LAB_ARCHIVE] = true
+    end
+    if story.clues[State.STORY_CLUES.LAB_ARCHIVE]
+        and order < STORY_STAGE_ORDER[State.STORY_STAGES.INVESTIGATION] then
+      story.stage = State.STORY_STAGES.INVESTIGATION
+      order = STORY_STAGE_ORDER[story.stage]
+    end
+    if story.clues[State.STORY_CLUES.MANSION_LOG]
+        and order < STORY_STAGE_ORDER[State.STORY_STAGES.INVESTIGATION] then
+      story.stage = State.STORY_STAGES.INVESTIGATION
+      story.clues[State.STORY_CLUES.LAB_ARCHIVE] = true
+      order = STORY_STAGE_ORDER[story.stage]
+    end
+    if order >= STORY_STAGE_ORDER[State.STORY_STAGES.INVITATION]
+        or (story.clues[State.STORY_CLUES.LAB_ARCHIVE]
+          and story.clues[State.STORY_CLUES.MANSION_LOG]) then
+      if order < STORY_STAGE_ORDER[State.STORY_STAGES.INVITATION] then
+        story.stage = State.STORY_STAGES.INVITATION
+        order = STORY_STAGE_ORDER[story.stage]
+      end
+      story.clues[State.STORY_CLUES.LAB_ARCHIVE] = true
+      story.clues[State.STORY_CLUES.MANSION_LOG] = true
+    end
+    if exhibition.wins > 0
+        and order < STORY_STAGE_ORDER[State.STORY_STAGES.CHOICE] then
+      story.stage = State.STORY_STAGES.CHOICE
+      order = STORY_STAGE_ORDER[story.stage]
+    end
+    if story.stage == State.STORY_STAGES.EXPOSED then
+      ending.choice = State.STORY_ENDINGS.EXPOSE
+    elseif story.stage == State.STORY_STAGES.CHAMPION then
+      ending.choice = State.STORY_ENDINGS.CHAMPION
+    elseif ending.choice == State.STORY_ENDINGS.EXPOSE then
+      story.stage = State.STORY_STAGES.EXPOSED
+    elseif ending.choice == State.STORY_ENDINGS.CHAMPION then
+      story.stage = State.STORY_STAGES.CHAMPION
+    end
+    if ending.choice and exhibition.wins == 0 then
+      exhibition.wins = 1
+      exhibition.attempts = math.max(exhibition.attempts, 1)
+    end
+    if ending.choice == State.STORY_ENDINGS.CHAMPION then
+      if not ending.rewardClaimed and ending.rewardPending == 0 then
+        ending.rewardPending = State.CHAMPION_REWARD
+      end
+    elseif ending.choice == State.STORY_ENDINGS.EXPOSE then
+      ending.rewardPending, ending.rewardClaimed = 0, true
+    end
+  end
   return out
 end
 

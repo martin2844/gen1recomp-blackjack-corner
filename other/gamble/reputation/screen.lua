@@ -10,6 +10,7 @@ return function(ctx)
       game = game,
       onClose = opts and opts.onClose,
       snapshot = ctx.progress.snapshot(game),
+      story = ctx.story and ctx.story.snapshot(game) or nil,
       rankUp = ctx.progress.consumeRankUp(),
     }, Screen)
   end
@@ -61,7 +62,7 @@ return function(ctx)
     return 0
   end
 
-  local function viewModel(state)
+  local function viewModel(state, story)
     state = state or {}
     local nextRank = state.nextRank
     local model = {
@@ -77,6 +78,11 @@ return function(ctx)
       hasBank = (tonumber(state.pendingRewardCoins) or 0) > 0,
       nextRank = nextRank,
       progress = 1,
+      ending = story and story.ending and story.ending.choice or nil,
+      endingBank = compact(story and story.ending
+        and story.ending.rewardPending or 0),
+      hasEndingBank = (tonumber(story and story.ending
+        and story.ending.rewardPending) or 0) > 0,
     }
     if nextRank then
       local start = currentRankStart(state)
@@ -100,8 +106,8 @@ return function(ctx)
 
   -- Exposed on screen instances so layout regressions can be tested without
   -- depending on pixels or a particular host window scale.
-  function Screen:viewModel(state)
-    return viewModel(state or self.snapshot)
+  function Screen:viewModel(state, story)
+    return viewModel(state or self.snapshot, story or self.story)
   end
 
   function Screen:draw()
@@ -110,8 +116,10 @@ return function(ctx)
       rankLabel = "ROOKIE", points = 0, badges = 0, wins = 0, losses = 0,
       currentLossStreak = 0, lifetimeWagered = 0,
     }
-    local model = viewModel(state)
-    UI.frame("HIGH ROLLER", Font, nil, theme)
+    local model = viewModel(state, self.story)
+    local title = model.ending == "CHAMPION" and "HOUSE CHAMPION"
+      or model.ending == "EXPOSE" and "ROCKET EXPOSED" or "HIGH ROLLER"
+    UI.frame(title, Font, nil, theme)
 
     -- Current rank and progress are one compact card. Values are right-aligned
     -- to a fixed edge so changing REP never pushes into the rank label.
@@ -153,8 +161,12 @@ return function(ctx)
     UI.color(C.ink)
     Font.draw("WAGERED", 14, 98); right(Font, model.wagered, 146, 98)
     Font.draw("FAV", 14, 108); right(Font, model.favorite, 146, 108)
-    if model.hasBank then
+    if model.hasEndingBank then
+      Font.draw("REWARD", 14, 118); right(Font, model.endingBank, 146, 118)
+    elseif model.hasBank then
       Font.draw("BANKED", 14, 118); right(Font, model.bank, 146, 118)
+    elseif model.ending then
+      Font.draw("ENDING", 14, 118); right(Font, model.ending, 146, 118)
     else
       Font.draw("COLD STREAK", 14, 118); right(Font, model.cold, 146, 118)
     end

@@ -425,7 +425,8 @@ return function(game)
     arena = { unlocked = false, reputation = 0 },
   }
   local migrated = api.reputation.ensure()
-  eq(migrated.schema, 4); eq(migrated.reputation.points, 777)
+  eq(migrated.schema, api.campaign_state.SCHEMA)
+  eq(migrated.reputation.points, 777)
   eq(migrated.debt.principal, 321); eq(migrated.house.status, "ROCKET_OWNED")
   eq(migrated.arena.matchesPlayed, 0)
   pass("MIG-01")

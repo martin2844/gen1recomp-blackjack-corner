@@ -1,5 +1,5 @@
 return {
-  summary = "A game-wide casino remix with High Roller progression, Rocket credit, two live floors, eight games, pawning, and rare prizes.",
+  summary = "A game-wide casino remix with eight games, High Roller progression, Rocket credit, and a Cinnabar/Giovanni finale.",
   author = "martin2844",
   tags = { "minigame", "game-corner", "casino", "blackjack", "holdem", "crash", "arcade", "shiny", "prizes" },
   differences = {
@@ -19,6 +19,8 @@ return {
       "rank-based Rocket loans with fixed fees and recoverable default states",
       "one-time family-home pawning at any balance, Rocket occupation, and a recoverable buyback battle",
       "a KINGPIN status terminal, walkable stairs, two native Rocket floors, and a live battle-betting arena",
+      "a five-record Arena/Cinnabar investigation, Series 3 exhibition, and irreversible EXPOSE or CHAMPION finale",
+      "ending-reactive casino dialogue, permanent High Roller titles, and a cap-safe one-time Champion reward",
       "Crash, Tube Flyer, and weighted Prize Case arcade machines",
       "opposite-version exclusives, starters, fossils, and shiny upgrades",
       "a one-time 9,999-coin Master Ball prize",

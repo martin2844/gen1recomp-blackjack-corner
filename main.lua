@@ -55,6 +55,8 @@ return function(mod)
   local ArenaServiceFactory = loadLocal(mod, paths.arena .. "service.lua")
   local ArenaWorld = loadLocal(mod, "other/gamble/arena_world.lua")(WorldHelpers)
   local ArenaSecurityFactory = loadLocal(mod, "other/gamble/arena_security.lua")
+  local ArenaStoryFactory = loadLocal(mod, "other/gamble/arena_story.lua")
+  local StoryWorld = loadLocal(mod, "other/gamble/story_world.lua")(WorldHelpers)
   local PalletCasino = loadLocal(mod, "other/pallet_casino.lua")(WorldHelpers)
   local Sound = require("src.core.Sound")
 
@@ -92,7 +94,7 @@ return function(mod)
 
   local Service = Services(mod, Catalog, Pawn, config)
   local UI = UIFactory(mod, Service, Catalog, Pawn, config)
-  local Progress, Credit, Arena, ArenaSecurity
+  local Progress, Credit, Arena, ArenaSecurity, ArenaStory
   local function play(game, name) Sound.play(game.data, name) end
   local common = {
     mod = mod, coins = Service.coins, coinCap = config.coinCap,
@@ -155,12 +157,19 @@ return function(mod)
     state = CampaignState, rules = ReputationRules,
     active = Gamble.active, coinCap = config.coinCap,
   })
+  ArenaStory = ArenaStoryFactory(mod, {
+    state = CampaignState, active = Gamble.active, coinCap = config.coinCap,
+  })
   Credit = CreditService(mod, {
     state = CampaignState, rules = CreditRules, active = Gamble.active,
     coinCap = config.coinCap, badgeCount = ReputationRules.badgeCount,
     rank = function(game)
       local snapshot = Progress.snapshot(game)
       return snapshot and snapshot.rank or "ROOKIE"
+    end,
+    newLoansAllowed = function()
+      local story = ArenaStory.snapshot()
+      return not story or story.ending.choice ~= ArenaStory.ENDINGS.EXPOSE
     end,
   })
   local House = HouseService(mod, {
@@ -175,6 +184,12 @@ return function(mod)
     end,
     allowed = function(game) return Credit.luxuryAllowed(game) end,
     beginRound = common.beginRound, settleRound = common.settleRound,
+    exhibition = ArenaStory.exhibitionAvailable,
+    settleExhibition = function(game, matchId, won)
+      local ok, state, reason = ArenaStory.settleExhibition(game, matchId, won)
+      StoryWorld.sync(game, ArenaStory, ok and won)
+      return ok, state, reason
+    end,
   })
   ArenaSecurity = ArenaSecurityFactory(mod, {
     state = CampaignState, active = Gamble.active,
@@ -182,10 +197,12 @@ return function(mod)
   })
   config.luxuryAllowed = Credit.luxuryAllowed
   local function syncCampaignWorld(game)
+    local reward, rewardPending = ArenaStory.deliverEndingReward(game)
     local collectors = CreditWorld.sync(game, Credit)
     local occupied = HouseWorld.sync(game, House)
     local arena = ArenaWorld.sync(game, ArenaSecurity)
-    return collectors, occupied, arena
+    local story = StoryWorld.sync(game, ArenaStory)
+    return collectors, occupied, arena, story, reward, rewardPending
   end
   local CreditUI = CreditUIFactory(mod, {
     credit = Credit, rules = CreditRules, text = UI.text,
@@ -196,7 +213,7 @@ return function(mod)
   })
   local HighRoller = ReputationScreen({
     mod = mod, ui = ArcadeUI, rules = ReputationRules,
-    progress = Progress, close = UI.close,
+    progress = Progress, story = ArenaStory, close = UI.close,
   })
   local StarterRoulette = loadLocal(mod, paths.roulette .. "screen.lua")({
     mod = mod, rules = RouletteRules, view = RouletteView,
@@ -251,6 +268,7 @@ return function(mod)
     ArenaSecurity.entered(game, mapId, fromMapId)
     if not Gamble.active() then return end
     ArenaWorld.sync(game, ArenaSecurity)
+    StoryWorld.sync(game, ArenaStory)
   end
   -- Reconcile before the destination spawns so both permanent staff objects
   -- are already visible on the first frame.
@@ -300,13 +318,24 @@ return function(mod)
   CreditWorld.register(mod)
   HouseWorld.register(mod)
   ArenaWorld.register(mod, ids.lounge)
+  StoryWorld.register(mod)
+
+  local function endingChoice()
+    local story = ArenaStory.snapshot()
+    return story and story.ending and story.ending.choice or nil
+  end
 
   mod.content.map_scripts:register("GAME_CORNER", { talk = {
     TEXT_GAMECORNER_CLERK1 = UI.coinClerk,
     TEXT_GAMECORNER_CLERK = UI.coinClerk,
     TEXT_PAWN_BROKER = UI.pawnBroker,
     TEXT_CASINO_DEBTOR = function(game, _, _, done)
-      UI.text(game, "I had a winning\nsystem yesterday.\fToday I sold my\nBIKE to test it.", done)
+      local ending = endingChoice()
+      UI.text(game, ending == ArenaStory.ENDINGS.EXPOSE
+        and "ROCKET odds leaked.\fTurns out my system\nwas their system."
+        or ending == ArenaStory.ENDINGS.CHAMPION
+          and "The CHAMPION walks\nwith us?\fMaybe my luck just\nchanged."
+        or "I had a winning\nsystem yesterday.\fToday I sold my\nBIKE to test it.", done)
     end,
     TEXT_CASINO_DREAMER = function(game, _, _, done)
       UI.text(game, "One jackpot and\nI'm leaving town.\fThat's what I said\nlast month.", done)
@@ -327,17 +356,22 @@ return function(mod)
     if not allowed then UI.text(game, frozen, done); return end
     open(game, message, screen, done)
   end
-  local function reactiveText(game, ordinary, regular, vip, cold)
+  local function reactiveText(game, ordinary, regular, vip, cold,
+      exposed, champion)
     local state = Progress.snapshot(game)
     if not state then return ordinary end
+    local ending = endingChoice()
+    if ending == ArenaStory.ENDINGS.EXPOSE and exposed then return exposed end
+    if ending == ArenaStory.ENDINGS.CHAMPION and champion then return champion end
     if cold and state.currentLossStreak >= 5 then return cold end
     if vip and ReputationRules.atLeast(state.rank, "HIGH_ROLLER") then return vip end
     if regular and state.rank == "REGULAR" then return regular end
     return ordinary
   end
-  local function reactiveTalk(ordinary, regular, vip, cold)
+  local function reactiveTalk(ordinary, regular, vip, cold, exposed, champion)
     return function(game, _, _, done)
-      UI.text(game, reactiveText(game, ordinary, regular, vip, cold), done)
+      UI.text(game, reactiveText(game, ordinary, regular, vip, cold,
+        exposed, champion), done)
     end
   end
   mod.content.map_scripts:register(ids.lounge, { talk = {
@@ -360,7 +394,9 @@ return function(mod)
       "Welcome to the\nCASINO LOUNGE!\fTables up front.\nArcade in back.",
       "Back again?\fThe dealers know\nyour face now.",
       "Welcome, HIGH\nROLLER.\fYour favorite table\nis waiting.",
-      "Rough streak?\fThe house always\nremembers a return."),
+      "Rough streak?\fThe house always\nremembers a return.",
+      "You brought light\ndownstairs.\fSome guests preferred\nthe dark.",
+      "Welcome, CHAMPION.\fYour table is always\nreserved."),
     TEXT_BLACKJACK_PATRON = reactiveTalk(
       "I always double\ndown on eleven!",
       "A REGULAR, huh?\fDon't start giving\nme advice.",
@@ -435,12 +471,45 @@ return function(mod)
     end,
   } })
 
+  local function arenaClue(game, clueId, foundText, waitingText, knownText, done)
+    local added, state, reason = ArenaStory.discover(game, clueId)
+    if reason == "NOT READY" or not state then
+      UI.text(game, waitingText, done)
+      return
+    end
+    local text = added and foundText or knownText
+    text = text .. ("\fCLUES %d OF %d."):format(
+      state.clueCount, state.clueTarget)
+    if reason == "LEAD COMPLETE" then
+      text = text .. "\fThe three records\nmatch.\fArena Pokemon came\nfrom CINNABAR.\fA Rocket seal marks\nLAB WEST WING."
+    end
+    UI.text(game, text, done)
+  end
+
   mod.content.map_scripts:register(ids.arenaLobby, { talk = {
     TEXT_ARENA_GREETER = function(game, _, _, done)
-      UI.text(game, "GREATNESS WAITS\nBELOW.\fWelcome, KINGPIN.", done)
+      local story = ArenaStory.snapshot(game)
+      if story and story.stage == ArenaStory.STAGES.EXPOSED then
+        UI.text(game, "You chose EXPOSE.\fThe lift stays open.\nThe welcome is gone.", done)
+      elseif story and story.stage == ArenaStory.STAGES.CHAMPION then
+        UI.text(game, "HOUSE CHAMPION.\fGreatness waits\nwherever you stand.", done)
+      elseif story and story.stage == ArenaStory.STAGES.LEAD then
+        UI.text(game, "A HANDLER EXPECTS\nYOU IN CINNABAR.\fAsk about the\nLAB WEST WING.\fForget who sent you.", done)
+      else
+        UI.text(game, "GREATNESS WAITS\nBELOW.\fWelcome, KINGPIN.", done)
+      end
     end,
     TEXT_ARENA_DOORMAN = function(game, _, _, done)
-      UI.text(game, "HOUSE FIGHTERS.\nONLY.\fThe betting floor is\nstraight ahead.", done)
+      local story = ArenaStory.snapshot(game)
+      if story and story.stage == ArenaStory.STAGES.EXPOSED then
+        UI.text(game, "Orders say the pit\nstays open.\fOrders say I stop\nsmiling.", done)
+      elseif story and story.stage == ArenaStory.STAGES.CHAMPION then
+        UI.text(game, "Your pit, CHAMPION.\fThe board is live.", done)
+      elseif story and story.stage == ArenaStory.STAGES.LEAD then
+        UI.text(game, "WEST WING burned\ndown twice.\fCINNABAR still logs\nevery visitor.", done)
+      else
+        UI.text(game, "HOUSE FIGHTERS.\nONLY.\fThe betting floor is\nstraight ahead.", done)
+      end
     end,
     TEXT_ARENA_CASHIER = function(game, _, _, done)
       local state = Arena.snapshot(game)
@@ -463,7 +532,12 @@ return function(mod)
       end
     end,
     TEXT_ARENA_HOSTESS = function(game, _, _, done)
-      UI.text(game, "Complimentary tea.\fTastes expensive.\nFixes nothing.", done)
+      local ending = endingChoice()
+      UI.text(game, ending == ArenaStory.ENDINGS.EXPOSE
+        and "No more free tea.\fThe games remain.\nHospitality doesn't."
+        or ending == ArenaStory.ENDINGS.CHAMPION
+          and "CHAMPION'S service.\fFresh tea.\nNo questions."
+        or "Complimentary tea.\fTastes expensive.\nFixes nothing.", done)
     end,
     TEXT_ARENA_SOCIALITE = function(game, _, _, done)
       UI.text(game, "Upstairs they call\nthis bad taste.\fDown here: MA'AM.", done)
@@ -481,7 +555,10 @@ return function(mod)
       UI.text(game, "SOLID GOLD MEOWTH.\fThe eyes follow\nevery loose coin.", done)
     end,
     TEXT_ARENA_LOBBY_PAINTING = function(game, _, _, done)
-      UI.text(game, "GIOVANNI smiles\nwithout his eyes.\fThe brass plaque\nis newly polished.", done)
+      arenaClue(game, ArenaStory.CLUES.FRAME,
+        "GIOVANNI smiles\nwithout his eyes.\fBehind the frame:\nTRANSFER SERIES 3.\fThe route begins at\nCINNABAR LAB.",
+        "GIOVANNI smiles\nwithout his eyes.\fThe brass plaque\nis newly polished.",
+        "Behind the painting:\nTRANSFER SERIES 3.\fRoute: CINNABAR\nto CELADON.", done)
     end,
     TEXT_ARENA_LOBBY_PC = function(game, _, _, done)
       local state = Arena.snapshot(game)
@@ -507,7 +584,64 @@ return function(mod)
     TEXT_ARENA_BOOKIE = function(game, _, _, done)
       local allowed, reason = Arena.access(game)
       if not allowed then UI.text(game, reason, done); return end
-      open(game, "NO TRAINER ORDERS.\nNO ITEMS.\nNO MERCY.\fPick the fighter.\nThe pit decides.", ids.arena, done)
+      local story = ArenaStory.snapshot(game)
+      local invitation = story and story.stage == ArenaStory.STAGES.INVITATION
+      local exposed = story and story.stage == ArenaStory.STAGES.EXPOSED
+      local champion = story and story.stage == ArenaStory.STAGES.CHAMPION
+      open(game, invitation
+        and "SERIES 3 IS READY.\nGIOVANNI IS WATCHING.\fPick the fighter.\nWin his audience."
+        or exposed and "You burned the ledger.\fThe board survives.\nOdds do not take sides."
+        or champion and "Welcome, CHAMPION.\fThe public card is\nyours to command."
+        or "NO TRAINER ORDERS.\nNO ITEMS.\nNO MERCY.\fPick the fighter.\nThe pit decides.",
+        ids.arena, done)
+    end,
+    TEXT_BLACKJACK_CORNER_GIOVANNI = function(game, _, _, done)
+      local story = ArenaStory.snapshot(game)
+      if story and story.stage == ArenaStory.STAGES.CHOICE then
+        local openChoice
+        local function confirm(choice)
+          local expose = choice == ArenaStory.ENDINGS.EXPOSE
+          local warning = expose
+            and "EXPOSE ROCKET?\nVIP perks end.\fTheir staff turns on\nyou.\fEvery game and route\nstays open.\fThis cannot be\nundone. Proceed?"
+            or "JOIN THE HOUSE?\nBecome CHAMPION.\fRocket keeps control.\fA final reward and\nVIP title unlock.\fThis cannot be\nundone. Proceed?"
+          game.stack:push(mod.ui.TextBox.new(game, warning, nil, {
+            choice = function(yes)
+              if not yes then openChoice(); return end
+              local ok, _, reason = ArenaStory.chooseEnding(game, choice)
+              if not ok then UI.text(game, reason, done); return end
+              local _, _, _, _, credited, pending = syncCampaignWorld(game)
+              local rewardText = ""
+              if not expose then
+                rewardText = ("\f%d coins transferred."):format(credited or 0)
+                if (pending or 0) > 0 then
+                  rewardText = rewardText .. ("\f%d coins BANKED."):format(pending)
+                end
+              end
+              UI.text(game, expose
+                and "Then let daylight in.\fThe ledgers leave\nwith you.\fROCKET will remember\nthis choice."
+                or "A sensible wager.\fFrom now on, the\nhouse knows your name:\nCHAMPION." .. rewardText, done)
+            end,
+          }))
+        end
+        function openChoice()
+          game.stack:push(mod.ui.Menu.new(game, {
+            { label = "EXPOSE", onSelect = function()
+                confirm(ArenaStory.ENDINGS.EXPOSE)
+              end },
+            { label = "CHAMPION", onSelect = function()
+                confirm(ArenaStory.ENDINGS.CHAMPION)
+              end },
+            { label = "LEAVE", onSelect = done },
+          }, { tx = 4, ty = 3, maxVisible = 3, onCancel = done }))
+        end
+        UI.text(game, "You beat SERIES 3.\fMost people wager\ncoins. You wagered\nyour judgment.\fNow decide what kind\nof winner you are.", openChoice)
+      elseif story and story.stage == ArenaStory.STAGES.EXPOSED then
+        UI.text(game, "You chose daylight.\fDo not confuse my\nrestraint with\nforgiveness.", done)
+      elseif story and story.stage == ArenaStory.STAGES.CHAMPION then
+        UI.text(game, "CHAMPION.\fThe house is watching.\nMake it profitable.", done)
+      else
+        UI.text(game, "The boss has no\nbusiness with you.", done)
+      end
     end,
     TEXT_ARENA_TO_LOBBY = function(game, _, _, done)
       UI.text(game, "The lobby door is\nbehind you.", done)
@@ -522,16 +656,27 @@ return function(mod)
       UI.text(game, "House fighters only.\fNo trainer orders.\nNo excuses either.", done)
     end,
     TEXT_ARENA_FAN_4 = function(game, _, _, done)
-      UI.text(game, "Rare card tonight.\fI heard wings in\nthe holding room.\fBig wings.", done)
+      arenaClue(game, ArenaStory.CLUES.MANIFEST,
+        "Rare card tonight.\fI heard wings in\nthe holding room.\fA crate tag fell:\nCINNABAR WEST.",
+        "Rare card tonight.\fI heard wings in\nthe holding room.\fBig wings.",
+        "The crate tag reads:\nCINNABAR WEST.\fLIVE SPECIMEN.\nDO NOT OPEN.", done)
     end,
     TEXT_ARENA_FAN_5 = function(game, _, _, done)
       UI.text(game, "Three losses.\fNext bet is rent.\nAfter that, pride.", done)
     end,
     TEXT_ARENA_FAN_6 = function(game, _, _, done)
-      UI.text(game, "They heal winners\nbehind curtains.\fNobody asks about\nthe loser.", done)
+      arenaClue(game, ArenaStory.CLUES.CHART,
+        "They heal winners\nbehind curtains.\fA torn chart says:\nCELL GROWTH TRIAL.\fDR. FUJI signed it.",
+        "They heal winners\nbehind curtains.\fNobody asks about\nthe loser.",
+        "The chart names\nDR. FUJI.\fIts subject number\nmatches the crate.", done)
     end,
     TEXT_ARENA_FAN_7 = function(game, _, _, done)
-      UI.text(game, "Keep aisles clear.\fBoss hates spills,\ncheats, witnesses.", done)
+      local ending = endingChoice()
+      UI.text(game, ending == ArenaStory.ENDINGS.EXPOSE
+        and "Witnesses everywhere.\fBoss hates that\nmost of all."
+        or ending == ArenaStory.ENDINGS.CHAMPION
+          and "Clear the aisle.\fThe CHAMPION is\nwatching."
+        or "Keep aisles clear.\fBoss hates spills,\ncheats, witnesses.", done)
     end,
     TEXT_ARENA_FAN_8 = function(game, _, _, done)
       UI.text(game, "Came for one fight.\fFour BADGES ago,\ndear.", done)
@@ -560,6 +705,46 @@ return function(mod)
     },
   })
 
+  mod.content.map_scripts:register("CINNABAR_LAB_METRONOME_ROOM", { talk = {
+    TEXT_BLACKJACK_CORNER_CINNABAR_HANDLER = function(game, _, _, done)
+      local state = ArenaStory.snapshot(game)
+      if state and state.stage == ArenaStory.STAGES.LEAD then
+        local advanced = ArenaStory.beginCinnabar(game)
+        StoryWorld.sync(game, ArenaStory)
+        if advanced then
+          UI.text(game, "KINGPIN.\nYou read too much.\fThis copy came from\nLAB ARCHIVE 3.\fFind its specimen\nlog in the MANSION\nbasement.", done)
+          return
+        end
+      end
+      if state and state.stage == ArenaStory.STAGES.INVESTIGATION then
+        UI.text(game, "The matching log is\nin MANSION B1.\fA researcher waits\nnear the old diary.", done)
+      elseif state and state.stage == ArenaStory.STAGES.INVITATION then
+        UI.text(game, "Your invitation is\nauthenticated.\fReturn to the pit.\nDo not be late.", done)
+      elseif state and state.stage == ArenaStory.STAGES.EXPOSED then
+        UI.text(game, "The archive is public.\fThe Lab denies it.\nROCKET cannot.", done)
+      elseif state and state.stage == ArenaStory.STAGES.CHAMPION then
+        UI.text(game, "SERIES 3 answers\nto its CHAMPION now.\fThat is what the\nrecord will say.", done)
+      else
+        UI.text(game, "Wrong room.\fWrong questions.", done)
+      end
+    end,
+  } })
+
+  mod.content.map_scripts:register("POKEMON_MANSION_B1F", { talk = {
+    TEXT_BLACKJACK_CORNER_MANSION_RESEARCHER = function(game, _, _, done)
+      local added, state, reason = ArenaStory.discover(game,
+        ArenaStory.CLUES.MANSION_LOG)
+      StoryWorld.sync(game, ArenaStory)
+      if added and reason == "INVITATION READY" then
+        UI.text(game, "I kept one page:\nSERIES 3.\fADAPTIVE COMBAT\nRESPONSE.\fTRANSFER:\nCELADON PIT.\fYour exhibition\ninvitation is real.", done)
+      elseif state and state.stage == ArenaStory.STAGES.INVITATION then
+        UI.text(game, "I was never here.\fThe invitation takes\nyou back to CELADON.", done)
+      else
+        UI.text(game, "The basement keeps\nold failures.\fBring an authenticated\narchive request.", done)
+      end
+    end,
+  } })
+
   mod.content.map_scripts:register("PALLET_TOWN", { talk = {
     TEXT_PALLET_CASINO_SIGN = function(game, _, _, done)
       UI.text(game, "PALLET CASINO\nLuck starts here.\fRegret starts\ninside.", done)
@@ -578,10 +763,20 @@ return function(mod)
   mod.content.map_scripts:register("REDS_HOUSE_1F", {
     talk = {
       TEXT_REDSHOUSE1F_ROCKET_TENANT = function(game, _, _, done)
-        UI.text(game, "Nice place.\fCheap deed. Good view\nof OAK's lab.", done)
+        local ending = endingChoice()
+        UI.text(game, ending == ArenaStory.ENDINGS.EXPOSE
+          and "You exposed the pit.\fThe deed still says\nROCKET. Pay it."
+          or ending == ArenaStory.ENDINGS.CHAMPION
+            and "CHAMPION.\fNice property.\nStill ours."
+          or "Nice place.\fCheap deed. Good view\nof OAK's lab.", done)
       end,
       TEXT_REDSHOUSE1F_ROCKET_OBSERVER = function(game, _, _, done)
-        UI.text(game, "This spot is great\nto keep OAK under\nwatch.", done)
+        local ending = endingChoice()
+        UI.text(game, ending == ArenaStory.ENDINGS.EXPOSE
+          and "OAK knows we're here.\fSo does half of\nKANTO now."
+          or ending == ArenaStory.ENDINGS.CHAMPION
+            and "We watch OAK.\fNow we report to the\nCHAMPION too."
+          or "This spot is great\nto keep OAK under\nwatch.", done)
       end,
     },
     onVictory = function(game)
@@ -628,17 +823,26 @@ return function(mod)
       "I came for milk.\fThat was six hours\nago.",
       "Oh, they know you\nhere already.",
       "A big player from\nour little town!",
-      "Dear, take a walk.\fLuck needs room\nto find you."),
+      "Dear, take a walk.\fLuck needs room\nto find you.",
+      "You told the truth.\fPallet needed that\nmore than a jackpot.",
+      "Our own CHAMPION!\fYour mother must be...\nwell, surprised."),
     TEXT_PALLET_CASINO_GAMBLER = reactiveTalk(
       "COMET is safe.\fSafe bets are how\nthey get you.",
       "REGULAR already?\fPallet raises them\nfast.",
       "VIP odds are still\nhouse odds, friend.",
-      "Cold tables spread.\fMaybe don't stand\nso close."),
+      "Cold tables spread.\fMaybe don't stand\nso close.",
+      "The Rocket book is\npublic now.\fStill lost my wager.",
+      "CHAMPION!\fTell the house I was\nalways loyal."),
     TEXT_PALLET_CASINO_YOUNGSTER = function(game, _, _, done)
       UI.text(game, "Mom thinks I'm at\nPROF.OAK's lab.\fDon't tell her.", done)
     end,
     TEXT_PALLET_CASINO_LOSER = function(game, _, _, done)
-      UI.text(game, "I pawned my best\nPOKEMON.\fThirty percent feels\nvery far away.", done)
+      local ending = endingChoice()
+      UI.text(game, ending == ArenaStory.ENDINGS.EXPOSE
+        and "You exposed ROCKET.\fCan you expose my\npawn ticket next?"
+        or ending == ArenaStory.ENDINGS.CHAMPION
+          and "CHAMPION...\fAny chance my pawn\ngets mercy?"
+        or "I pawned my best\nPOKEMON.\fThirty percent feels\nvery far away.", done)
     end,
   } })
 
@@ -703,4 +907,6 @@ return function(mod)
   mod.exports.arena = Arena
   mod.exports.arena_security = ArenaSecurity
   mod.exports.arena_world = ArenaWorld
+  mod.exports.arena_story = ArenaStory
+  mod.exports.story_world = StoryWorld
 end

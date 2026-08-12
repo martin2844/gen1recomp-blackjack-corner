@@ -11,6 +11,7 @@ tests/arena_test.lua
 tests/arena_security_test.lua
 tests/arena_story_test.lua
 tests/shiny_fallback_test.lua
+tests/settings_test.lua
 tests/run_all.sh
 tests/support/headless_fs.lua
 tests/support/casino_catalog.lua
@@ -30,6 +31,7 @@ tests/manual/V0.6_IN_GAME_TESTING.md
 tests/manual/V0.7_IN_GAME_TESTING.md
 tests/manual/FINAL_STAGE_IN_GAME_TESTING.md
 tests/manual/CASINO_NETWORK_IN_GAME_TESTING.md
+tests/manual/SETTINGS_IN_GAME_TESTING.md
 tests/manual/releases/v0.5.0.md
 tests/manual/releases/v0.5.1.md
 tests/manual/releases/v0.5.2.md
@@ -61,6 +63,7 @@ tests/manual/drivers/arena_world_polish.lua
 tests/manual/drivers/card_suit_audit.lua
 tests/manual/drivers/casino_network_audit.lua
 tests/manual/drivers/randomizer_compat_audit.lua
+tests/manual/drivers/settings_audit.lua
 assets/screenshots/regional-casino-viridian.png
 assets/screenshots/regional-casino-cinnabar.png
 assets/screenshots/regional-case-ace-cerulean.png

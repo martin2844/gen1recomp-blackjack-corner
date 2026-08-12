@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+### Added
+
+- Added a permanent **MODS > Blackjack Corner > OPTIONS** page with Gamble
+  Mode default selection, repeat table-intro control, reveal speed, and shiny
+  prize-upgrade controls. The four bundled shiny presentation settings now
+  append to that core page instead of conditionally owning it.
+
+### Changed
+
+- Moved the per-save Gamble Mode question ahead of Oak's first appearance.
+  The global setting only preselects YES or NO, so every new campaign still
+  receives an explicit confirmation.
+- Relaxed, Normal, and Fast reveal speeds now share one animation clock across
+  starter and prize reels, horse racing, Plinko, and the Underground Arena;
+  Crash and Tube Flyer physics are deliberately unchanged.
+
+### Fixed
+
+- Blackjack Corner no longer loses its entire options page when an external
+  shiny renderer disables the bundled fallback.
+
 ## [0.7.0] - 2026-08-12
 
 ### Added

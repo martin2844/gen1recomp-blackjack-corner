@@ -300,9 +300,9 @@ detailed Arena phase gate retained in
    Use the named mod ZIP, not GitHub's automatic source-code archives.
 2. Open Gen1Recomp and choose **MODS > Import mod .zip**.
 3. Select the downloaded ZIP, enable **Blackjack Corner**, and start the game.
-4. Start a new game and answer **YES** to Oak's Gamble Mode prompt for the
-   full-adventure remix. Answer **NO** to keep normal story progression while
-   retaining the Celadon casino expansion.
+4. Start a new game. Blackjack Corner asks about **Gamble Mode before Oak
+   appears**: answer **YES** for the full-adventure remix, or **NO** to keep
+   normal story progression while retaining the casino expansion.
 5. Gamble Mode starts with a Coin Case and 100 coins. Pallet's new southwest
    casino is immediately available; Celadon's double-door leads to the larger
    Casino Lounge later in the adventure.
@@ -310,14 +310,32 @@ detailed Arena phase gate retained in
 Requires Gen1Recomp Mod API 2 and an engine version in the range
 `>=0.0.0-0 <2.0.0`.
 
+## Settings
+
+Open **MODS > Blackjack Corner > OPTIONS** to configure the mod. These choices
+live in the global mod profile; Gamble Mode itself is still confirmed
+separately for every new save.
+
+| Setting | Values | Effect |
+| --- | --- | --- |
+| Gamble Default | No / Yes | Preselects the answer on the pre-Oak Gamble Mode prompt without skipping confirmation |
+| Table Intros | On / Off | Shows or skips repeat rules cards before ordinary casino games; story-critical Arena dialogue is always kept |
+| Reveal Speed | Relaxed / Normal / Fast | Changes reels, starter roulette, horse racing, Plinko, and Arena animation pace without changing Crash or Tube Flyer difficulty |
+| Shiny Upgrades | On / Off | Shows or hides the extra-cost shiny choice at Pokemon prize counters |
+
+When Blackjack Corner supplies its bundled shiny renderer, the same page also
+contains **Shiny Animation**, **Shiny Chime**, **Battle Markers**, and
+**Shiny Colors**. Core settings remain present when a dedicated shiny mod is
+installed.
+
 ## Features
 
 ### Optional Gamble Mode
 
-Professor Oak asks whether to enable Gamble Mode before the new adventure
-begins. The choice belongs to that save: choosing **NO** leaves Oak's starter
-selection and all Gym TM rewards untouched, while choosing **YES** enables the
-complete remix.
+Blackjack Corner asks whether to enable Gamble Mode on a clean screen before
+Professor Oak first appears. The choice belongs to that save: choosing **NO**
+leaves Oak's starter selection and all Gym TM rewards untouched, while choosing
+**YES** lets Oak introduce the complete remix.
 
 - The player starts with a Coin Case and 100 coins.
 - Oak's Lab replaces the gift Poké Balls with a three-piece roulette cabinet.
@@ -641,7 +659,8 @@ is refused and no coins are taken.
 
 ### Persistent shiny Pokemon
 
-- Every Pokemon prize offers **NORMAL** and **SHINY** purchase choices.
+- Every Pokemon prize offers **NORMAL** and **SHINY** purchase choices by
+  default; **SHINY UPGRADES** can hide the paid shiny choice.
 - Purchased shinies receive canonical Gen II-compatible shiny DVs rather than
   a temporary cosmetic flag, so their status persists in the save.
 - With no dedicated shiny mod installed, all 151 Generation I species receive

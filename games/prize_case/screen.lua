@@ -88,8 +88,9 @@ return function(ctx)
       elseif input:wasPressed("a") then self:open()
       elseif input:wasPressed("b") then self:close() end
     elseif self.phase == "spinning" then
-      self.elapsed = math.min(self.duration,
-        self.elapsed + math.min(0.05, dt or 1 / 60))
+      local step = ctx.revealStep and ctx.revealStep(dt)
+        or math.min(0.05, dt or 1 / 60)
+      self.elapsed = math.min(self.duration, self.elapsed + step)
       local progress = self.elapsed / self.duration
       self.reelOffset = Rules.REEL_STOP_OFFSET * (1 - (1 - progress) ^ 4)
       if progress >= 1 then self:settle() end

@@ -104,13 +104,17 @@ return function(ctx)
       elseif input:wasPressed("a") then self:startBattle()
       elseif input:wasPressed("b") then self:close() end
     elseif self.phase == "intro" then
-      self.elapsed = (self.elapsed or 0) + math.min(0.05, dt or 1 / 60)
+      local step = ctx.revealStep and ctx.revealStep(dt)
+        or math.min(0.05, dt or 1 / 60)
+      self.elapsed = (self.elapsed or 0) + step
       if self.elapsed >= Rules.INTRO_TIME then
         self.phase, self.actionTimer, self.actionIndex = "battle", 0, 1
         self.currentAction = self.pending.match.actions[1]
       end
     elseif self.phase == "battle" then
-      self.actionTimer = self.actionTimer + math.min(0.05, dt or 1 / 60)
+      local step = ctx.revealStep and ctx.revealStep(dt)
+        or math.min(0.05, dt or 1 / 60)
+      self.actionTimer = self.actionTimer + step
       if self.actionTimer >= Rules.ACTION_TIME then
         local action = self.currentAction
         if action then self.hp[action.defender] = action.defenderHP end

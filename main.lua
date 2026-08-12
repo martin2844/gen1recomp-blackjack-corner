@@ -24,6 +24,7 @@ return function(mod)
   local PlinkoRules = loadLocal(mod, paths.plinko .. "rules.lua")
   local RouletteRules = loadLocal(mod, paths.roulette .. "rules.lua")
   local ArenaRules = loadLocal(mod, paths.arena .. "rules.lua")
+  local Settings = loadLocal(mod, "other/settings.lua")
   local ShinyFallback = loadLocal(mod, "other/shiny/fallback.lua")
   local ArcadeUI = loadLocal(mod, "games/shared/ui.lua")
   local CrashView = loadLocal(mod, paths.crash .. "view.lua")(ArcadeUI)
@@ -63,6 +64,24 @@ return function(mod)
     "other/gamble/case_challengers.lua")(WorldHelpers)
   local Sound = require("src.core.Sound")
 
+  -- Optional dependencies run first when installed. The core settings page is
+  -- unconditional; fallback-only shiny controls are appended when this mod is
+  -- also responsible for rendering shiny presentation.
+  local shinyProvider
+  for _, providerId in ipairs({
+    "shiny_indicators",
+    "SHINY_POKEMON",
+    "crystal_animated_sprites_with_shiny_visuals",
+    "gen2_shiny_visuals",
+    "shiny_visuals",
+  }) do
+    shinyProvider = mod:find(providerId)
+    if shinyProvider then break end
+  end
+  local fallbackOptionRows
+  if not shinyProvider then fallbackOptionRows = ShinyFallback.optionRows() end
+  local settings = Settings.install(mod, fallbackOptionRows)
+
   local ids = {
     blackjack = "BlackjackCornerTable",
     holdem = "BlackjackCornerHoldemTable",
@@ -88,6 +107,7 @@ return function(mod)
     coinBundlePrice = 1000,
     masterBallKey = "master_ball_redeemed",
     pawnLedgerKey = "pawned_pokemon",
+    shinyUpgrades = settings.shinyUpgrades,
   }
   local blackjackBets, holdemBets = { 10, 50, 100, 500 }, { 10, 50, 100, 500 }
 
@@ -102,6 +122,7 @@ return function(mod)
   local common = {
     mod = mod, coins = Service.coins, coinCap = config.coinCap,
     creditPayout = Service.creditCoins,
+    revealStep = settings.revealStep,
     close = UI.close, play = play,
     beginRound = function(gameId, stake, durable)
       return Progress and Progress.beginRound(gameId, stake, durable) or nil
@@ -154,7 +175,7 @@ return function(mod)
 
   local Gamble = GambleMode.install(mod, {
     rules = RouletteRules, service = Service, screenId = ids.roulette,
-    text = UI.text,
+    text = UI.text, defaultGamble = settings.gambleDefault,
   })
   Progress = ReputationService(mod, {
     state = CampaignState, rules = ReputationRules,
@@ -221,6 +242,7 @@ return function(mod)
   local StarterRoulette = loadLocal(mod, paths.roulette .. "screen.lua")({
     mod = mod, rules = RouletteRules, view = RouletteView,
     close = UI.close, play = play, complete = Gamble.complete,
+    revealStep = settings.revealStep,
   })
   local BattleArena = loadLocal(mod, paths.arena .. "screen.lua")(context({
     rules = ArenaRules, view = ArenaView, service = Arena,
@@ -352,8 +374,9 @@ return function(mod)
     end,
   } })
 
-  local function open(game, message, screen, done)
-    UI.openAfterMessage(game, message, screen, done)
+  local function open(game, message, screen, done, forceIntro)
+    UI.openAfterMessage(game, message, screen, done,
+      forceIntro or settings.tableIntros())
   end
   local function openLuxury(game, message, screen, done)
     local allowed, frozen = Credit.luxuryAllowed(game)
@@ -611,7 +634,7 @@ return function(mod)
         or exposed and "You burned the ledger.\fThe board survives.\nOdds do not take sides."
         or champion and "Welcome, CHAMPION.\fThe public card is\nyours to command."
         or "NO TRAINER ORDERS.\nNO ITEMS.\nNO MERCY.\fPick the fighter.\nThe pit decides.",
-        ids.arena, done)
+        ids.arena, done, true)
     end,
     TEXT_BLACKJACK_CORNER_GIOVANNI = function(game, _, _, done)
       local story = ArenaStory.snapshot(game)
@@ -869,26 +892,17 @@ return function(mod)
       openLuxury(game, "Exchange coins for\nPOKEMON prizes?", ids.pokemon, done)
     end,
     TEXT_GAMECORNERPRIZEROOM_PRIZE_VENDOR_2 = function(game, _, _, done)
-      openLuxury(game, "Normal or SHINY?\nYou choose!", ids.pokemon, done)
+      openLuxury(game, settings.shinyUpgrades()
+        and "Normal or SHINY?\nYou choose!"
+        or "Exchange coins for\nPOKEMON prizes?", ids.pokemon, done)
     end,
     TEXT_GAMECORNERPRIZEROOM_PRIZE_VENDOR_3 = function(game, _, _, done)
       openLuxury(game, "Rare items for\nGame Corner coins!", ids.item, done)
     end,
   } })
 
-  -- Optional dependencies run first when installed. Let a dedicated shiny
-  -- renderer own every hook; otherwise install the bundled Gen II fallback.
-  local shinyProvider
-  for _, providerId in ipairs({
-    "shiny_indicators",
-    "SHINY_POKEMON",
-    "crystal_animated_sprites_with_shiny_visuals",
-    "gen2_shiny_visuals",
-    "shiny_visuals",
-  }) do
-    shinyProvider = mod:find(providerId)
-    if shinyProvider then break end
-  end
+  -- Let a dedicated shiny renderer own every presentation hook; otherwise
+  -- activate the bundled fallback whose option rows were included above.
   if shinyProvider then
     ShinyFallback.disable()
     mod.exports.shiny_fallback = false
@@ -898,6 +912,7 @@ return function(mod)
     mod.log:info("using bundled Gen II shiny indicator fallback")
   end
   mod.exports.shiny_provider = shinyProvider and shinyProvider.id or mod.id
+  mod.exports.settings = settings
 
   mod.exports.rules, mod.exports.view = Rules, BlackjackView
   mod.exports.holdem_rules, mod.exports.holdem_view = HoldemRules, HoldemView

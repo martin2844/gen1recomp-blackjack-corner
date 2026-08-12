@@ -140,10 +140,11 @@ function Gamble.install(mod, opts)
 
   mod.hooks:wrap("intro.oak_speech.build", function(next, steps, speech)
     steps = next(steps, speech)
-    mod.ui.insertStepAfter(steps, "oak_welcome", {
-      id = "blackjack_corner_gamble_mode", kind = "yesno", pic = "oak",
-      saveKey = "gamble_mode", defaultNo = true,
-      text = "Enable GAMBLE MODE?\fRandom starter.\nGyms give cases.",
+    mod.ui.insertStepBefore(steps, "oak_welcome", {
+      id = "blackjack_corner_gamble_mode", kind = "yesno",
+      saveKey = "gamble_mode",
+      defaultNo = not (opts.defaultGamble and opts.defaultGamble()),
+      text = "BLACKJACK CORNER\fEnable GAMBLE MODE?\fRandom starter.\nGyms give cases.",
     })
     return steps
   end)

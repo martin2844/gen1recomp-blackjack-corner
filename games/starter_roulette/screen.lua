@@ -62,8 +62,9 @@ return function(ctx)
   function Screen:update(dt)
     local input = self.game.input
     if self.phase == "spinning" then
-      self.elapsed = math.min(self.duration,
-        self.elapsed + math.min(0.05, dt or 1 / 60))
+      local step = ctx.revealStep and ctx.revealStep(dt)
+        or math.min(0.05, dt or 1 / 60)
+      self.elapsed = math.min(self.duration, self.elapsed + step)
       local progress = self.elapsed / self.duration
       self.reelOffset = Rules.STOP_OFFSET * (1 - (1 - progress) ^ 4)
       if progress >= 1 then self:settle() end

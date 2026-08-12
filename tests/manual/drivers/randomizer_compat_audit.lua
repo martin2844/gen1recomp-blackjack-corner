@@ -123,6 +123,7 @@ return function(game)
     assert(#rouletteObjects == 0,
       "disabled Gamble Mode retained the private roulette binding")
     pass("COMPAT-VANILLA", "Randomizer keeps Oak's starter balls when Gamble Mode is off")
+    love.event.quit(0)
     return
   end
 
@@ -137,6 +138,7 @@ return function(game)
     if top and top.screenId == "BlackjackCornerStarterRoulette" then
       assert(U.shot(game, shotDir .. "/randomizer-gamble-roulette.png"))
       pass("COMPAT-ROULETTE", "Oak's real cabinet opens Blackjack Corner roulette")
+      love.event.quit(0)
       return
     end
     U.tap(game, "a")

@@ -778,6 +778,10 @@ also rejected without charging coins when the Bag has no room.
   without it; CASE ACE trainers, Gym Cases, and story changes remain Gamble-only.
 - Blackjack does not include splits, insurance, or surrender.
 - Texas Hold'em is a custom house-banked game, not multiplayer poker.
+- Nuzlocke 1.x and Nuzlocke 2's pre-game setup can share the new-game flow.
+  Blackjack Corner defers Nuzlocke's post-Oak World Building dialogue until
+  Oak has fully left, preventing the completed intro from becoming a white,
+  input-blocking screen.
 - Mods or total conversions that replace the Celadon Game Corner, Prize Room,
   or their scripts may conflict even if the launcher cannot detect it.
 - Save a backup before combining large content mods.

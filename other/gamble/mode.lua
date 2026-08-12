@@ -165,6 +165,43 @@ function Gamble.install(mod, opts)
     end
   end)
 
+  -- Nuzlocke 2's World Building listener opens an Oak flavor TextBox from
+  -- intro.oak_speech.finished. The engine emits that event before OakSpeech
+  -- removes itself; Oak would therefore pop the new box instead and remain as
+  -- an exhausted opaque white screen. Temporarily lift post-intro overlays
+  -- above Oak, then restore them from Oak's completion callback.
+  mod.events:on("intro.oak_speech.finished", function(ev)
+    local speech = ev and ev.speech
+    local game = speech and speech.game
+    local loader = game and game.mods
+    local nuzlocke = loader and loader.mods and loader.mods.nuzlocke
+    local stack = game and game.stack
+    local states = stack and stack.states
+    if not (nuzlocke and nuzlocke.enabled ~= false and not nuzlocke.failed
+        and type(states) == "table" and not speech._blackjackCornerIntroDeferred) then
+      return
+    end
+
+    local speechIndex
+    for index = #states, 1, -1 do
+      if states[index] == speech then speechIndex = index break end
+    end
+    if not speechIndex or speechIndex == #states then return end
+
+    local deferred = {}
+    for index = #states, speechIndex + 1, -1 do
+      table.insert(deferred, 1, table.remove(states, index))
+    end
+    if #deferred == 0 then return end
+
+    speech._blackjackCornerIntroDeferred = true
+    local originalOnDone = speech.onDone
+    speech.onDone = function(...)
+      if originalOnDone then originalOnDone(...) end
+      for _, state in ipairs(deferred) do states[#states + 1] = state end
+    end
+  end, -10000)
+
   local function runBase(textId, game, ow, npc, done)
     local script = MapScripts.baseTalk("OAKS_LAB", textId)
     if type(script) == "function" then return script(game, ow, npc, done) end

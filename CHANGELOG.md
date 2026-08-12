@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fixed
+
+- Fixed Nuzlocke 2 compatibility at the end of Oak's new-game introduction.
+  Its World Building dialogue now opens after Oak exits instead of being
+  popped early and leaving an opaque white intro screen on the stack.
+
 ## [0.7.1] - 2026-08-12
 
 ### Added

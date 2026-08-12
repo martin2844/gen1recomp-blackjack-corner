@@ -41,10 +41,16 @@ Run the full case list in
 [`V0.6_IN_GAME_TESTING.md`](V0.6_IN_GAME_TESTING.md) before marking the release
 checklist complete.
 
-The unreleased regional expansion has its own supervised matrix in
+The v0.7 regional expansion has its own supervised matrix in
 [`CASINO_NETWORK_IN_GAME_TESTING.md`](CASINO_NETWORK_IN_GAME_TESTING.md). It
 covers Randomizer coexistence in Oak's Lab, every city branch and sign, the
 eight themed Gym reels, and the post-badge CASE ACE battles and rewards.
+
+The settings and pre-Oak campaign-choice work has a focused release matrix in
+[`SETTINGS_IN_GAME_TESTING.md`](SETTINGS_IN_GAME_TESTING.md). It covers option
+persistence, external shiny-provider composition, Randomizer ordering, runtime
+toggles, and the invariant that global preferences never rewrite an existing
+campaign's Gamble Mode choice.
 
 The internal Arena milestone driver, `drivers/v07_arena_audit.lua`, executes
 the deterministic Red/Blue gate and captures every required visual checkpoint. The
@@ -58,7 +64,7 @@ ending-reactive world dialogue. Rows that still require supervised navigation
 are explicitly left unsigned in the matrix rather than inferred from an API or
 teleport.
 The current cumulative public results are recorded in
-[`releases/v0.7.0.md`](releases/v0.7.0.md); earlier public and internal
+[`releases/v0.7.1.md`](releases/v0.7.1.md); earlier public and internal
 milestone records remain available for detailed evidence.
 
 Before signing off a release:

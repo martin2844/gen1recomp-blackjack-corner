@@ -228,7 +228,8 @@ T.check(api and api.rules and api.holdem_rules and api.holdem_view and api.catal
     and api.credit_rules and api.credit and api.credit_world
     and api.house and api.house_world and api.arena_rules and api.arena
     and api.arena_security
-    and api.arena_world and api.arena_story and api.story_world,
+    and api.arena_world and api.arena_story and api.story_world
+    and api.settings,
   "games, prizes, coin exchange, pawning, and arcade rules are exported")
 T.check(api.roulette_view.RESULT_BUTTON_Y
     + api.roulette_view.RESULT_BUTTON_HEIGHT <= api.roulette_view.FRAME_CONTENT_BOTTOM,
@@ -327,10 +328,20 @@ do
   local steps = { { id = "oak_welcome", kind = "say" } }
   local built = Runtime.call("intro.oak_speech.build", function(rows) return rows end,
     steps, {})
-  T.eq(built[2].id, "blackjack_corner_gamble_mode",
-    "new games ask about Gamble Mode during Oak's introduction")
-  T.eq(built[2].kind, "yesno", "Gamble Mode is an explicit yes-or-no choice")
-  T.check(built[2].defaultNo, "ordinary rules remain the safe default")
+  T.eq(built[1].id, "blackjack_corner_gamble_mode",
+    "new games ask about Gamble Mode before Oak appears")
+  T.eq(built[2].id, "oak_welcome",
+    "Oak's first appearance follows the campaign choice")
+  T.eq(built[1].kind, "yesno", "Gamble Mode is an explicit yes-or-no choice")
+  T.eq(built[1].pic, nil, "the campaign choice does not reveal Oak early")
+  T.check(built[1].defaultNo, "ordinary rules remain the safe default")
+
+  run.loader.modOptions.blackjack_corner = { gamble_default = "on" }
+  local preferred = Runtime.call("intro.oak_speech.build",
+    function(rows) return rows end, { { id = "oak_welcome", kind = "say" } }, {})
+  T.check(not preferred[1].defaultNo,
+    "the persistent setting can preselect Gamble Mode for a new campaign")
+  run.loader.modOptions.blackjack_corner = {}
 
   run.data.text._OaksLabOakChooseMonText =
     "OAK: There are 3\nPOKEMON here!"
@@ -1236,6 +1247,68 @@ local function fixtureMon(species, level)
 end
 
 local noInput = { wasPressed = function() return false end }
+
+do
+  local options = run.loader.modOptions.blackjack_corner or {}
+  run.loader.modOptions.blackjack_corner = options
+  local function stackGame()
+    local game = gameWith(10000)
+    game.input = noInput
+    game.save.inventory.COIN_CASE = 1
+    game.stack = { items = {} }
+    function game.stack:push(screen) self.items[#self.items + 1] = screen end
+    function game.stack:pop() return table.remove(self.items) end
+    function game.stack:top() return self.items[#self.items] end
+    return game
+  end
+
+  options.shiny_upgrades = false
+  local game = stackGame()
+  local prizes = run.data.screens.BlackjackCornerPokemonPrizes.new(game, {})
+  prizes.onChoose(prizes.items[1])
+  T.eq(#game.stack:top().items, 2,
+    "disabling shiny upgrades leaves NORMAL and CANCEL prize actions")
+  T.eq(game.stack:top().items[1].label:sub(1, 6), "NORMAL",
+    "the ordinary Pokemon prize remains available without shiny upgrades")
+
+  options.shiny_upgrades = true
+  game = stackGame()
+  prizes = run.data.screens.BlackjackCornerPokemonPrizes.new(game, {})
+  prizes.onChoose(prizes.items[1])
+  T.eq(#game.stack:top().items, 3,
+    "enabling shiny upgrades restores NORMAL, SHINY, and CANCEL actions")
+  T.eq(game.stack:top().items[2].label:sub(1, 5), "SHINY",
+    "the paid shiny prize action is restored")
+
+  local loungeTalk
+  for _, contribution in ipairs(
+      run.loader.content.map_scripts:chain("BLACKJACK_LOUNGE")) do
+    loungeTalk = loungeTalk or (contribution.talk
+      and contribution.talk.TEXT_BLACKJACK_TABLE)
+  end
+  T.check(type(loungeTalk) == "function",
+    "the settings integration reaches a real casino table handler")
+  options.table_intros = false
+  game = stackGame()
+  loungeTalk(game, nil, nil)
+  T.eq(game.stack:top().screenId, "BlackjackCornerTable",
+    "disabling table intros opens an ordinary game directly")
+  options.table_intros = true
+  game = stackGame()
+  loungeTalk(game, nil, nil)
+  T.check(game.stack:top().pages and not game.stack:top().screenId,
+    "enabling table intros keeps the rules card before an ordinary game")
+
+  options.reveal_speed = "fast"
+  game = stackGame()
+  local case = run.data.screens.BlackjackCornerPrizeCase.new(game, {})
+  case.phase, case.elapsed, case.duration = "spinning", 0, 2
+  case:update(1 / 60)
+  T.check(case.elapsed > 0.02,
+    "the reveal-speed setting reaches a real reel animation")
+
+  run.loader.modOptions.blackjack_corner = {}
+end
 
 do
   local slot = setmetatable({

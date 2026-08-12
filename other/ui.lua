@@ -9,14 +9,15 @@ return function(mod, Service, Catalog, Pawn, config)
     if game.stack:top() == state then game.stack:pop() end
   end
 
-  function UI.openAfterMessage(game, message, screen, done)
+  function UI.openAfterMessage(game, message, screen, done, showMessage)
     if not (game.save.inventory and game.save.inventory.COIN_CASE) then
       UI.text(game, "A COIN CASE is\nrequired!", done)
       return
     end
-    UI.text(game, message, function()
+    local function launch()
       mod.ui.push(game, screen, { onClose = done })
-    end)
+    end
+    if showMessage == false then launch() else UI.text(game, message, launch) end
   end
 
   function UI.coinClerk(game, _, _, done)
@@ -184,18 +185,24 @@ return function(mod, Service, Catalog, Pawn, config)
       pageJump = true, footer = ("COINS %d"):format(Service.coins(game)),
       onChoose = function(item)
         local prize = item.value
-        game.stack:push(mod.ui.Menu.new(game, {
+        local choices = {
           { label = "NORMAL " .. prize.cost, onSelect = function()
               local ok, msg = Service.buyPokemon(game, prize, false)
               finishPrize(game, list, ok, msg, opts and opts.onClose)
             end },
-          { label = "SHINY " .. (prize.cost + Catalog.SHINY_SURCHARGE),
+        }
+        if not config.shinyUpgrades or config.shinyUpgrades() then
+          choices[#choices + 1] = {
+            label = "SHINY " .. (prize.cost + Catalog.SHINY_SURCHARGE),
             onSelect = function()
               local ok, msg = Service.buyPokemon(game, prize, true)
               finishPrize(game, list, ok, msg, opts and opts.onClose)
-            end },
-          { label = "CANCEL" },
-        }, { tx = 3, ty = 4, maxVisible = 3 }))
+            end,
+          }
+        end
+        choices[#choices + 1] = { label = "CANCEL" }
+        game.stack:push(mod.ui.Menu.new(game, choices,
+          { tx = 3, ty = 4, maxVisible = #choices }))
       end,
       onCancel = opts and opts.onClose,
     })

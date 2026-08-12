@@ -10,6 +10,23 @@ local SHINY_ATTACK = {
 
 local Fallback = {}
 
+local OPTION_ROWS = {
+  { key = "shiny_sparkles", label = "SHINY ANIMATION", type = "toggle", default = true },
+  { key = "shiny_chime", label = "SHINY CHIME", type = "toggle", default = true },
+  { key = "shiny_markers", label = "BATTLE MARKERS", type = "toggle", default = true },
+  { key = "shiny_colors", label = "SHINY COLORS", type = "toggle", default = true },
+}
+
+function Fallback.optionRows()
+  local rows = {}
+  for _, row in ipairs(OPTION_ROWS) do
+    local clone = {}
+    for key, value in pairs(row) do clone[key] = value end
+    rows[#rows + 1] = clone
+  end
+  return rows
+end
+
 function Fallback.disable()
   local SummaryMenu = package.loaded["src.ui.SummaryMenu"]
   if type(SummaryMenu) == "table" then
@@ -23,13 +40,6 @@ function Fallback.install(mod)
   local derived = {}
   local game
   local sourcePrefix = "assets/" .. "generated/"
-
-  mod.options:define({
-    { key = "shiny_sparkles", label = "SHINY ANIMATION", type = "toggle", default = true },
-    { key = "shiny_chime", label = "SHINY CHIME", type = "toggle", default = true },
-    { key = "shiny_markers", label = "BATTLE MARKERS", type = "toggle", default = true },
-    { key = "shiny_colors", label = "SHINY COLORS", type = "toggle", default = true },
-  })
 
   local function isShiny(mon)
     if type(mon) ~= "table" then return false end

@@ -7,6 +7,7 @@ return {
       "the Game Corner opens into a larger two-table casino lounge",
       "all three Prize Corner counters offer expanded catalogues",
       "Gamble Mode replaces Oak's starter choice with a randomizer-safe roulette",
+      "Gamble Mode is confirmed before Oak appears, with a configurable default",
       "Gym Leaders award one persistent, leader-themed case instead of a direct TM",
     },
     added = {
@@ -26,6 +27,7 @@ return {
       "Crash, Tube Flyer, and weighted Prize Case arcade machines",
       "opposite-version exclusives, starters, fossils, and shiny upgrades",
       "a one-time 9,999-coin Master Ball prize",
+      "core settings for table intros, reveal pace, and shiny prize upgrades",
     },
     known = {
       "Gamble Mode is chosen only for a new save; existing saves keep their original story rules",

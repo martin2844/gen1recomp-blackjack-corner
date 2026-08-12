@@ -33,6 +33,10 @@ for _, provider in ipairs({
     "Blackjack Corner reports the active external provider")
   T.eq(api.shiny_fallback, false,
     "the bundled fallback stays disabled beside an external provider")
+  T.eq(#run.loader.optionSchemas.blackjack_corner, 4,
+    "core Blackjack Corner settings remain available beside an external shiny provider")
+  T.eq(run.loader.optionSchemas.blackjack_corner[1].key, "gamble_default",
+    "the external-provider settings page begins with the campaign default")
   local hooks = T.record.hooks(run.loader)
   T.eq(hooks:depth("pokemon.sprite"), 1,
     "Blackjack Corner preserves exactly one external shiny sprite hook")
@@ -77,8 +81,10 @@ T.same(api.shiny_status_icon, {
   ".#......", "###.....", ".#....#.", ".....###",
   "......#.", "...#....", "..###...", "...#....",
 }, "status marker matches Crystal's three-sparkle tile")
-T.eq(#run.loader.optionSchemas.blackjack_corner, 4,
-  "the fallback exposes four presentation settings")
+T.eq(#run.loader.optionSchemas.blackjack_corner, 8,
+  "the fallback appends four presentation settings to four core settings")
+T.eq(run.loader.optionSchemas.blackjack_corner[5].key, "shiny_sparkles",
+  "fallback-only presentation settings follow the stable core rows")
 
 -- All 151 front and back sprites receive their canonical Crystal palettes.
 do

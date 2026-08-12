@@ -54,7 +54,9 @@ return function(ctx)
       elseif input:wasPressed("a") then self:dropBall()
       elseif input:wasPressed("b") then self:close() end
     elseif self.phase == "dropping" then
-      if Rules.update(self.drop, math.min(0.05, dt or 1 / 60)) then self:finish() end
+      local step = ctx.revealStep and ctx.revealStep(dt)
+        or math.min(0.05, dt or 1 / 60)
+      if Rules.update(self.drop, step) then self:finish() end
     elseif input:wasPressed("a") then
       if self.rankUpPending and ctx.showRankUp then
         self.rankUpPending = false; ctx.showRankUp(self.game)

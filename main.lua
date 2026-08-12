@@ -43,6 +43,7 @@ return function(mod)
   local Lounge = loadLocal(mod, "other/lounge.lua")(WorldHelpers)
   local GambleMode = loadLocal(mod, "other/gamble/mode.lua")
   local GymCases = loadLocal(mod, "other/gamble/gym_cases.lua")
+  local GymCaseComments = loadLocal(mod, "other/gamble/gym_case_comments.lua")
   local CampaignState = loadLocal(mod, "other/gamble/state.lua")
   local ReputationRules = loadLocal(mod, "other/gamble/reputation/rules.lua")
   local ReputationService = loadLocal(mod, "other/gamble/reputation/service.lua")
@@ -247,13 +248,16 @@ return function(mod)
   local BattleArena = loadLocal(mod, paths.arena .. "screen.lua")(context({
     rules = ArenaRules, view = ArenaView, service = Arena,
   }))
-  local Gym = GymCases.install(mod, { active = Gamble.active, screenId = ids.gymCase })
+  local Gym = GymCases.install(mod, {
+    active = Gamble.active, screenId = ids.gymCase,
+    comments = GymCaseComments,
+  })
   local GymCase = loadLocal(mod, paths.case .. "screen.lua")(context({
     rules = GymCases.rules(CaseRules), view = CaseView, cost = 0,
     title = "GYM CASE", autoOpen = true, oneShot = true,
     counterKey = "gym_cases_opened", rewardPool = Gym.pool,
     giveReward = Service.giveCaseReward, onChosen = Gym.onChosen,
-    onDelivered = Gym.onDelivered,
+    onDelivered = Gym.onDelivered, resultDialogue = Gym.rewardDialogue,
   }))
 
   for screen, class in pairs({

@@ -9,6 +9,7 @@ return {
       "Gamble Mode replaces Oak's starter choice with a randomizer-safe roulette",
       "Gamble Mode is confirmed before Oak appears, with a configurable default",
       "Gym Leaders award one persistent, leader-themed case instead of a direct TM",
+      "every delivered Gym Case gets an exact, rarity-aware reaction from its leader",
     },
     added = {
       "a gloomy Pallet Town mini-casino with early coin, pawn, and case services",

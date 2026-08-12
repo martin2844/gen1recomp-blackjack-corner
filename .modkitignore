@@ -39,6 +39,7 @@ tests/manual/releases/v0.6.0.md
 tests/manual/releases/v0.7.0.md
 tests/manual/releases/v0.7.1.md
 tests/manual/releases/v0.7.2.md
+tests/manual/releases/v0.7.3.md
 tests/manual/evidence/README.md
 tests/manual/drivers/high_roller_fresh.lua
 tests/manual/drivers/high_roller_rank_up.lua
@@ -66,6 +67,7 @@ tests/manual/drivers/card_suit_audit.lua
 tests/manual/drivers/casino_network_audit.lua
 tests/manual/drivers/randomizer_compat_audit.lua
 tests/manual/drivers/settings_audit.lua
+tests/manual/drivers/gym_case_comments_audit.lua
 assets/screenshots/regional-casino-viridian.png
 assets/screenshots/regional-casino-cinnabar.png
 assets/screenshots/regional-case-ace-cerulean.png

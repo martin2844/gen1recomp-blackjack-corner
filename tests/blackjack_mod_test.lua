@@ -545,16 +545,37 @@ do
   T.check(gymCase.claimSaved, "a full Bag preserves the exact Gym Case claim")
   T.eq(#api.gym_cases.queue(), 1,
     "a failed Gym Case delivery remains in the persistent queue")
+  local pressed = {}
+  Game.input = { wasPressed = function(_, key) return pressed[key] == true end }
+  pressed.a = true
+  gymCase:update(0)
+  T.eq(#Game.stack.pushed, 0,
+    "a failed Gym Case delivery does not invent a leader reaction")
+  pressed.a = false
   local chosen = api.gym_cases.queue()[1].reward.id
   for index = 1, 19 do Game.save.inventory["GYM_FILLER_" .. index] = nil end
   local retry = run.data.screens.BlackjackCornerGymCase.new(Game, {
     caseData = api.gym_cases.queue()[1], autoOpen = true, oneShot = true,
   })
+  Game.stack:push(retry)
   retry:update(0)
   T.eq(retry.winner.id, chosen, "a Gym Case retry keeps the exact selected prize")
   retry:settle()
   T.eq(#api.gym_cases.queue(), 0, "a delivered Gym Case leaves the queue")
   T.eq(Game.save.inventory[chosen], 1, "the retried Gym Case reaches the Bag")
+  pressed.a = true
+  retry:update(0)
+  local reaction = Game.stack:top()
+  T.check(reaction and reaction.pages and not reaction.screenId,
+    "acknowledging a delivered Gym Case opens the leader's reaction")
+  local reactionText = {}
+  for _, page in ipairs(reaction.pages or {}) do
+    for _, line in ipairs(page) do reactionText[#reactionText + 1] = line end
+  end
+  reactionText = table.concat(reactionText, " ")
+  T.check(reactionText:find("MISTY", 1, true)
+      and reactionText:find("BUBBLEBEAM", 1, true),
+    "Misty reacts to the exact delivered Gym Case prize")
   Runtime.emit("intro.oak_speech.answered", {
     saveKey = "gamble_mode", value = false, speech = { game = Game },
   })
@@ -602,6 +623,59 @@ do
         and speech:lower():find("spin", 1, true),
       expected.leader .. " clearly tells the player to spin a themed case")
   end
+end
+
+do
+  local tierMarkers = {
+    common = "SAFE PULL", pokemon = "SOLID PULL", rare = "RARE PULL",
+    epic = "EPIC PULL", gold = "JACKPOT",
+  }
+  local total = 0
+  for badge, definition in pairs(api.gym_cases.definitions) do
+    local reactions = {}
+    for _, reward in ipairs(definition.rewards) do
+      total = total + 1
+      local reaction = api.gym_cases.rewardDialogue({ badge = badge }, reward)
+      local normalized = reaction and reaction:gsub("%s+", " ") or ""
+      local identity = reward.id or reward.species
+      T.check(reaction and reaction:find(definition.leader, 1, true),
+        definition.leader .. " comments on " .. tostring(identity))
+      T.check(normalized:find(tierMarkers[reward.tier], 1, true),
+        tostring(identity) .. " gets a rarity-aware reaction")
+      T.check(not reactions[reaction],
+        definition.leader .. " has unique copy for " .. tostring(identity))
+      for markedPage in (reaction .. "\f"):gmatch("(.-)\f") do
+        local _, lineBreaks = markedPage:gsub("\n", "")
+        T.check(lineBreaks <= 1,
+          tostring(identity) .. " reaction uses at most two authored lines per page")
+        for line in (markedPage .. "\n"):gmatch("(.-)\n") do
+          T.check(#line <= 18,
+            tostring(identity) .. " reaction fits the native text width")
+        end
+      end
+      reactions[reaction] = true
+    end
+  end
+  T.eq(total, 80, "all eight leaders cover all ten themed case prizes")
+  local horsea = api.gym_cases.rewardDialogue({ badge = "CASCADEBADGE" }, {
+    kind = "pokemon", species = "HORSEA", tier = "pokemon",
+  })
+  T.check(horsea and horsea:find("mid", 1, true),
+    "Misty gives HORSEA the requested affectionate roast")
+  local bubblebeam = api.gym_cases.rewardDialogue({ badge = "CASCADEBADGE" }, {
+    kind = "item", id = "TM_BUBBLEBEAM", tier = "gold",
+  })
+  T.check(bubblebeam and bubblebeam:find("WATER POKEMON", 1, true),
+    "Misty still teaches the classic BUBBLEBEAM lesson on the jackpot pull")
+  local legacy = api.gym_cases.rewardDialogue({ badge = "CASCADEBADGE" }, {
+    kind = "pokemon", species = "NIDORAN_F", label = "NIDORAN F",
+    tier = "pokemon",
+  })
+  local normalizedLegacy = legacy and legacy:gsub("%s+", " ") or ""
+  T.check(normalizedLegacy:find("MISTY", 1, true)
+      and normalizedLegacy:find("NIDORAN F", 1, true)
+      and normalizedLegacy:find("SOLID PULL", 1, true),
+    "a pending pre-theme Gym Case still gets an exact rarity-aware reaction")
 end
 
 do

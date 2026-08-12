@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+## [0.7.3] - 2026-08-12
+
+### Added
+
+- Every successfully delivered Gym Case now ends with a prize-specific reaction
+  from its Gym Leader. All 80 rewards have bespoke dialogue rather than a
+  shared item or Pokemon template.
+- Reactions scale with the reward tier from safe and solid pulls through rare,
+  epic, and jackpot results, while preserving each leader's voice: Brock
+  teaches, Misty teases, Surge gives orders, Erika stays politely sharp, Koga
+  speaks in discipline and poison, Sabrina predicts, Blaine quizzes, and
+  Giovanni assesses power.
+- Signature rewards receive direct callbacks to the original games, including
+  Misty's TM11 BUBBLEBEAM advice, while weaker pulls get affectionate, ironic
+  commentary such as her verdict on HORSEA.
+
+### Fixed
+
+- A Gym Leader reacts only after the exact reward reaches the Bag, party, or
+  PC. Full-storage failures keep the chosen prize queued and produce no false
+  celebration; the reaction appears after the eventual successful retry.
+
 ## [0.7.2] - 2026-08-12
 
 ### Fixed

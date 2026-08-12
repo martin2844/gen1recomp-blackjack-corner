@@ -164,45 +164,103 @@ return function(game)
   assert(exhibition.match.winner and exhibition.match.actions)
   U.log("PASS", "EXH-02", "fighter pair, odds, result, and actions were committed")
 
-  local lostId = exhibition.match.id
-  local recordedLoss, lossState = api.arena_story.settleExhibition(game,
-    lostId, false)
-  assert(recordedLoss and lossState.stage == api.arena_story.STAGES.INVITATION)
-  assert(api.arena.resetPosted())
-  exhibition = assert(api.arena.current(game))
-  assert(exhibition.kind == "EXHIBITION"
-    and exhibition.match.id > lostId)
-  assert(exhibition.match.fighters[1].species == "DRAGONITE"
-    and exhibition.match.fighters[2].species == "MEWTWO")
-  U.log("PASS", "EXH-06", "loss kept the fixed exhibition retryable")
-
-  local committedId = exhibition.match.id
-  local committedWinner = exhibition.match.winner
-  U.teleport(game, api.arena_world.ARENA, 9, 4, "up")
-  U.wait(20)
-  U.tap(game, "a")
-  U.wait(120)
-  local screen
-  for _ = 1, 5 do
-    local top = game.stack:top()
-    if top and top.pending then screen = top break end
+  local function openArenaScreen()
+    U.teleport(game, api.arena_world.ARENA, 9, 4, "up")
+    U.wait(20)
     U.tap(game, "a")
-    U.wait(120)
+    for _ = 1, 8 do
+      local top = game.stack:top()
+      if top and top.pending then return top end
+      U.wait(120)
+      U.tap(game, "a")
+    end
+    error("arena bookie did not open a resumable screen")
   end
-  assert(screen and screen.pending and screen.pending.kind == "EXHIBITION")
-  assert(screen.pending.match.id == committedId)
+
+  local lostId = exhibition.match.id
+  local losingSelection = 3 - exhibition.match.winner
+  local screen = openArenaScreen()
+  assert(screen.pending.kind == "EXHIBITION"
+    and screen.pending.match.id == lostId)
   assert(U.shot(game, shotDir .. "/story-exhibition-card.png"))
-  if committedWinner == 2 then U.tap(game, "down"); U.wait(5) end
+  if losingSelection == 2 then U.tap(game, "down"); U.wait(5) end
   U.tap(game, "a")
   U.wait(20)
   assert(U.shot(game, shotDir .. "/story-exhibition-intro.png"))
+  local coinsAfterStake = game.save.coins
   assert(game:writeSave(), "paid exhibition save failed")
   local exhibitionDisk = assert(SaveData.load(game.save.version))
   local diskPending = assert(exhibitionDisk.modData.blackjack_corner
     .gamble_campaign.arena.pending)
-  assert(diskPending.match.id == committedId
-    and diskPending.selected == committedWinner)
-  U.log("PASS", "EXH-03", "paid Series 3 ticket reached disk before animation")
+  assert(diskPending.match.id == lostId
+    and diskPending.selected == losingSelection
+    and diskPending.stake == screen.pending.stake
+    and diskPending.match.winner == exhibition.match.winner
+    and diskPending.match.odds[1] == exhibition.match.odds[1]
+    and diskPending.match.odds[2] == exhibition.match.odds[2]
+    and #diskPending.match.actions == #exhibition.match.actions
+    and diskPending.match.reward == exhibition.match.reward)
+  game:restoreSave(exhibitionDisk)
+  assert(game.save.coins == coinsAfterStake)
+  screen = openArenaScreen()
+  assert(screen.phase == "intro"
+    and screen.pending.status == "BET"
+    and screen.pending.match.id == lostId
+    and screen.pending.selected == losingSelection
+    and screen.pending.match.winner == exhibition.match.winner
+    and screen.pending.match.odds[1] == exhibition.match.odds[1]
+    and #screen.pending.match.actions == #exhibition.match.actions)
+  U.log("PASS", "EXH-03",
+    "disk restore resumed the exact paid Series 3 animation")
+  for _ = 1, 6000 do
+    U.wait(1)
+    if screen.phase == "result" then break end
+  end
+  assert(screen.phase == "result" and not screen.pending.won)
+  assert(screen.pending.match.id == lostId)
+  assert(U.shot(game, shotDir .. "/story-exhibition-loss.png"))
+  state = api.arena_story.snapshot(game)
+  assert(state.stage == api.arena_story.STAGES.INVITATION)
+  assert(state.exhibition.attempts == 1 and state.exhibition.wins == 0)
+  local lossCoins = game.save.coins
+  local lossArena = api.arena.snapshot(game)
+  local lossRep = api.reputation.snapshot(game)
+  local lossHistory = #loader.modSave.blackjack_corner.gamble_campaign.arena.history
+  local repeated, repeatedPending = api.arena.settle(game)
+  assert(repeated and repeatedPending.status == "RESULT")
+  assert(game.save.coins == lossCoins)
+  assert(api.arena.snapshot(game).matchesPlayed == lossArena.matchesPlayed)
+  assert(api.reputation.snapshot(game).completedGames == lossRep.completedGames)
+  assert(#loader.modSave.blackjack_corner.gamble_campaign.arena.history
+    == lossHistory)
+  assert(game:writeSave(), "loss result save failed")
+  local lossDisk = assert(SaveData.load(game.save.version))
+  game:restoreSave(lossDisk)
+  screen = openArenaScreen()
+  assert(screen.phase == "result" and not screen.pending.won)
+  assert(game.save.coins == lossCoins)
+  assert(api.arena.snapshot(game).matchesPlayed == lossArena.matchesPlayed)
+  assert(api.reputation.snapshot(game).completedGames == lossRep.completedGames)
+  assert(#loader.modSave.blackjack_corner.gamble_campaign.arena.history
+    == lossHistory)
+  U.log("PASS", "EXH-07",
+    "loss result, coins, REP, and Arena history stayed duplicate-proof")
+
+  U.tap(game, "a")
+  U.wait(120)
+  screen = game.stack:top()
+  assert(screen and screen.pending and screen.phase == "bet")
+  exhibition = screen.pending
+  assert(exhibition.kind == "EXHIBITION" and exhibition.match.id > lostId)
+  assert(exhibition.match.fighters[1].species == "DRAGONITE"
+    and exhibition.match.fighters[2].species == "MEWTWO")
+  U.log("PASS", "EXH-06",
+    "native loss acknowledgement opened the fixed exhibition retry")
+
+  local committedId = exhibition.match.id
+  local committedWinner = exhibition.match.winner
+  if committedWinner == 2 then U.tap(game, "down"); U.wait(5) end
+  U.tap(game, "a")
   for _ = 1, 6000 do
     U.wait(1)
     if screen.phase == "result" then break end
@@ -214,10 +272,6 @@ return function(game)
   assert(state.stage == api.arena_story.STAGES.CHOICE)
   assert(state.exhibition.attempts == 2 and state.exhibition.wins == 1)
   U.log("PASS", "EXH-04", "Series 3 win committed Giovanni's audience")
-
-  local repeated = api.arena_story.settleExhibition(game, committedId, true)
-  assert(not repeated)
-  U.log("PASS", "EXH-07", "Series 3 settlement could not duplicate")
 
   U.tap(game, "b")
   U.wait(60)

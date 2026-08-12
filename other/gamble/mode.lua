@@ -12,6 +12,8 @@ local BALL_NAMES = {
   "OAKSLAB_BULBASAUR_POKE_BALL", "OAKSLAB_EEVEE_POKE_BALL",
 }
 
+local ROULETTE_TEXT = "TEXT_BLACKJACK_CORNER_STARTER_ROULETTE"
+
 local OAK_GAMBLE_TEXTS = {
   _OaksLabRivalFedUpWithWaitingText =
     "{RIVAL}: Gramps!\nCan we gamble\nalready?",
@@ -46,23 +48,49 @@ function Gamble.install(mod, opts)
       "SPRITE_STARTER_ROULETTE_03" }
     local matches = {}
     for _, object in ipairs(lab and lab.objects or {}) do
-      for _, name in ipairs(BALL_NAMES) do
-        if object.name == name then
-          matches[#matches + 1] = object
+      local isGift = object._blackjackCornerOriginalSprite ~= nil
+      for index, name in ipairs(BALL_NAMES) do
+        if object.name == name or object.text == BALL_TEXTS[index] then
+          isGift = true
           break
         end
       end
+      -- Starter overhauls may replace the object identity as well as its text
+      -- binding. On the stock Red/Blue Lab, only gift stands occupy this part
+      -- of row 3, so native geometry is the final first-pass compatibility seam.
+      if not isGift then
+        local x, y = tonumber(object.x), tonumber(object.y)
+        if y == 3 and x and x >= 6 and x <= 8 and not object.trainerClass then
+          isGift = true
+        end
+      end
+      if isGift then matches[#matches + 1] = object end
+    end
+    table.sort(matches, function(left, right)
+      local lx, rx = tonumber(left.x) or 0, tonumber(right.x) or 0
+      if lx ~= rx then return lx < rx end
+      return (tonumber(left.index) or 0) < (tonumber(right.index) or 0)
+    end)
+    local function apply(object, sprite)
+      -- Keep the physical object but move its A-press onto a private text
+      -- binding. The full Randomizer owns the vanilla ball handlers at a
+      -- higher map-script priority; rebinding lets its starters work when
+      -- Gamble Mode is off without letting them replace the roulette.
+      if not tostring(object.sprite or ""):find("SPRITE_STARTER_ROULETTE_", 1, true) then
+        object._blackjackCornerOriginalSprite = object.sprite
+      end
+      if object.text ~= ROULETTE_TEXT then
+        object._blackjackCornerOriginalText = object.text or false
+      end
+      object.sprite = sprite
+      object.text = ROULETTE_TEXT
     end
     if #matches == 1 then
       -- Yellow has one gift ball, so use the center cabinet piece.
-      matches[1]._blackjackCornerOriginalSprite =
-        matches[1]._blackjackCornerOriginalSprite or matches[1].sprite
-      matches[1].sprite = pieces[2]
+      apply(matches[1], pieces[2])
     else
       for index, object in ipairs(matches) do
-        object._blackjackCornerOriginalSprite =
-          object._blackjackCornerOriginalSprite or object.sprite
-        object.sprite = pieces[math.min(index, #pieces)]
+        apply(object, pieces[math.min(index, #pieces)])
       end
     end
   end
@@ -72,6 +100,13 @@ function Gamble.install(mod, opts)
     for _, object in ipairs(lab and lab.objects or {}) do
       if object._blackjackCornerOriginalSprite then
         object.sprite = object._blackjackCornerOriginalSprite
+      end
+      if object._blackjackCornerOriginalText ~= nil then
+        if object._blackjackCornerOriginalText == false then
+          object.text = nil
+        else
+          object.text = object._blackjackCornerOriginalText
+        end
       end
     end
   end
@@ -95,7 +130,11 @@ function Gamble.install(mod, opts)
       data and data._blackjackCornerOriginalOakTexts
     if not text or not originals then return end
     for key in pairs(OAK_GAMBLE_TEXTS) do
-      text[key] = originals[key] == false and nil or originals[key]
+      if originals[key] == false then
+        text[key] = nil
+      else
+        text[key] = originals[key]
+      end
     end
   end
 
@@ -136,20 +175,26 @@ function Gamble.install(mod, opts)
   end
 
   local talk = {}
-  for _, textId in ipairs(BALL_TEXTS) do
-    talk[textId] = function(game, ow, npc, done)
-      if not active() then return runBase(textId, game, ow, npc, done) end
-      local flags = game.save.flags or {}
-      if flags.EVENT_GOT_STARTER then
-        opts.text(game, "The roulette is\nlocked for good.", done)
-        return
-      end
-      local invited = flags.EVENT_FOLLOWED_OAK_INTO_LAB
-        or flags.EVENT_FOLLOWED_OAK_INTO_LAB_2
-        or flags.EVENT_OAK_ASKED_TO_CHOOSE_MON
-      if not invited then return runBase(textId, game, ow, npc, done) end
-      mod.ui.push(game, screenId, { onClose = done })
+  talk[ROULETTE_TEXT] = function(game, ow, npc, done)
+    if not active() then
+      restoreLabSprites(game)
+      if done then done() end
+      return
     end
+    applyLabSprites(game)
+    local flags = game.save.flags or {}
+    if flags.EVENT_GOT_STARTER then
+      opts.text(game, "The roulette is\nlocked for good.", done)
+      return
+    end
+    local invited = flags.EVENT_FOLLOWED_OAK_INTO_LAB
+      or flags.EVENT_FOLLOWED_OAK_INTO_LAB_2
+      or flags.EVENT_OAK_ASKED_TO_CHOOSE_MON
+    if not invited then
+      opts.text(game, "OAK decides when\nthe wheel opens.", done)
+      return
+    end
+    mod.ui.push(game, screenId, { onClose = done })
   end
   talk.TEXT_OAKSLAB_OAK1 = function(game, ow, npc, done)
     if active() and not game.save.flags.EVENT_GOT_STARTER
@@ -250,10 +295,9 @@ function Gamble.install(mod, opts)
       if fallback then last.moves = { fallback } end
     end
     return out
-  end)
+  end, 1000)
 
-  mod.events:on("game.ready", function(ev)
-    local game = ev and ev.game
+  local function reconcileLab(game)
     if not game then return end
     if active() then
       applyLabSprites(game)
@@ -262,9 +306,32 @@ function Gamble.install(mod, opts)
       restoreLabSprites(game)
       restoreOakDialogue(game)
     end
-  end)
+  end
 
-  return { active = active, complete = complete }
+  -- Run after ordinary mod listeners. Gamble Mode owns the Lab objects and
+  -- their private A-press binding only while enabled; disabling it restores
+  -- the original bindings so the full Randomizer can award its saved starters.
+  mod.events:on("game.ready", function(ev)
+    local game = ev and ev.game
+    reconcileLab(game)
+  end, -10000)
+  mod.events:on("save.loaded", function(ev)
+    local game = require("src.core.Game")
+    reconcileLab(game)
+    local mapId = ev and ev.save and ev.save.player and ev.save.player.map
+    local ow = game and game.overworld
+    if mapId == "OAKS_LAB" and ow and ow.map
+        and ow.map.id == mapId and ow.reloadMap then
+      ow:reloadMap(mapId, "gamble-starter-sync")
+    end
+  end, -10000)
+  mod.events:on("map.exited", function(ev)
+    if ev and ev.toMapId == "OAKS_LAB" then
+      reconcileLab(require("src.core.Game"))
+    end
+  end, -10000)
+
+  return { active = active, complete = complete, reconcileLab = reconcileLab }
 end
 
 return Gamble

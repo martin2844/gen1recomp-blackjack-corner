@@ -2,6 +2,60 @@
 
 ## Unreleased
 
+## [0.7.0] - 2026-08-12
+
+### Added
+
+- Added compact casino branches to Viridian, Pewter, Cerulean, Vermilion,
+  Lavender, Fuchsia, Saffron, and Cinnabar, completing a gambling floor in
+  every Kanto city alongside the larger Pallet and Celadon casinos.
+- Added city-specific exterior signs, host/patron dialogue, blackjack,
+  Hold'em, bulk coin service, and one local arcade terminal to every branch.
+- Added eight optional post-Gym CASE ACE trainers with above-leader teams and
+  exactly-once themed case rewards.
+
+### Changed
+
+- Rebuilt all eight Gym Case pools around their leaders' elemental and
+  personality themes. Every pool now contains ten distinct prizes, inherited
+  filler is gone, and adjacent reel slots cannot repeat the same reward.
+- Cinnabar's branch preserves the Lab trade-room NPCs and script label; the
+  other regional branches replace only tutorial or flavor houses with no item
+  or progression reward.
+
+### Fixed
+
+- The full `pokemon_randomizer` mod can no longer override Gamble Mode's Oak
+  roulette or rival roll. Blackjack Corner now isolates the roulette A-press
+  from the Randomizer's starter-ball handlers and applies its rival projection
+  after randomized trainer teams, without disabling randomized encounters or
+  ordinary trainers. Disabling Gamble Mode returns control of both starter
+  balls to the Randomizer.
+- Continuing a save directly in Oak's Lab or a CASE ACE city now reconciles
+  the loaded campaign before rebuilding the live map, so the roulette and
+  earned challengers cannot remain hidden until another transition.
+- Cinnabar Casino now preserves the native Island → Lab → trade-room route and
+  returns to the Lab; Viridian Casino consumes the removed Trainer School's
+  invisible blackboard and notebook interactions.
+- ROM-free release validation now uses fixture-only CASE ACE teams while real
+  imported games retain the authored Cooltrainer portraits and complete teams.
+
+- Future-schema ending choices and metadata now survive an older build's
+  load/write cycle without being allowlisted away or reconciled by schema-nine
+  story rules.
+- Explicit EXPOSE or CHAMPION choices now remain authoritative when repairing
+  a partially written save whose derived stage conflicts with that choice.
+- Durable Arena tickets can resume the story, payout, and result phases when
+  their shared reputation receipt committed immediately before an interrupted
+  save boundary.
+- The Rocket broker no longer offers impossible repayment actions after EXPOSE
+  when the player's old debt is already clear.
+- The final-stage native driver now performs the promised mid-animation disk
+  restore and a real Series 3 loss, acknowledgement, retry, and duplicate
+  ledger audit instead of simulating those outcomes through story service calls.
+- GitHub releases are now built by the same Modkit packer used by validation,
+  so the tested and published archive shapes cannot drift.
+
 ## [0.6.0] - 2026-08-11
 
 ### Added

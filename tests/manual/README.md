@@ -41,15 +41,24 @@ Run the full case list in
 [`V0.6_IN_GAME_TESTING.md`](V0.6_IN_GAME_TESTING.md) before marking the release
 checklist complete.
 
+The unreleased regional expansion has its own supervised matrix in
+[`CASINO_NETWORK_IN_GAME_TESTING.md`](CASINO_NETWORK_IN_GAME_TESTING.md). It
+covers Randomizer coexistence in Oak's Lab, every city branch and sign, the
+eight themed Gym reels, and the post-badge CASE ACE battles and rewards.
+
 The internal Arena milestone driver, `drivers/v07_arena_audit.lua`, executes
 the deterministic Red/Blue gate and captures every required visual checkpoint. The
 complete human-readable matrix and launch commands live in
 [`V0.7_IN_GAME_TESTING.md`](V0.7_IN_GAME_TESTING.md).
-The final story driver, `drivers/final_story_foundation.lua`, executes all 34
-final-stage rows across Red EXPOSE and Blue CHAMPION, including cancellation,
-disk persistence, cap-safe reward delivery, and ending-reactive world dialogue.
+The final story matrix defines 34 final-stage rows across Red EXPOSE and Blue
+CHAMPION. `drivers/final_story_foundation.lua` automates the focused values and
+visual checks documented in that matrix, including a real paid-animation disk
+restore, native loss/retry, cancellation, cap-safe reward delivery, and
+ending-reactive world dialogue. Rows that still require supervised navigation
+are explicitly left unsigned in the matrix rather than inferred from an API or
+teleport.
 The current cumulative public results are recorded in
-[`releases/v0.6.0.md`](releases/v0.6.0.md); earlier public and internal
+[`releases/v0.7.0.md`](releases/v0.7.0.md); earlier public and internal
 milestone records remain available for detailed evidence.
 
 Before signing off a release:

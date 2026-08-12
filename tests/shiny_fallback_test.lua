@@ -4,6 +4,8 @@ local T = require("tests.modkit")
 local ImageWriter = require("src.import.ImageWriter")
 local HeadlessFs = assert(loadfile(
   "mods/blackjack_corner/tests/support/headless_fs.lua"))()
+local CasinoCatalog = assert(loadfile(
+  "mods/blackjack_corner/tests/support/casino_catalog.lua"))()
 
 local MOD = "mods/blackjack_corner"
 local SOURCE_PREFIX = "assets/" .. "generated/"
@@ -18,7 +20,7 @@ for _, provider in ipairs({
   { id = "shiny_visuals", path = MOD .. "/tests/fixtures/shiny_visuals" },
 }) do
   local run = T.sdk.loadMods({ provider.path, MOD }, {
-    data = T.fixtures.fresh(), dev = true,
+    data = CasinoCatalog.seed(T.fixtures.fresh()), dev = true,
     fs = HeadlessFs.new({ provider.path, MOD }),
   })
   T.eq(#run.errors, 0, "external shiny provider and Blackjack Corner load cleanly")
@@ -40,7 +42,7 @@ for _, provider in ipairs({
 end
 
 local run = T.sdk.loadMod(MOD, {
-  data = T.fixtures.fresh(), dev = true,
+  data = CasinoCatalog.seed(T.fixtures.fresh()), dev = true,
   fs = HeadlessFs.new({ MOD }),
 })
 T.eq(#run.errors, 0, "Blackjack Corner loads cleanly without a shiny provider")
@@ -219,7 +221,7 @@ do
   local external = T.sdk.loadMods({
     MOD .. "/tests/fixtures/shiny_indicators", MOD,
   }, {
-    data = T.fixtures.fresh(), dev = true,
+    data = CasinoCatalog.seed(T.fixtures.fresh()), dev = true,
     fs = HeadlessFs.new({ MOD .. "/tests/fixtures/shiny_indicators", MOD }),
   })
   T.eq(#external.errors, 0,

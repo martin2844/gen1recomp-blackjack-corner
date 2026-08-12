@@ -166,6 +166,11 @@ local future = State.sanitize({
   story = { stage = "GIOVANNI_FINALE", clues = {
     FUTURE_DOSSIER = true,
     [story.CLUES.LAB_ARCHIVE] = true,
+  }, ending = {
+    choice = "TAKEOVER",
+    rewardPending = 123,
+    rewardClaimed = false,
+    futureMarker = "keep",
   } },
 })
 T.eq(future.schema, 10, "a future campaign schema is never downgraded")
@@ -175,6 +180,21 @@ T.check(future.story.clues.FUTURE_DOSSIER,
   "future clue fields survive an older build")
 T.check(future.story.clues[story.CLUES.LAB_ARCHIVE],
   "known prerequisite clues cannot regress a future chapter")
+T.eq(future.story.ending.choice, "TAKEOVER",
+  "a future ending choice survives an older build")
+T.eq(future.story.ending.futureMarker, "keep",
+  "future ending metadata survives an older build")
+
+local futureSaved = { gamble_campaign = State.copy(future) }
+local futureStore = State.new({ save = {
+  get = function(_, key) return futureSaved[key] end,
+  set = function(_, key, value) futureSaved[key] = value end,
+} }, function() return true end)
+local futureLoaded = futureStore.load(false)
+T.eq(futureLoaded.story.ending.choice, "TAKEOVER",
+  "loading a future save preserves its ending choice")
+T.eq(futureSaved.gamble_campaign.story.ending.choice, "TAKEOVER",
+  "the load-write cycle cannot erase a future ending choice")
 
 saved.gamble_campaign.story.stage = story.STAGES.CHOICE
 saved.gamble_campaign.story.ending = { choice = nil }
@@ -210,6 +230,17 @@ T.eq(repairedEnding.story.ending.choice, story.ENDINGS.CHAMPION,
   "ending sanitation repairs a partially written champion transition")
 T.eq(repairedEnding.story.ending.rewardPending, State.CHAMPION_REWARD,
   "schema-nine migration restores an undelivered champion reward")
+local explicitEnding = State.sanitize({ schema = 9, story = {
+  stage = story.STAGES.EXPOSED,
+  ending = { choice = story.ENDINGS.CHAMPION,
+    rewardPending = 25000, rewardClaimed = false },
+} })
+T.eq(explicitEnding.story.stage, story.STAGES.CHAMPION,
+  "an explicit irreversible ending repairs a conflicting stage")
+T.eq(explicitEnding.story.ending.choice, story.ENDINGS.CHAMPION,
+  "stage repair cannot reverse an explicit ending choice")
+T.eq(explicitEnding.story.ending.rewardPending, 25000,
+  "stage repair cannot erase a banked champion reward")
 
 T.check(story.resetForQA(), "the story service exposes a deterministic QA reset")
 T.eq(story.snapshot(game).clueCount, 0, "QA reset clears only story progress")

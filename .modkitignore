@@ -39,6 +39,7 @@ tests/manual/releases/v0.6.0.md
 tests/manual/releases/v0.7.0.md
 tests/manual/releases/v0.7.1.md
 tests/manual/releases/v0.7.2.md
+tests/manual/releases/v0.7.3.md
 tests/manual/evidence/README.md
 tests/manual/drivers/high_roller_fresh.lua
 tests/manual/drivers/high_roller_rank_up.lua

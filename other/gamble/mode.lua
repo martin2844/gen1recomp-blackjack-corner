@@ -12,6 +12,8 @@ local BALL_NAMES = {
   "OAKSLAB_BULBASAUR_POKE_BALL", "OAKSLAB_EEVEE_POKE_BALL",
 }
 
+local ROULETTE_TEXT = "TEXT_BLACKJACK_CORNER_STARTER_ROULETTE"
+
 local OAK_GAMBLE_TEXTS = {
   _OaksLabRivalFedUpWithWaitingText =
     "{RIVAL}: Gramps!\nCan we gamble\nalready?",
@@ -53,9 +55,9 @@ function Gamble.install(mod, opts)
           break
         end
       end
-      -- Some randomizers replace both the object name and its text binding.
-      -- On the stock Red/Blue Lab, only gift stands occupy this part of row 3;
-      -- native geometry is the final compatibility seam on the first pass.
+      -- Starter overhauls may replace the object identity as well as its text
+      -- binding. On the stock Red/Blue Lab, only gift stands occupy this part
+      -- of row 3, so native geometry is the final first-pass compatibility seam.
       if not isGift then
         local x, y = tonumber(object.x), tonumber(object.y)
         if y == 3 and x and x >= 6 and x <= 8 and not object.trainerClass then
@@ -70,13 +72,18 @@ function Gamble.install(mod, opts)
       return (tonumber(left.index) or 0) < (tonumber(right.index) or 0)
     end)
     local function apply(object, sprite)
-      -- Another mod may legitimately replace the gift-ball art after the
-      -- first pass. Remember its latest non-roulette sprite so disabling
-      -- Gamble Mode restores that mod's art instead of vanilla's.
+      -- Keep the physical object but move its A-press onto a private text
+      -- binding. The full Randomizer owns the vanilla ball handlers at a
+      -- higher map-script priority; rebinding lets its starters work when
+      -- Gamble Mode is off without letting them replace the roulette.
       if not tostring(object.sprite or ""):find("SPRITE_STARTER_ROULETTE_", 1, true) then
         object._blackjackCornerOriginalSprite = object.sprite
       end
+      if object.text ~= ROULETTE_TEXT then
+        object._blackjackCornerOriginalText = object.text or false
+      end
       object.sprite = sprite
+      object.text = ROULETTE_TEXT
     end
     if #matches == 1 then
       -- Yellow has one gift ball, so use the center cabinet piece.
@@ -93,6 +100,13 @@ function Gamble.install(mod, opts)
     for _, object in ipairs(lab and lab.objects or {}) do
       if object._blackjackCornerOriginalSprite then
         object.sprite = object._blackjackCornerOriginalSprite
+      end
+      if object._blackjackCornerOriginalText ~= nil then
+        if object._blackjackCornerOriginalText == false then
+          object.text = nil
+        else
+          object.text = object._blackjackCornerOriginalText
+        end
       end
     end
   end
@@ -116,7 +130,11 @@ function Gamble.install(mod, opts)
       data and data._blackjackCornerOriginalOakTexts
     if not text or not originals then return end
     for key in pairs(OAK_GAMBLE_TEXTS) do
-      text[key] = originals[key] == false and nil or originals[key]
+      if originals[key] == false then
+        text[key] = nil
+      else
+        text[key] = originals[key]
+      end
     end
   end
 
@@ -157,21 +175,26 @@ function Gamble.install(mod, opts)
   end
 
   local talk = {}
-  for _, textId in ipairs(BALL_TEXTS) do
-    talk[textId] = function(game, ow, npc, done)
-      if not active() then return runBase(textId, game, ow, npc, done) end
-      applyLabSprites(game)
-      local flags = game.save.flags or {}
-      if flags.EVENT_GOT_STARTER then
-        opts.text(game, "The roulette is\nlocked for good.", done)
-        return
-      end
-      local invited = flags.EVENT_FOLLOWED_OAK_INTO_LAB
-        or flags.EVENT_FOLLOWED_OAK_INTO_LAB_2
-        or flags.EVENT_OAK_ASKED_TO_CHOOSE_MON
-      if not invited then return runBase(textId, game, ow, npc, done) end
-      mod.ui.push(game, screenId, { onClose = done })
+  talk[ROULETTE_TEXT] = function(game, ow, npc, done)
+    if not active() then
+      restoreLabSprites(game)
+      if done then done() end
+      return
     end
+    applyLabSprites(game)
+    local flags = game.save.flags or {}
+    if flags.EVENT_GOT_STARTER then
+      opts.text(game, "The roulette is\nlocked for good.", done)
+      return
+    end
+    local invited = flags.EVENT_FOLLOWED_OAK_INTO_LAB
+      or flags.EVENT_FOLLOWED_OAK_INTO_LAB_2
+      or flags.EVENT_OAK_ASKED_TO_CHOOSE_MON
+    if not invited then
+      opts.text(game, "OAK decides when\nthe wheel opens.", done)
+      return
+    end
+    mod.ui.push(game, screenId, { onClose = done })
   end
   talk.TEXT_OAKSLAB_OAK1 = function(game, ow, npc, done)
     if active() and not game.save.flags.EVENT_GOT_STARTER
@@ -272,7 +295,7 @@ function Gamble.install(mod, opts)
       if fallback then last.moves = { fallback } end
     end
     return out
-  end)
+  end, 1000)
 
   local function reconcileLab(game)
     if not game then return end
@@ -285,9 +308,9 @@ function Gamble.install(mod, opts)
     end
   end
 
-  -- Run after ordinary mod listeners. Randomizers commonly rewrite the Lab
-  -- gift objects at boot; Gamble Mode owns their final presentation while it
-  -- is enabled, but restores the randomizer's chosen art when disabled.
+  -- Run after ordinary mod listeners. Gamble Mode owns the Lab objects and
+  -- their private A-press binding only while enabled; disabling it restores
+  -- the original bindings so the full Randomizer can award its saved starters.
   mod.events:on("game.ready", function(ev)
     local game = ev and ev.game
     reconcileLab(game)

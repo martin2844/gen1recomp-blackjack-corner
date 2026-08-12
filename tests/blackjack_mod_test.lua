@@ -290,9 +290,10 @@ do
   local originalOakChoice = run.data.text._OaksLabOakChooseMonText
   local originalOakRival = run.data.text._OaksLabOakBePatientText
   local introGame = { data = run.data, save = { inventory = {}, coins = 0 } }
-  local randomized = run.data.maps.OAKS_LAB.objects[1]
-  randomized.name, randomized.text, randomized.sprite =
-    "RANDOMIZER_GIFT_1", "TEXT_RANDOMIZER_GIFT_1", "SPRITE_RANDOMIZER_TABLE"
+  local originalStarterTexts = {}
+  for index, object in ipairs(run.data.maps.OAKS_LAB.objects) do
+    originalStarterTexts[index] = object.text
+  end
   Runtime.emit("intro.oak_speech.answered", {
     saveKey = "gamble_mode", value = true, speech = { game = introGame },
   })
@@ -309,26 +310,29 @@ do
   for index, object in ipairs(run.data.maps.OAKS_LAB.objects) do
     T.eq(object.sprite, ("SPRITE_STARTER_ROULETTE_%02d"):format(index),
       "Oak's three gift balls become one roulette cabinet")
+    T.eq(object.text, "TEXT_BLACKJACK_CORNER_STARTER_ROULETTE",
+      "Gamble Mode moves starter interaction off the Randomizer-owned ball handler")
   end
-  local stopRandomizer = run.loader.events:on("game.ready", function()
-    randomized.name = "RANDOMIZER_GIFT_1"
-    randomized.text = "TEXT_RANDOMIZER_GIFT_1"
-    randomized.sprite = "SPRITE_RANDOMIZER_TABLE"
-  end, 0, "starter_randomizer_fixture")
+  local rouletteHandler
+  for _, contribution in ipairs(
+      run.loader.content.map_scripts:chain("OAKS_LAB")) do
+    rouletteHandler = rouletteHandler or (contribution.talk
+      and contribution.talk.TEXT_BLACKJACK_CORNER_STARTER_ROULETTE)
+  end
+  T.check(type(rouletteHandler) == "function",
+    "the isolated roulette text binding has a matching map handler")
   Runtime.emit("game.ready", { game = introGame })
-  stopRandomizer()
-  T.eq(randomized.sprite, "SPRITE_STARTER_ROULETTE_01",
-    "Gamble Mode's late hook reclaims a randomizer-rewritten starter table")
+  T.eq(run.data.maps.OAKS_LAB.objects[1].text,
+    "TEXT_BLACKJACK_CORNER_STARTER_ROULETTE",
+    "Gamble Mode keeps its isolated roulette handler after late boot listeners")
   Runtime.emit("intro.oak_speech.answered", {
     saveKey = "gamble_mode", value = false, speech = { game = introGame },
   })
-  T.eq(randomized.sprite, "SPRITE_RANDOMIZER_TABLE",
-    "disabling Gamble Mode restores the randomizer's latest table art")
   for index, object in ipairs(run.data.maps.OAKS_LAB.objects) do
-    if index ~= 1 then
     T.eq(object.sprite, "SPRITE_POKE_BALL",
       "declining Gamble Mode restores Oak's ordinary gift-ball art")
-    end
+    T.eq(object.text, originalStarterTexts[index],
+      "declining Gamble Mode returns starter interaction to the Randomizer-compatible ball handler")
   end
   T.eq(run.data.text._OaksLabOakChooseMonText, originalOakChoice,
     "declining Gamble Mode restores Oak's ordinary starter speech")
@@ -518,6 +522,37 @@ do
   Runtime.emit("intro.oak_speech.answered", {
     saveKey = "gamble_mode", value = true, speech = { game = game },
   })
+  local trainerChain = run.loader.hooks.chains["trainer.party"] or {}
+  local blackjackPriority
+  for _, entry in ipairs(trainerChain) do
+    if entry.owner == "blackjack_corner" then blackjackPriority = entry.priority end
+  end
+  T.check((blackjackPriority or 0) > 0,
+    "the roulette rival projection runs after the Randomizer's trainer projection")
+  local stopTrainerFixture = run.loader.hooks:wrap("trainer.party",
+    function(next, trainerClass, partyIndex, party)
+      local out = next(trainerClass, partyIndex, party)
+      local copy = {}
+      for index, slot in ipairs(out) do
+        copy[index] = {}
+        for key, value in pairs(slot) do copy[index][key] = value end
+      end
+      if copy[#copy] then copy[#copy].species = "FIXMON_C" end
+      return copy
+    end, 0, "pokemon_randomizer_fixture")
+  local stopEncounterFixture = run.loader.hooks:wrap("encounter.species",
+    function(next, encounter, context)
+      next(encounter, context)
+      return "FIXMON_B"
+    end, 0, "pokemon_randomizer_fixture")
+  local ordinaryParty = Runtime.call("trainer.party",
+    function(_, _, party) return party end,
+    "OPP_BUG_CATCHER", 1, { { species = "FIXMON_A", level = 5 } })
+  T.eq(ordinaryParty[1].species, "FIXMON_C",
+    "Gamble Mode leaves the Randomizer's ordinary trainer parties intact")
+  T.eq(Runtime.call("encounter.species", function(encounter) return encounter end,
+    "FIXMON_A", { mapId = "ROUTE_1" }), "FIXMON_B",
+    "Gamble Mode leaves the Randomizer's wild encounters intact")
   local ok = api.gamble.complete(game, "MAGIKARP", "ABRA")
   T.check(ok, "a risky Magikarp roulette roll is still deliverable")
   T.eq(game.save.party[1].moves[#game.save.party[1].moves].id, "TACKLE",
@@ -528,6 +563,8 @@ do
     "the rival's separately rolled species replaces the vanilla starter")
   T.eq(rivalParty[1].moves[1], "CONFUSION",
     "a risky rival roll receives the same anti-softlock treatment")
+  stopTrainerFixture()
+  stopEncounterFixture()
   Runtime.emit("intro.oak_speech.answered", {
     saveKey = "gamble_mode", value = false, speech = { game = game },
   })

@@ -28,9 +28,11 @@ data.
 
 ## Unreleased casino network expansion
 
-- Gamble Mode now reclaims Oak's starter-roulette cabinet after other starter
-  or randomizer mods rewrite the Lab gift table. Turning Gamble Mode off
-  restores the other mod's latest art instead of forcing vanilla sprites.
+- Gamble Mode now composes with `pokemon_randomizer`: when both are enabled,
+  Blackjack Corner owns Oak's roulette and both rolled starters, while the
+  Randomizer keeps control of wild encounters and ordinary trainer teams.
+  With Gamble Mode disabled, the Randomizer's saved starter-ball flow remains
+  intact.
 - Every Kanto city now has a gambling floor: Pallet and Celadon retain their
   large casinos, and eight compact native-tile branches add blackjack,
   Hold'em, coin sales, a local machine, a named exterior sign, and dialogue

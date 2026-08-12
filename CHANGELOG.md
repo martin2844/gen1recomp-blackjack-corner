@@ -23,9 +23,12 @@
 
 ### Fixed
 
-- Starter/randomizer mods can no longer replace Gamble Mode's roulette table
-  on Lab entry. Gamble Mode owns the final enabled presentation and restores
-  the other mod's latest sprite when disabled.
+- The full `pokemon_randomizer` mod can no longer override Gamble Mode's Oak
+  roulette or rival roll. Blackjack Corner now isolates the roulette A-press
+  from the Randomizer's starter-ball handlers and applies its rival projection
+  after randomized trainer teams, without disabling randomized encounters or
+  ordinary trainers. Disabling Gamble Mode returns control of both starter
+  balls to the Randomizer.
 
 - Future-schema ending choices and metadata now survive an older build's
   load/write cycle without being allowlisted away or reconciled by schema-nine

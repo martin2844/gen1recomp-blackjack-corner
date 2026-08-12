@@ -7,13 +7,17 @@ one-ball starter pass before its support status changes.
 
 ## Starter/randomizer compatibility
 
-- [ ] `COMPAT-01` Enable a starter randomizer, start a new Gamble Mode save,
-  and enter Oak's Lab. The three-piece roulette cabinet—not the randomizer's
-  replacement table—is visible and opens the Gamble Mode roulette.
+- [ ] `COMPAT-01` Enable `pokemon_randomizer` with wild encounters, trainers,
+  and starters randomized; then start a new Gamble Mode save and enter Oak's
+  Lab. The three-piece cabinet opens Blackjack Corner's roulette rather than
+  the Randomizer's three starter-ball offers.
 - [ ] `COMPAT-02` Complete the player and rival rolls. Both starters follow
-  Gamble Mode's saved results and the Lab rival battle remains reachable.
-- [ ] `COMPAT-03` Start another save with Gamble Mode disabled. The
-  randomizer's own table art and starter behavior remain intact.
+  Gamble Mode's saved results and the Lab rival battle remains reachable. Then
+  confirm one wild encounter and one non-rival trainer still use the active
+  Randomizer seed.
+- [ ] `COMPAT-03` Start another randomized save with Gamble Mode disabled.
+  Oak's three starter balls use the Randomizer's saved species, level, and
+  rival counterpick exactly as they do without Blackjack Corner installed.
 
 ## Regional casino route
 

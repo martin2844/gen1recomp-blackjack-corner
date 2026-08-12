@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [0.7.2] - 2026-08-12
+
 ### Fixed
 
 - Fixed Nuzlocke 2 compatibility at the end of Oak's new-game introduction.

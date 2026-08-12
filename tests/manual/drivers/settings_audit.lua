@@ -45,6 +45,18 @@ return function(game)
       loader.modOptions.blackjack_corner or {}
     return loader.modOptions.blackjack_corner
   end
+  local function textOf(box)
+    local lines = {}
+    for _, page in ipairs(box and box.pages or {}) do
+      for _, line in ipairs(page) do lines[#lines + 1] = line end
+    end
+    return (table.concat(lines, " "):gsub("%s+", " "))
+  end
+  local function pokemonCount()
+    local count = #(game.save.party or {})
+    for _, box in ipairs(game.save.boxes or {}) do count = count + #box end
+    return count
+  end
   local function assertFallbackRows(manager)
     local expected = {
       "gamble_default", "table_intros", "reveal_speed", "shiny_upgrades",
@@ -170,7 +182,7 @@ return function(game)
     "Gamble Default did not preselect the requested answer")
   assert(U.shot(game, shotDir .. "/gamble-prompt-before-oak.png"))
   pass("INTRO-01", "Gamble Mode appears on a clean screen before Oak")
-  pass(expectedYes and "INTRO-03" or "INTRO-02",
+  pass(expectedYes and "INTRO-03-CURSOR" or "INTRO-02-CURSOR",
     "global default preselects but does not skip the explicit answer")
   U.tap(game, "a")
 
@@ -189,6 +201,39 @@ return function(game)
     assert(game.save.inventory and game.save.inventory.COIN_CASE
       and game.save.coins == 100,
       "accepted Gamble Mode did not grant its Coin Case and 100 coins")
+    local roulettePieces = 0
+    for _, object in ipairs(game.data.maps.OAKS_LAB.objects or {}) do
+      if object.text == "TEXT_BLACKJACK_CORNER_STARTER_ROULETTE" then
+        roulettePieces = roulettePieces + 1
+      end
+    end
+    assert(roulettePieces > 0,
+      "accepted Gamble Mode did not claim Oak's roulette objects")
+    pass("INTRO-03",
+      "YES grants the Coin Case, 100 coins, and Oak's private roulette")
+  else
+    for _, object in ipairs(game.data.maps.OAKS_LAB.objects or {}) do
+      assert(object.text ~= "TEXT_BLACKJACK_CORNER_STARTER_ROULETTE",
+        "declined Gamble Mode left a Lab object bound to the roulette")
+    end
+
+    -- Run the real Gym-victory hook in ordinary mode. It must preserve the
+    -- native TM path and must not queue a Gamble Mode case.
+    local flagsBefore, inventoryBefore = game.save.flags, game.save.inventory
+    game.save.flags, game.save.inventory = {}, { COIN_CASE = 1 }
+    local nativeRewardCalls = 0
+    local Overworld = require("src.world.OverworldController")
+    Overworld.checkVictoryRewards({ runVictoryHook = function()
+      nativeRewardCalls = nativeRewardCalls + 1
+    end, game = game }, "OPP_MISTY", 1)
+    assert(nativeRewardCalls == 1 and game.save.inventory.CASCADEBADGE == 1
+      and game.save.inventory.TM_BUBBLEBEAM == 1,
+      "declined Gamble Mode did not preserve the native Gym reward path")
+    assert(not bucket.gym_case_queue or #bucket.gym_case_queue == 0,
+      "declined Gamble Mode queued a Gym case")
+    game.save.flags, game.save.inventory = flagsBefore, inventoryBefore
+    pass("INTRO-02",
+      "NO preserves Oak's ordinary starter handler and native Gym rewards")
   end
 
   -- A global preference must never mutate this campaign's saved answer.
@@ -198,6 +243,11 @@ return function(game)
   assert(bucket.gamble_mode == expectedYes,
     "changing Gamble Default rewrote the live campaign")
   pass("INTRO-05", "global default leaves the existing campaign untouched")
+
+  -- The rest of the driver validates live Gamble Mode-only screens. The
+  -- save-scoped default invariant above is already proven, so enable it
+  -- deliberately on the NO-default ROM rather than skipping half the gate.
+  bucket.gamble_mode = true
 
   local function popToWorld()
     while game.stack:top() and game.stack:top() ~= game.overworld do
@@ -232,21 +282,40 @@ return function(game)
   -- Story-critical Arena copy is forced even while ordinary introductions
   -- are disabled. Seed the public rank requirements, then call the real
   -- bookie handler instead of pushing the screen directly.
-  if expectedYes then
-    local campaign = api.campaign_state.defaults()
-    campaign.reputation.points = 4000
-    bucket.gamble_campaign = campaign
-    for _, badge in ipairs(api.reputation_rules.BADGES) do
-      game.save.inventory[badge] = 1
-    end
-    local bookie = assert(MapScripts.talkScript(
-      "ROCKET_BATTLE_ARENA", "TEXT_ARENA_BOOKIE"))
-    bookie(game, game.overworld, nil)
-    assert(game.stack:top().pages and not game.stack:top().screenId,
-      "Table Intros OFF skipped the Arena's forced story copy")
-    popToWorld()
-    pass("PLAY-02", "Arena narrative remains forced at KINGPIN access")
+  local campaign = api.campaign_state.defaults()
+  campaign.reputation.points = 4000
+  campaign.arena.unlocked = true
+  bucket.gamble_campaign = campaign
+  for _, badge in ipairs(api.reputation_rules.BADGES) do
+    game.save.inventory[badge] = 1
   end
+  local bookie = assert(MapScripts.talkScript(
+    "ROCKET_BATTLE_ARENA", "TEXT_ARENA_BOOKIE"))
+  local storyChecks = {
+    { stage = api.arena_story.STAGES.INVITATION, marker = "SERIES 3 IS READY" },
+    { stage = api.arena_story.STAGES.EXPOSED, ending = "EXPOSE",
+      marker = "burned the ledger" },
+    { stage = api.arena_story.STAGES.CHAMPION, ending = "CHAMPION",
+      marker = "Welcome, CHAMPION" },
+  }
+  for _, check in ipairs(storyChecks) do
+    campaign = api.campaign_state.defaults()
+    campaign.reputation.points, campaign.arena.unlocked = 4000, true
+    campaign.story.stage = check.stage
+    if check.ending then
+      campaign.story.ending.choice = check.ending
+      campaign.story.ending.rewardClaimed = true
+    end
+    bucket.gamble_campaign = campaign
+    bookie(game, game.overworld, nil)
+    local copy = textOf(game.stack:top())
+    assert(copy:find(check.marker, 1, true),
+      "Table Intros OFF skipped Arena copy for " .. check.stage
+        .. ": " .. copy)
+    popToWorld()
+  end
+  pass("PLAY-02",
+    "Arena invitation and both ending-reactive intros remain forced")
 
   manager:setOption("blackjack_corner", "shiny_upgrades", false)
   local prizes = game.data.screens.BlackjackCornerPokemonPrizes.new(game, {})
@@ -260,19 +329,184 @@ return function(game)
   assert(#game.stack:top().items == 3,
     "Shiny Upgrades ON did not restore NORMAL, SHINY, and CANCEL")
   game.stack:pop()
-  pass("PRIZE-01", "shiny purchase choice updates live without blocking normal prizes")
+  manager:setOption("blackjack_corner", "shiny_upgrades", false)
+  prizes = game.data.screens.BlackjackCornerPokemonPrizes.new(game, {})
+  local beforeCoins, beforePokemon = game.save.coins, pokemonCount()
+  prizes.onChoose(prizes.items[1])
+  local normalMenu = game.stack:top()
+  local normalCost = prizes.items[1].value.cost
+  normalMenu.items[1].onSelect()
+  assert(game.save.coins == beforeCoins - normalCost,
+    "ordinary Pokemon prize did not debit its listed price")
+  assert(pokemonCount() == beforePokemon + 1,
+    "ordinary Pokemon prize was not delivered to party or PC")
+  popToWorld()
+  pass("PRIZE-01",
+    "shiny choice updates live and ordinary purchase delivery succeeds")
 
-  local settings = assert(api.settings, "settings export is unavailable")
-  manager:setOption("blackjack_corner", "reveal_speed", "relaxed")
-  local relaxed = settings.revealStep(0.02)
-  manager:setOption("blackjack_corner", "reveal_speed", "normal")
-  local normal = settings.revealStep(0.02)
+  local speeds = { "relaxed", "normal", "fast" }
+  local function drive(screen, finished, maximum)
+    local frames = 0
+    while not finished(screen) and frames < maximum do
+      screen:update(1 / 60)
+      frames = frames + 1
+    end
+    assert(finished(screen), "screen animation did not finish within its frame budget")
+    return frames
+  end
+  local function ordered(label, runs)
+    assert(runs.relaxed.frames > runs.normal.frames
+      and runs.normal.frames > runs.fast.frames,
+      label .. " reveal frames were not RELAXED > NORMAL > FAST")
+    assert(runs.relaxed.result == runs.normal.result
+      and runs.normal.result == runs.fast.result,
+      label .. " result changed with reveal speed")
+    assert(runs.relaxed.payout == runs.normal.payout
+      and runs.normal.payout == runs.fast.payout,
+      label .. " payout changed with reveal speed")
+  end
+  local function baseCampaign()
+    local value = api.campaign_state.defaults()
+    value.reputation.points = 4000
+    value.arena.unlocked = true
+    for _, rank in ipairs(api.reputation_rules.RANKS) do
+      value.reputation.rankRewardsClaimed[rank.id] = true
+    end
+    return value
+  end
+
+  local rouletteRuns = {}
+  for _, speed in ipairs(speeds) do
+    manager:setOption("blackjack_corner", "reveal_speed", speed)
+    love.math.setRandomSeed(20260812)
+    local screen = game.data.screens.BlackjackCornerStarterRoulette.new(game, {})
+    screen:start()
+    local frames = drive(screen, function(value) return value.phase == "offer" end, 1000)
+    rouletteRuns[speed] = {
+      frames = frames,
+      result = screen.playerStarter .. ":" .. screen.rivalStarter,
+      payout = 0,
+    }
+  end
+  ordered("Starter Roulette", rouletteRuns)
+
+  local caseRuns = {}
+  for _, speed in ipairs(speeds) do
+    manager:setOption("blackjack_corner", "reveal_speed", speed)
+    love.math.setRandomSeed(20260812)
+    bucket.gamble_campaign = baseCampaign()
+    bucket.paid_case_claim = nil
+    game.save.coins = 100000
+    local screen = game.data.screens.BlackjackCornerPrizeCase.new(game, {})
+    screen:open()
+    local frames = drive(screen, function(value) return value.phase == "result" end, 1200)
+    assert(not screen.claimSaved, "Prize Case test reward could not be delivered")
+    caseRuns[speed] = {
+      frames = frames,
+      result = tostring(screen.winner.kind) .. ":"
+        .. tostring(screen.winner.id or screen.winner.species),
+      payout = 0,
+    }
+  end
+  ordered("Prize Case", caseRuns)
+
+  local horseRuns = {}
+  for _, speed in ipairs(speeds) do
+    manager:setOption("blackjack_corner", "reveal_speed", speed)
+    love.math.setRandomSeed(20260812)
+    bucket.gamble_campaign = baseCampaign()
+    game.save.coins = 100000
+    local screen = game.data.screens.BlackjackCornerHorseRacing.new(game, {})
+    screen:start()
+    local frames = drive(screen, function(value) return value.phase == "result" end, 1500)
+    horseRuns[speed] = {
+      frames = frames, result = screen.race.winner, payout = screen.payout,
+    }
+  end
+  ordered("Horse Racing", horseRuns)
+
+  local plinkoRuns = {}
+  for _, speed in ipairs(speeds) do
+    manager:setOption("blackjack_corner", "reveal_speed", speed)
+    love.math.setRandomSeed(20260812)
+    bucket.gamble_campaign = baseCampaign()
+    game.save.coins = 100000
+    local screen = game.data.screens.BlackjackCornerPlinko.new(game, {})
+    screen:dropBall()
+    local frames = drive(screen, function(value) return value.phase == "result" end, 1000)
+    plinkoRuns[speed] = {
+      frames = frames, result = screen.drop.slot, payout = screen.payout,
+    }
+  end
+  ordered("Plinko", plinkoRuns)
+
+  local arenaRuns = {}
+  for _, speed in ipairs(speeds) do
+    manager:setOption("blackjack_corner", "reveal_speed", speed)
+    love.math.setRandomSeed(20260812)
+    bucket.gamble_campaign = baseCampaign()
+    game.save.coins = 100000
+    local screen = game.data.screens.BlackjackCornerBattleArena.new(game, {})
+    assert(screen.phase == "bet", "Arena test did not begin on the wager screen")
+    screen:startBattle()
+    local frames = drive(screen, function(value) return value.phase == "result" end, 5000)
+    arenaRuns[speed] = {
+      frames = frames,
+      result = screen.pending.match.fighters[1].species .. ":"
+        .. screen.pending.match.fighters[2].species .. ":"
+        .. screen.pending.match.winner,
+      payout = screen.pending.payout,
+    }
+  end
+  ordered("Battle Arena", arenaRuns)
+  pass("PLAY-03",
+    "all five production screens change pace without changing results or payouts")
+
+  local crashRuns, tubeRuns = {}, {}
+  for _, speed in ipairs(speeds) do
+    manager:setOption("blackjack_corner", "reveal_speed", speed)
+    love.math.setRandomSeed(20260812)
+    bucket.gamble_campaign = baseCampaign()
+    game.save.coins = 100000
+    local crash = game.data.screens.BlackjackCornerCrash.new(game, {})
+    crash:launch()
+    crash.crashPoint = 999
+    crash:update(0.05)
+    crashRuns[speed] = { elapsed = crash.elapsed, multiplier = crash.multiplier }
+    crash:cashOut()
+
+    love.math.setRandomSeed(20260812)
+    bucket.gamble_campaign = baseCampaign()
+    game.save.coins = 100000
+    local tube = game.data.screens.BlackjackCornerTubeFlyer.new(game, {})
+    tube:start()
+    tube:update(0.02)
+    tubeRuns[speed] = {
+      y = tube.run.y, velocity = tube.run.velocity, x = tube.run.tubes[1].x,
+    }
+    tube:finish()
+  end
+  for _, speed in ipairs({ "normal", "fast" }) do
+    assert(crashRuns[speed].elapsed == crashRuns.relaxed.elapsed
+      and crashRuns[speed].multiplier == crashRuns.relaxed.multiplier,
+      "Reveal Speed changed Crash growth")
+    assert(tubeRuns[speed].y == tubeRuns.relaxed.y
+      and tubeRuns[speed].velocity == tubeRuns.relaxed.velocity
+      and tubeRuns[speed].x == tubeRuns.relaxed.x,
+      "Reveal Speed changed Tube Flyer physics")
+  end
+  pass("PLAY-04", "Crash growth and Tube Flyer physics ignore Reveal Speed")
+
+  -- Leave the persisted global options at their exact seed values. This makes
+  -- a second verify pass on the same identity a valid repeatability check.
+  manager:setOption("blackjack_corner", "gamble_default", "on")
+  manager:setOption("blackjack_corner", "table_intros", false)
   manager:setOption("blackjack_corner", "reveal_speed", "fast")
-  local fast = settings.revealStep(0.02)
-  assert(relaxed < normal and normal < fast,
-    "native settings did not produce ordered reveal clocks")
-  pass("PLAY-03", "Relaxed, Normal, and Fast expose ordered shared reveal clocks")
-  pass("PLAY-04", "Crash and Tube Flyer remain outside the shared reveal clock")
+  manager:setOption("blackjack_corner", "shiny_upgrades", false)
+  manager:setOption("blackjack_corner", "shiny_sparkles", false)
+  manager:setOption("blackjack_corner", "shiny_chime", false)
+  manager:setOption("blackjack_corner", "shiny_markers", false)
+  manager:setOption("blackjack_corner", "shiny_colors", false)
 
   U.log("SETTINGS AUDIT COMPLETE")
   love.event.quit(0)

@@ -52,6 +52,12 @@ persistence, external shiny-provider composition, Randomizer ordering, runtime
 toggles, and the invariant that global preferences never rewrite an existing
 campaign's Gamble Mode choice.
 
+The v0.7.3 Gym Case reaction gate uses
+`drivers/gym_case_comments_audit.lua`. Run it through the same isolated
+identity flow above: Red forces Misty's HORSEA reaction, while Blue forces her
+TM11 BUBBLEBEAM callback. Each run captures the delivered reward, rarity
+header, and exact prize comment after confirming that delivery succeeded.
+
 The internal Arena milestone driver, `drivers/v07_arena_audit.lua`, executes
 the deterministic Red/Blue gate and captures every required visual checkpoint. The
 complete human-readable matrix and launch commands live in

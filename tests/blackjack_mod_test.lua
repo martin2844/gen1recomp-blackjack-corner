@@ -118,7 +118,11 @@ for fixtureIndex, fixture in ipairs(regionalFixtures) do
   for index = 1, math.max(warpIndex, alternate or 0) do
     warps[index] = { x = index, y = 1, destMap = "FIXTURE_MAP", destWarp = 1 }
   end
-  warps[warpIndex] = { x = wx, y = wy, destMap = interiorId, destWarp = 1 }
+  local exteriorDestination = exteriorId == "CINNABAR_ISLAND"
+    and "CINNABAR_LAB" or interiorId
+  warps[warpIndex] = {
+    x = wx, y = wy, destMap = exteriorDestination, destWarp = 1,
+  }
   if alternate then
     warps[alternate] = { x = wx, y = wy - 2, destMap = interiorId, destWarp = 1 }
   end
@@ -137,17 +141,33 @@ for fixtureIndex, fixture in ipairs(regionalFixtures) do
   end
   local regionalHouseBlocks = {}
   for index = 1, 16 do regionalHouseBlocks[index] = 15 end
+  local interiorDestination = interiorId == "CINNABAR_LAB_TRADE_ROOM"
+    and "CINNABAR_LAB" or "LAST_MAP"
+  local interiorDestWarp = interiorId == "CINNABAR_LAB_TRADE_ROOM"
+    and 3 or warpIndex
   data.maps[interiorId] = {
     id = interiorId,
     label = interiorId == "CINNABAR_LAB_TRADE_ROOM"
       and "CinnabarLabTradeRoom" or interiorId,
     index = 220 + fixtureIndex, tileset = "LOBBY", width = 4, height = 4,
     blocks = regionalHouseBlocks, borderBlock = 15, connections = {}, signs = {},
-    warps = { { x = 2, y = 7, destMap = "LAST_MAP", destWarp = warpIndex },
-      { x = 3, y = 7, destMap = "LAST_MAP", destWarp = warpIndex } },
+    warps = { { x = 2, y = 7, destMap = interiorDestination,
+        destWarp = interiorDestWarp },
+      { x = 3, y = 7, destMap = interiorDestination,
+        destWarp = interiorDestWarp } },
     objects = interiorObjects,
   }
 end
+data.maps.CINNABAR_LAB = {
+  id = "CINNABAR_LAB", label = "CinnabarLab", index = 240,
+  tileset = "LOBBY", width = 5, height = 5,
+  blocks = {}, borderBlock = 15, connections = {}, signs = {}, objects = {},
+  warps = {
+    { x = 2, y = 9, destMap = "CINNABAR_ISLAND", destWarp = 3 },
+    { x = 3, y = 9, destMap = "CINNABAR_ISLAND", destWarp = 3 },
+    { x = 8, y = 3, destMap = "CINNABAR_LAB_TRADE_ROOM", destWarp = 1 },
+  },
+}
 local houseBlocks = {}
 for i = 1, 16 do houseBlocks[i] = 15 end
 data.maps.REDS_HOUSE_1F = {
@@ -249,6 +269,35 @@ do
   end
   T.check(keptScientist and cinnabar.label == "CinnabarLabTradeRoom",
     "Cinnabar's casino branch preserves its native Lab interaction surface")
+  T.eq(run.data.maps.CINNABAR_ISLAND.warps[3].destMap, "CINNABAR_LAB",
+    "Cinnabar keeps its ordinary Lab entrance instead of inventing a direct door")
+  T.eq(run.data.maps.CINNABAR_LAB.warps[3].destMap,
+    "CINNABAR_LAB_TRADE_ROOM",
+    "Cinnabar Casino remains reachable through the native Lab trade-room door")
+  T.eq(cinnabar.warps[1].destMap, "CINNABAR_LAB",
+    "Cinnabar Casino exits back into the Lab instead of skipping outdoors")
+  T.eq(cinnabar.warps[1].destWarp, 3,
+    "Cinnabar Casino preserves the native trade-room return door")
+
+  local Data = require("src.core.Data")
+  local MapScripts = require("src.script.MapScripts")
+  local previousScripts = Data.map_scripts
+  Data.map_scripts = run.data.map_scripts
+  MapScripts.invalidate("VIRIDIAN_SCHOOL_HOUSE")
+  local schoolScript = MapScripts.get("VIRIDIAN_SCHOOL_HOUSE")
+  T.check(schoolScript and schoolScript.onInteract({}, {}, 3, 0),
+    "Viridian Casino consumes the old invisible blackboard interaction")
+  T.check(schoolScript.onInteract({}, {}, 3, 4),
+    "Viridian Casino consumes the old invisible notebook interaction")
+  T.check(not schoolScript.onInteract({}, {}, 2, 4),
+    "Viridian Casino leaves unrelated interaction cells available to other mods")
+  Data.map_scripts = previousScripts
+  MapScripts.invalidate("VIRIDIAN_SCHOOL_HOUSE")
+
+  T.eq(run.data.trainers.OPP_CASE_ACE_M.basePic, "OPP_COOLTRAINER_M",
+    "imported catalogs retain the real CASE ACE trainer portrait")
+  T.eq(run.data.trainers.OPP_CASE_ACE_M.parties[1][1].species, "MANKEY",
+    "imported catalogs retain the authored CASE ACE teams")
 
   local leaderCaps = { 14, 21, 24, 29, 43, 43, 47, 50 }
   T.eq(#api.case_challengers.locations, 8,
@@ -325,6 +374,26 @@ do
   T.eq(run.data.maps.OAKS_LAB.objects[1].text,
     "TEXT_BLACKJACK_CORNER_STARTER_ROULETTE",
     "Gamble Mode keeps its isolated roulette handler after late boot listeners")
+  local Game = require("src.core.Game")
+  local oldData, oldSave, oldOverworld = Game.data, Game.save, Game.overworld
+  local coldReload
+  Game.data, Game.save = run.data, introGame.save
+  Game.overworld = {
+    map = { id = "OAKS_LAB" },
+    reloadMap = function(_, mapId, reason) coldReload = { mapId, reason } end,
+  }
+  run.data.maps.OAKS_LAB.objects[1].sprite = "SPRITE_POKE_BALL"
+  run.data.maps.OAKS_LAB.objects[1].text = originalStarterTexts[1]
+  Runtime.emit("save.loaded", { save = {
+    player = { map = "OAKS_LAB" },
+  } })
+  T.eq(run.data.maps.OAKS_LAB.objects[1].text,
+    "TEXT_BLACKJACK_CORNER_STARTER_ROULETTE",
+    "cold CONTINUE restores Gamble Mode's private roulette interaction")
+  T.check(coldReload and coldReload[1] == "OAKS_LAB"
+      and coldReload[2] == "gamble-starter-sync",
+    "cold CONTINUE rebuilds Oak's live Lab objects after roulette reconciliation")
+  Game.data, Game.save, Game.overworld = oldData, oldSave, oldOverworld
   Runtime.emit("intro.oak_speech.answered", {
     saveKey = "gamble_mode", value = false, speech = { game = introGame },
   })
@@ -912,7 +981,8 @@ do
   local Game = require("src.core.Game")
   local Data = require("src.core.Data")
   local MapScripts = require("src.script.MapScripts")
-  local oldData, oldSave, oldStack = Game.data, Game.save, Game.stack
+  local oldData, oldSave, oldStack, oldOverworld =
+    Game.data, Game.save, Game.stack, Game.overworld
   local oldMapScripts = Data.map_scripts
   local location = api.case_challengers.locations[1]
   Game.data = run.data
@@ -953,8 +1023,38 @@ do
   })
   T.check(not Game.save.objectToggles[location.map][location.objectName],
     "regional challengers disappear when Gamble Mode is disabled")
+
+  Runtime.emit("intro.oak_speech.answered", {
+    saveKey = "gamble_mode", value = true, speech = { game = Game },
+  })
+  Game.save.objectToggles[location.map][location.objectName] = nil
+  local reloaded
+  Game.overworld = {
+    map = { id = location.map },
+    reloadMap = function(_, mapId, reason)
+      if reason == "case-challenger-sync" then
+        reloaded = { mapId, reason }
+      end
+    end,
+  }
+  Runtime.emit("save.loaded", { save = {
+    player = { map = location.map },
+  } })
+  T.check(Game.save.objectToggles[location.map][location.objectName],
+    "CONTINUE applies a badge-earned CASE ACE toggle to the loaded save")
+  T.check(reloaded and reloaded[1] == location.map
+      and reloaded[2] == "case-challenger-sync",
+    "CONTINUE rebuilds a live CASE ACE city after reconciling its toggle")
+  reloaded = nil
+  Game.overworld.map.id = "PALLET_TOWN"
+  Runtime.emit("save.loaded", { save = {
+    player = { map = "PALLET_TOWN" },
+  } })
+  T.eq(reloaded, nil,
+    "CONTINUE does not rebuild maps that cannot contain a CASE ACE")
   Data.map_scripts = oldMapScripts
-  Game.data, Game.save, Game.stack = oldData, oldSave, oldStack
+  Game.data, Game.save, Game.stack, Game.overworld =
+    oldData, oldSave, oldStack, oldOverworld
 end
 T.eq(run.data.maps.GAME_CORNER.blocks[82], 61,
   "a double-door replaces one lower Game Corner floor block")

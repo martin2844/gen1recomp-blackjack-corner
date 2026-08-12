@@ -315,6 +315,16 @@ function Gamble.install(mod, opts)
     local game = ev and ev.game
     reconcileLab(game)
   end, -10000)
+  mod.events:on("save.loaded", function(ev)
+    local game = require("src.core.Game")
+    reconcileLab(game)
+    local mapId = ev and ev.save and ev.save.player and ev.save.player.map
+    local ow = game and game.overworld
+    if mapId == "OAKS_LAB" and ow and ow.map
+        and ow.map.id == mapId and ow.reloadMap then
+      ow:reloadMap(mapId, "gamble-starter-sync")
+    end
+  end, -10000)
   mod.events:on("map.exited", function(ev)
     if ev and ev.toMapId == "OAKS_LAB" then
       reconcileLab(require("src.core.Game"))

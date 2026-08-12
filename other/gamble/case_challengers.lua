@@ -83,6 +83,34 @@ Challengers.parties = {
     { species = "DRAGONITE", level = 56 } },
 }
 
+-- The repository's public validation base intentionally contains only three
+-- synthetic Pokemon and one trainer portrait.  Keep that structural gate
+-- useful without weakening the imported-ROM build: real Red/Blue catalogs
+-- always take the themed teams above, while the fixture gets eight valid
+-- parties under the same trainer IDs and party numbers.
+local function registrationCatalog(mod)
+  if mod.content.pokemon:get("MANKEY")
+      and mod.content.trainers:get("OPP_COOLTRAINER_M") then
+    return Challengers.parties, {
+      male = "OPP_COOLTRAINER_M", female = "OPP_COOLTRAINER_F",
+    }
+  end
+  local parties = {}
+  local species = { "FIXMON_A", "FIXMON_B", "FIXMON_C" }
+  for index = 1, #Challengers.parties do
+    parties[index] = {}
+    for slot = 1, 3 do
+      parties[index][slot] = {
+        species = species[((index + slot - 2) % #species) + 1],
+        level = 10 + index * 5 + slot,
+      }
+    end
+  end
+  return parties, {
+    male = "OPP_FIX_YOUNGSTER", female = "OPP_FIX_YOUNGSTER",
+  }
+end
+
 local function saveId(location)
   return location.map .. "_obj_" .. tostring(location.objectIndex)
 end
@@ -91,13 +119,19 @@ local function awardKey(location)
   return "case_challenger_awarded_" .. location.key:lower()
 end
 
+local function locationForMap(mapId)
+  for _, location in ipairs(Challengers.locations) do
+    if location.map == mapId then return location end
+  end
+end
+
 function Challengers.register(mod, opts)
+  local registeredParties, basePics = registrationCatalog(mod)
   for gender, trainerClass in pairs(Challengers.TRAINERS) do
     mod.content.trainers:register(trainerClass, {
       id = trainerClass, name = "CASE ACE",
-      basePic = gender == "female" and "OPP_COOLTRAINER_F"
-        or "OPP_COOLTRAINER_M",
-      baseMoney = 45, parties = Challengers.parties,
+      basePic = basePics[gender],
+      baseMoney = 45, parties = registeredParties,
     })
   end
 
@@ -174,6 +208,20 @@ function Challengers.register(mod, opts)
     end
   end, -100)
   mod.events:on("game.ready", function(ev) sync(ev and ev.game) end, -100)
+  mod.events:on("save.loaded", function(ev)
+    local game = require("src.core.Game")
+    local mapId = ev and ev.save and ev.save.player and ev.save.player.map
+    local location = locationForMap(mapId)
+    sync(game, mapId)
+    -- CONTINUE builds the saved overworld immediately before save.loaded.
+    -- If the player saved in a CASE ACE city, rebuild that one live NPC list
+    -- after applying its badge toggle; otherwise a newly eligible challenger
+    -- stays absent until the player leaves and re-enters the map.
+    local ow = game and game.overworld
+    if location and ow and ow.map and ow.map.id == mapId and ow.reloadMap then
+      ow:reloadMap(mapId, "case-challenger-sync")
+    end
+  end, -100)
   mod.events:on("map.exited", function(ev)
     sync(require("src.core.Game"), ev and ev.toMapId)
   end, -100)

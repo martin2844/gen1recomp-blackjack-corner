@@ -718,7 +718,8 @@ also rejected without charging coins when the Bag has no room.
 - Gamble Mode is a new-save choice. It cannot be enabled retroactively from
   the options menu, and declining it leaves story rewards untouched.
 - The Underground Arena is a Gamble Mode campaign destination and requires
-  KINGPIN. The two casinos and seven earlier games remain available without it.
+  KINGPIN. The city casino network and seven earlier games remain available
+  without it; CASE ACE trainers, Gym Cases, and story changes remain Gamble-only.
 - Blackjack does not include splits, insurance, or surrender.
 - Texas Hold'em is a custom house-banked game, not multiplayer poker.
 - Mods or total conversions that replace the Celadon Game Corner, Prize Room,

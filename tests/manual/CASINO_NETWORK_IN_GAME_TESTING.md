@@ -25,7 +25,8 @@ Visit Pallet, Viridian, Pewter, Cerulean, Vermilion, Lavender, Celadon,
 Fuchsia, Saffron, and Cinnabar.
 
 - [ ] `CITY-01` Every city has a readable named casino sign and an unobstructed
-  entrance from the overworld.
+  entrance. Seven regional branches open directly from the overworld;
+  Cinnabar's sign points through the Pokemon Lab to its preserved trade room.
 - [ ] `CITY-02` Every compact branch has readable local dialogue, blackjack,
   Hold'em, coin sales, and its advertised local machine.
 - [ ] `CITY-03` Every table/machine can be approached, opened, cancelled, and
@@ -33,8 +34,9 @@ Fuchsia, Saffron, and Cinnabar.
 - [ ] `CITY-04` Exit both door cells in every branch and re-enter after a disk
   save/restore. The correct city and doorway are preserved.
 - [ ] `CITY-05` In Cerulean, verify both original exterior doors return to the
-  correct casino exit. In Cinnabar, verify the original Lab scientist/trades
-  still work before and after using all casino services.
+  correct casino exit. In Cinnabar, enter through the Lab and verify its
+  ordinary entrance plus the original scientist/trades still work before and
+  after using all casino services.
 - [ ] `CITY-06` Progress the ordinary story through every affected city.
   Required Gyms, marts, Centers, routes, Oak flow, Safari Zone, Silph, Lab,
   Mansion, and Fly destinations remain available.

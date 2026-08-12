@@ -59,6 +59,8 @@ tests/manual/drivers/v07_arena_audit.lua
 tests/manual/drivers/arena_palette_slots.lua
 tests/manual/drivers/arena_world_polish.lua
 tests/manual/drivers/card_suit_audit.lua
+tests/manual/drivers/casino_network_audit.lua
+tests/manual/drivers/randomizer_compat_audit.lua
 tests/manual/drivers/final_story_foundation.lua
 assets/screenshots/blackjack-bet-selection.png
 assets/screenshots/blackjack-hand-actions.png

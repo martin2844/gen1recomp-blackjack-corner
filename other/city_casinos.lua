@@ -167,15 +167,29 @@ function CityCasinos.register(mod)
       })
 
       local exits = { location.sourceWarp, location.alternateWarp or location.sourceWarp }
+      local casinoWarps
+      if location.preserveObjects then
+        casinoWarps = {}
+        for index = 1, 2 do
+          local original = interior.warps and interior.warps[index]
+          casinoWarps[index] = {
+            x = 5 + index, y = 9,
+            destMap = original and original.destMap or "CINNABAR_LAB",
+            destWarp = original and original.destWarp or 3,
+          }
+        end
+      else
+        casinoWarps = {
+          { x = 6, y = 9, destMap = "LAST_MAP", destWarp = exits[1] },
+          { x = 7, y = 9, destMap = "LAST_MAP", destWarp = exits[2] },
+        }
+      end
       local casino = {
         tileset = "LOBBY", width = 6, height = 5,
         blocks = World.cityCasinoBlocks(), borderBlock = 15,
         palette = location.palette, connections = {}, signs = {},
         objects = casinoObjects(location, interior.objects),
-        warps = {
-          { x = 6, y = 9, destMap = "LAST_MAP", destWarp = exits[1] },
-          { x = 7, y = 9, destMap = "LAST_MAP", destWarp = exits[2] },
-        },
+        warps = casinoWarps,
       }
       -- The Cinnabar traders still resolve one flavor line through the ROM
       -- map label; keeping that label preserves every original trade-room
@@ -199,10 +213,13 @@ function CityCasinos.registerScripts(mod, opts)
     local special = SPECIALS[location.special]
     mod.content.map_scripts:register(location.exterior, { talk = {
       TEXT_REGIONAL_CASINO_SIGN = function(game, _, _, done)
-        opts.text(game, location.city .. "\nCASINO\fBLACKJACK, HOLD'EM\nAND LOCAL ACTION.", done)
+        local message = location.key == "CINNABAR"
+          and "CINNABAR CASINO\fINSIDE POKéMON LAB.\nTRADE ROOM."
+          or location.city .. "\nCASINO\fBLACKJACK, HOLD'EM\nAND LOCAL ACTION."
+        opts.text(game, message, done)
       end,
     } })
-    mod.content.map_scripts:register(location.interior, { talk = {
+    local script = { talk = {
       TEXT_CITY_CASINO_HOST = function(game, _, _, done)
         opts.text(game, location.welcome, done)
       end,
@@ -229,7 +246,17 @@ function CityCasinos.registerScripts(mod, opts)
         local opener = special.luxury and opts.openLuxury or opts.open
         opener(game, message, screen[location.special], done)
       end,
-    } })
+    } }
+    if location.key == "VIRIDIAN" then
+      -- This branch replaces the Trainer School. Its blackboard and notebook
+      -- are base onInteract hooks rather than objects, so removing the room's
+      -- objects alone would leave two invisible, school-themed interactions
+      -- floating over the casino floor. Consume only those exact old cells.
+      script.onInteract = function(_, _, x, y)
+        return x == 3 and (y == 0 or y == 4)
+      end
+    end
+    mod.content.map_scripts:register(location.interior, script)
   end
 end
 

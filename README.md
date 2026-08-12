@@ -20,11 +20,21 @@ The final chapter follows evidence from that pit to Cinnabar, returns for a
 fixed Dragonite-versus-Mewtwo exhibition, and ends with an irreversible choice
 to expose Rocket or become the house champion.
 
-The v0.7.1 release is certified on Pokemon Red and Blue. Pokemon Yellow support
+The v0.7.2 release is certified on Pokemon Red and Blue. Pokemon Yellow support
 is available but remains experimental until its distinct one-ball Oak flow has
 its own native release gate. The mod contains no ROM or ROM-derived artwork;
 world and shiny graphics are generated locally from the player's imported game
 data.
+
+## Version 0.7.2 Nuzlocke compatibility
+
+- Nuzlocke 2's post-Oak World Building dialogue now waits until Oak's intro
+  screen has closed. Starting a new game with both mods enabled no longer
+  leaves an opaque white screen on top of the game.
+- The compatibility handoff is scoped to an active, successfully loaded
+  Nuzlocke mod. Blackjack Corner's standalone new-game flow and the older
+  Nuzlocke setup remain unchanged.
+- The fix is regression-tested and native-tested on Pokemon Red and Blue.
 
 ## Version 0.7.1 settings and onboarding
 
@@ -172,7 +182,7 @@ The implementation and internal milestone train are mapped in
 [docs/GAMBLE_MODE_ROADMAP.md](docs/GAMBLE_MODE_ROADMAP.md). Human UI/E2E signoff
 uses the supervised drivers and matrix in [`tests/manual`](tests/manual); the
 public release record is
-[tests/manual/releases/v0.7.1.md](tests/manual/releases/v0.7.1.md), with the
+[tests/manual/releases/v0.7.2.md](tests/manual/releases/v0.7.2.md), with the
 detailed Arena phase gate retained in
 [tests/manual/V0.7_IN_GAME_TESTING.md](tests/manual/V0.7_IN_GAME_TESTING.md).
 
@@ -315,7 +325,7 @@ detailed Arena phase gate retained in
 
 ## Install
 
-1. Download `blackjack_corner-0.7.1.zip` from the
+1. Download `blackjack_corner-0.7.2.zip` from the
    [latest release](https://github.com/martin2844/gen1recomp-blackjack-corner/releases/latest).
    Use the named mod ZIP, not GitHub's automatic source-code archives.
 2. Open Gen1Recomp and choose **MODS > Import mod .zip**.
@@ -778,6 +788,10 @@ also rejected without charging coins when the Bag has no room.
   without it; CASE ACE trainers, Gym Cases, and story changes remain Gamble-only.
 - Blackjack does not include splits, insurance, or surrender.
 - Texas Hold'em is a custom house-banked game, not multiplayer poker.
+- Nuzlocke 1.x and Nuzlocke 2's pre-game setup can share the new-game flow.
+  Blackjack Corner defers Nuzlocke's post-Oak World Building dialogue until
+  Oak has fully left, preventing the completed intro from becoming a white,
+  input-blocking screen.
 - Mods or total conversions that replace the Celadon Game Corner, Prize Room,
   or their scripts may conflict even if the launcher cannot detect it.
 - Save a backup before combining large content mods.

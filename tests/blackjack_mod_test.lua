@@ -343,6 +343,32 @@ do
     "the persistent setting can preselect Gamble Mode for a new campaign")
   run.loader.modOptions.blackjack_corner = {}
 
+  -- Nuzlocke 2's default World Building listener opens an Oak flavor box
+  -- from intro.oak_speech.finished. The engine emits that event before it
+  -- pops OakSpeech, so an uncoordinated listener makes Oak pop the new box
+  -- and leaves the completed opaque speech screen white forever.
+  local introOverlay = { pages = { { "OAK FLAVOR" } } }
+  local introStack = { states = {} }
+  function introStack:top() return self.states[#self.states] end
+  local introDone = false
+  local compatSpeech = {
+    onDone = function() introDone = true end,
+  }
+  local compatGame = {
+    mods = { mods = { nuzlocke = { enabled = true } } },
+    stack = introStack,
+  }
+  compatSpeech.game = compatGame
+  introStack.states = { compatSpeech, introOverlay }
+  Runtime.emit("intro.oak_speech.finished", { speech = compatSpeech })
+  T.eq(introStack:top(), compatSpeech,
+    "Nuzlocke's post-intro flavor is deferred until Oak can pop itself")
+  table.remove(introStack.states)
+  compatSpeech.onDone()
+  T.check(introDone, "the original Oak completion callback still runs")
+  T.eq(introStack:top(), introOverlay,
+    "the deferred Nuzlocke flavor resumes after Oak exits")
+
   run.data.text._OaksLabOakChooseMonText =
     "OAK: There are 3\nPOKEMON here!"
   run.data.text._OaksLabOakBePatientText =

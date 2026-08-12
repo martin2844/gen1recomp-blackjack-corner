@@ -72,6 +72,7 @@ return function(ctx)
     local ok, message = ctx.giveReward(self.game, self.winner)
     self.refunded = false
     self.claimSaved = not ok
+    self.delivered = ok
     if ok then
       if self.cost > 0 then mod.save:set(self.claimKey, nil) end
       self.hasSavedClaim = false
@@ -95,7 +96,12 @@ return function(ctx)
       self.reelOffset = Rules.REEL_STOP_OFFSET * (1 - (1 - progress) ^ 4)
       if progress >= 1 then self:settle() end
     elseif self.oneShot and (input:wasPressed("a") or input:wasPressed("b")) then
+      local dialogue = self.delivered and ctx.resultDialogue
+        and ctx.resultDialogue(self.caseData, self.winner) or nil
       self:close()
+      if dialogue then
+        self.game.stack:push(mod.ui.TextBox.new(self.game, dialogue))
+      end
     elseif input:wasPressed("a") then
       if self.claimSaved then
         self.phase = "ready"

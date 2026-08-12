@@ -227,6 +227,12 @@ function GymCases.install(mod, opts)
     return gym and gym.dialogue or nil
   end
 
+  local function rewardDialogue(entry, reward)
+    local gym = entry and GymCases.GYMS[entry.badge]
+    if not gym or not (opts.comments and opts.comments.forReward) then return nil end
+    return opts.comments.forReward({ badge = entry.badge, leader = gym.leader }, reward)
+  end
+
   local function victoryDialogue(game, reward)
     local lines, text = {}, game.data.text or {}
     for _, label in ipairs(reward.dialogue or {}) do
@@ -291,6 +297,7 @@ function GymCases.install(mod, opts)
     definitions = GymCases.GYMS,
     enqueueChallenge = enqueueChallenge,
     leaderDialogue = leaderDialogue,
+    rewardDialogue = rewardDialogue,
     onChosen = onChosen,
     onDelivered = remove,
   }

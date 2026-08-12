@@ -20,13 +20,13 @@ The final chapter follows evidence from that pit to Cinnabar, returns for a
 fixed Dragonite-versus-Mewtwo exhibition, and ends with an irreversible choice
 to expose Rocket or become the house champion.
 
-The v0.6.0 release is certified on Pokemon Red and Blue. Pokemon Yellow support
+The v0.7.0 release is certified on Pokemon Red and Blue. Pokemon Yellow support
 is available but remains experimental until its distinct one-ball Oak flow has
 its own native release gate. The mod contains no ROM or ROM-derived artwork;
 world and shiny graphics are generated locally from the player's imported game
 data.
 
-## Unreleased casino network expansion
+## Version 0.7.0 casino network expansion
 
 - Gamble Mode now composes with `pokemon_randomizer`: when both are enabled,
   Blackjack Corner owns Oak's roulette and both rolled starters, while the
@@ -152,11 +152,28 @@ The implementation and internal milestone train are mapped in
 [docs/GAMBLE_MODE_ROADMAP.md](docs/GAMBLE_MODE_ROADMAP.md). Human UI/E2E signoff
 uses the supervised drivers and matrix in [`tests/manual`](tests/manual); the
 public release record is
-[tests/manual/releases/v0.6.0.md](tests/manual/releases/v0.6.0.md), with the
+[tests/manual/releases/v0.7.0.md](tests/manual/releases/v0.7.0.md), with the
 detailed Arena phase gate retained in
 [tests/manual/V0.7_IN_GAME_TESTING.md](tests/manual/V0.7_IN_GAME_TESTING.md).
 
 ## Screenshots
+
+### Casino network, Randomizer compatibility, and themed cases
+
+<table>
+  <tr>
+    <td width="50%"><img src="assets/screenshots/randomizer-starter-roulette.png" alt="Oak's Gamble Mode starter roulette while Pokemon Randomizer is active"><br><sub>Gamble Mode reclaims Oak's cabinet while the real Randomizer continues to own wild encounters and ordinary trainers.</sub></td>
+    <td width="50%"><img src="assets/screenshots/gym-water-case-reel.png" alt="Misty's Water Case reel with Water and Ice themed prizes"><br><sub>Every Gym now spins a distinct ten-prize pool built around its leader.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="assets/screenshots/regional-casino-viridian.png" alt="The compact Viridian Casino branch"><br><sub>Eight signed regional branches bring Blackjack, Hold'em, coins, and local games across Kanto.</sub></td>
+    <td width="50%"><img src="assets/screenshots/regional-casino-cinnabar.png" alt="The Cinnabar Casino inside the Pokemon Lab trade room"><br><sub>Cinnabar's experimental floor preserves its scientists and native Lab route.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="assets/screenshots/regional-case-ace-cerulean.png" alt="Cerulean's post-Gym CASE ACE challenger"><br><sub>Eight badge-gated CASE ACEs offer stronger optional fights and one replay-safe themed case.</sub></td>
+    <td width="50%"></td>
+  </tr>
+</table>
 
 ### Final Gamble Mode chapter
 
@@ -278,7 +295,7 @@ detailed Arena phase gate retained in
 
 ## Install
 
-1. Download `blackjack_corner-0.6.0.zip` from the
+1. Download `blackjack_corner-0.7.0.zip` from the
    [latest release](https://github.com/martin2844/gen1recomp-blackjack-corner/releases/latest).
    Use the named mod ZIP, not GitHub's automatic source-code archives.
 2. Open Gen1Recomp and choose **MODS > Import mod .zip**.

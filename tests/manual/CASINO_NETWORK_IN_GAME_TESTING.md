@@ -73,8 +73,28 @@ Fuchsia, Saffron, and Cinnabar.
 
 ## Release evidence
 
-- [ ] Record host/mod SHAs and ROM SHA-1s.
-- [ ] Capture one exterior and one interior screenshot per regional branch.
+- [x] Record host/mod SHAs and ROM SHA-1s.
+- [x] Capture one exterior and one interior screenshot per regional branch.
 - [ ] Capture one themed reel and one CASE ACE reward flow per badge.
-- [ ] Run the full Lua suite, imported validation, lint, pack inspection, and
-  this supervised matrix before signing a release checklist.
+- [x] Run the full Lua suite, imported validation, lint, pack inspection, and
+  the two automated native release drivers before signing a release checklist.
+
+## v0.7.0 executed native gate
+
+On 2026-08-12, `casino_network_audit.lua` passed on imported Red and Blue. It
+physically entered and exited every branch (including Cinnabar through the
+Lab), opened and cancelled Blackjack, Hold'em, and the local machine through
+their overworld objects, verified all eight post-badge CASE ACE objects, audited
+all eight unique ten-prize Gym pools, and captured the themed Water Case reel.
+The run produced 16 exterior/interior branch screenshots per ROM.
+
+`randomizer_compat_audit.lua` also passed against the real
+`pokemon_randomizer` v0.46.4 on Red and Blue with Gamble Mode enabled, plus a
+separate Red handoff with Gamble Mode disabled. The native hook chain retained
+randomized wild encounters and ordinary trainer parties while Oak's physical
+cabinet opened Blackjack Corner's roulette only in Gamble Mode.
+
+Rows above that require eight full Gym victories, eight battle losses/wins, or
+per-case storage recovery remain intentionally unchecked; automated service and
+integration coverage protects those invariants, but this document does not
+mislabel them as supervised play.

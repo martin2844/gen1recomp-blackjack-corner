@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [0.7.0] - 2026-08-12
+
 ### Added
 
 - Added compact casino branches to Viridian, Pewter, Cerulean, Vermilion,
@@ -29,6 +31,14 @@
   after randomized trainer teams, without disabling randomized encounters or
   ordinary trainers. Disabling Gamble Mode returns control of both starter
   balls to the Randomizer.
+- Continuing a save directly in Oak's Lab or a CASE ACE city now reconciles
+  the loaded campaign before rebuilding the live map, so the roulette and
+  earned challengers cannot remain hidden until another transition.
+- Cinnabar Casino now preserves the native Island → Lab → trade-room route and
+  returns to the Lab; Viridian Casino consumes the removed Trainer School's
+  invisible blackboard and notebook interactions.
+- ROM-free release validation now uses fixture-only CASE ACE teams while real
+  imported games retain the authored Cooltrainer portraits and complete teams.
 
 - Future-schema ending choices and metadata now survive an older build's
   load/write cycle without being allowlisted away or reconciled by schema-nine

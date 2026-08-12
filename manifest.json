@@ -1,7 +1,7 @@
 {
   "id": "blackjack_corner",
   "name": "Blackjack Corner",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "api": 2,
   "entry": "main.lua",
   "profile": "content",

@@ -108,6 +108,11 @@ jobs:
           ref: 6f75a64c461070b07af1f89ad97fcf2473694eb8
           path: .release-host
 
+      - name: Install LuaJIT
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y luajit
+
       - name: Determine version
         id: ver
         env:

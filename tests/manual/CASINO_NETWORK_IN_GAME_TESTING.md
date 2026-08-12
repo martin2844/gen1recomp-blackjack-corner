@@ -28,7 +28,9 @@ Fuchsia, Saffron, and Cinnabar.
   entrance. Seven regional branches open directly from the overworld;
   Cinnabar's sign points through the Pokemon Lab to its preserved trade room.
 - [ ] `CITY-02` Every compact branch has readable local dialogue, blackjack,
-  Hold'em, coin sales, and its advertised local machine.
+  Hold'em, two-way coin exchange, a limited Pokemon prize list, and its
+  advertised local machine. Pallet's clerk exposes the same early redemption
+  and cash-out services.
 - [ ] `CITY-03` Every table/machine can be approached, opened, cancelled, and
   reopened; no cabinet, NPC, wall, or double-door cell traps the player.
 - [ ] `CITY-04` Exit both door cells in every branch and re-enter after a disk
@@ -40,6 +42,13 @@ Fuchsia, Saffron, and Cinnabar.
 - [ ] `CITY-06` Progress the ordinary story through every affected city.
   Required Gyms, marts, Centers, routes, Oak flow, Safari Zone, Silph, Lab,
   Mansion, and Fly destinations remain available.
+- [ ] `CITY-07` Redeem one Pokemon at Pallet or a regional branch. The normal
+  receipt appears, then the native nickname question and naming screen; verify
+  the chosen name in both a party delivery and a full-party PC delivery.
+- [ ] `CITY-08` At one regional clerk, cash out 50, 250, 500, 1,000, and MAX
+  coin bundles. Every bundle pays ¥1,000 per 50 coins, insufficient balances
+  remain unchanged, and a near-full wallet only offers a payout that fits
+  without crossing ¥999,999.
 
 ## Themed Gym Cases
 
@@ -53,6 +62,8 @@ Fuchsia, Saffron, and Cinnabar.
   items; Giovanni's Master Ball remains extremely rare rather than guaranteed.
 - [ ] `GYM-04` Fill the relevant storage before delivery, save/reload, free
   space, and retry from Start. The exact reward survives and is delivered once.
+- [ ] `GYM-05` Pull a Pokemon from one Gym Case and one ACE CASE. Both open the
+  nickname flow before returning to their distinct leader/ACE reaction.
 
 ## CASE ACE encounters
 
@@ -64,7 +75,8 @@ Fuchsia, Saffron, and Cinnabar.
 - [ ] `ACE-03` Lose each fight once. Normal blackout/recovery works and the
   trainer remains available without granting or queuing a case.
 - [ ] `ACE-04` Win each fight. The loss line appears on the battle screen, the
-  overworld reward dialogue follows, and one matching themed case opens.
+  ACE's own overworld reward dialogue follows, and one mixed-pool ACE CASE
+  opens without using the nearby Gym Leader's theme or reaction.
 - [ ] `ACE-05` Save/reload before case delivery, deliver it, then revisit and
   trigger an ordinary map victory hook. No second case, payout, or queue entry
   is created.

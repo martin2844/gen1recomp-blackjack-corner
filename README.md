@@ -9,8 +9,9 @@ Its optional Gamble Mode reaches from Oak's Lab to every Gym: the starter is
 random, the rival rolls separately, Gym TMs become themed mystery cases, and
 post-Gym case challengers appear across Kanto. Pallet Town gains its own gloomy
 casino, while compact regional branches put blackjack, Hold'em, and a local
-machine in Viridian, Pewter, Cerulean, Vermilion, Lavender, Fuchsia, Saffron,
-and Cinnabar. Celadon's expanded floor remains the main destination, with
+machine plus a limited Pokemon redemption counter in Viridian, Pewter,
+Cerulean, Vermilion, Lavender, Fuchsia, Saffron, and Cinnabar. Celadon's
+expanded floor remains the main destination, with
 blackjack, house-banked Texas Hold'em, Crash, Tube Flyer,
 Prize Cases, animated horse racing, Plinko, Pokemon pawning, shinies, rare
 items, and a one-time Master Ball. Gamble Mode's final High Roller rank now
@@ -94,7 +95,8 @@ data.
   gone, and the reel never places an identical prize in adjacent slots.
 - Eight optional CASE ACE trainers appear after their matching badges. Their
   complete teams sit above the nearby Gym Leader's level cap, remain retryable
-  after a loss, and award one replay-safe themed case after the first win.
+  after a loss, and award one replay-safe ACE CASE after the first win. ACE
+  reels use a shared mixed pool across types instead of copying the local Gym.
 
 ## Version 0.6.0 final Gamble Mode chapter
 
@@ -134,7 +136,7 @@ keeps players upgrading from v0.5.0 out of the closed terminal.
 | Area | What the release adds |
 | --- | --- |
 | Adventure | Optional save-scoped Gamble Mode changes the starter, rival team, all eight Gym Leader rewards, and adds eight post-Gym CASE ACE battles |
-| Pallet Town | A new early-game casino with blackjack, Hold'em, horse racing, Plinko, Prize Cases, coin sales, pawning, gamblers, and hidden coins |
+| Pallet Town | A new early-game casino with blackjack, Hold'em, horse racing, Plinko, Prize Cases, coin sales, local Pokemon redemption, pawning, gamblers, and hidden coins |
 | Celadon | A dedicated 20x18 lounge with two tables, three front cabinets, and a rear Horse Racing and Plinko arcade |
 | Eight games | Blackjack, Hold'em, Crash, Tube Flyer, Prize Case, animated horse racing, Plinko, and the Underground Arena |
 | Services | Bulk coin purchases and a pawn broker that stores up to five exact party Pokemon for later redemption |
@@ -206,7 +208,7 @@ detailed Arena phase gate retained in
 
 ## Screenshots
 
-### Casino network, Randomizer compatibility, and themed cases
+### Casino network, Randomizer compatibility, and case battles
 
 <table>
   <tr>
@@ -218,7 +220,7 @@ detailed Arena phase gate retained in
     <td width="50%"><img src="assets/screenshots/regional-casino-cinnabar.png" alt="The Cinnabar Casino inside the Pokemon Lab trade room"><br><sub>Cinnabar's experimental floor preserves its scientists and native Lab route.</sub></td>
   </tr>
   <tr>
-    <td width="50%"><img src="assets/screenshots/regional-case-ace-cerulean.png" alt="Cerulean's post-Gym CASE ACE challenger"><br><sub>Eight badge-gated CASE ACEs offer stronger optional fights and one replay-safe themed case.</sub></td>
+    <td width="50%"><img src="assets/screenshots/regional-case-ace-cerulean.png" alt="Cerulean's post-Gym CASE ACE challenger"><br><sub>Eight badge-gated CASE ACEs offer stronger optional fights and one replay-safe mixed-reward case.</sub></td>
     <td width="50%"></td>
   </tr>
 </table>
@@ -431,14 +433,15 @@ contains exactly one final reward:
 Pallet and Celadon remain the flagship floors. Viridian, Pewter, Cerulean,
 Vermilion, Lavender, Fuchsia, Saffron, and Cinnabar now each advertise a
 compact branch in a story-neutral interior. Every branch offers blackjack,
-Texas Hold'em, bulk coin sales, and one regional arcade game, with local hosts
-and patrons commenting on schools, fossils, Misty, sailors, ghosts, the Safari
-Zone, Silph, or Cinnabar experiments.
+Texas Hold'em, bulk coin sales and cash-outs, a limited local Pokemon prize
+list, and one regional arcade game, with local hosts and patrons commenting on schools,
+fossils, Misty, sailors, ghosts, the Safari Zone, Silph, or Cinnabar
+experiments. Celadon's dedicated Prize Room keeps the complete catalogue.
 
 After each badge, a stronger CASE ACE appears in the surrounding city. These
 are optional fixed encounters—not random ambushes and never Gym replacements.
 Their weakest party member is above the nearby leader's strongest Pokemon;
-winning once creates a persistent themed case, while losses and interrupted
+winning once creates a persistent mixed-reward case, while losses and interrupted
 delivery remain retryable without duplicating the reward.
 
 ### Pallet Town mini-casino
@@ -450,7 +453,9 @@ contains everything needed to enter the economy without waiting for Celadon:
 - A live race terminal, an animated Plinko board, and a 500-coin Prize Case.
 - Full blackjack and Texas Hold'em tables with dedicated dealers, using the
   same rules, progressive wagering, and Coin Case balance as Celadon.
-- A bulk coin clerk using the original exchange rate.
+- A bulk coin clerk that buys or cashes out coins at the original exchange
+  rate, with immediate access to the same limited local Pokemon redemption
+  list used by the regional branches.
 - A Rocket pawn broker who accepts party Pokemon under the same five-ticket,
   30%-redemption rules as Celadon.
 - Four wandering patrons with original dialogue about bad systems, hidden
@@ -582,14 +587,19 @@ The mod records Hold'em hands, wins, and royal flushes in its save data.
 - Hidden dealer hole card, readable overlapping hands, animated card movement,
   disabled action states, result pulses, and Game Corner sound effects.
 
-### Faster coin purchases
+### Two-way coin exchange
 
 The original coin clerk now offers 50, 250, 500, and 1,000 coins at once, plus
 a capacity-aware **MAX** option. Every selection preserves the original
 exchange rate of ¥1,000 for 50 coins, checks the player's money and Coin Case,
-and never exceeds the mod's expanded 1,000,000-coin limit. Native recompilation
-saves preserve the full balance; exporting back to a cartridge-format `.sav`
-necessarily clamps it to that format's original 9,999-coin maximum.
+and never exceeds the mod's expanded 1,000,000-coin limit.
+
+The same clerk can cash out complete 50-coin bundles at that identical rate,
+including 50, 250, 500, 1,000, and a capacity-aware **MAX** option. Cash-outs
+are atomic, require the Coin Case, and stop before the native ¥999,999 money
+limit so neither coins nor money can disappear. Native recompilation saves
+preserve the full Coin Case balance; exporting back to a cartridge-format
+`.sav` necessarily clamps it to that format's original 9,999-coin maximum.
 
 The original slot machines and hidden Game Corner coin pickups are patched to
 cross the old 9,999 boundary without dropping or truncating coins.
@@ -703,7 +713,9 @@ Pokemon Yellow adds Vulpix at level 18 for 1,000 coins, Wigglytuff at level
 
 Prize Pokemon update the Pokedex and go to the party when space is available
 or the active PC box otherwise. If both party and storage are full, the sale
-is refused and no coins are taken.
+is refused and no coins are taken. Successfully delivered Pokemon from a prize
+counter, Starter Roulette, paid Prize Case, Gym Case, or ACE CASE all offer the
+native nickname screen, including rewards sent directly to the PC.
 
 ### Persistent shiny Pokemon
 

@@ -10,6 +10,12 @@ return function(mod, Catalog, Pawn, config)
   local Service = {}
   local coinCap = config.coinCap
 
+  local function moneyCap(game)
+    local constants = game and game.data and game.data.constants
+    return math.max(0, math.floor(tonumber(constants and constants.moneyCap)
+      or tonumber(config.moneyCap) or 999999))
+  end
+
   function Service.coins(game)
     return math.max(0, tonumber(game.save.coins) or 0)
   end
@@ -63,6 +69,54 @@ return function(mod, Catalog, Pawn, config)
     return true, ("Thanks! Here are\nyour %d coins!"):format(amount), cost
   end
 
+  function Service.cashOutOffers(game)
+    local coins = math.floor(Service.coins(game))
+    local money = math.max(0, math.floor(tonumber(game.save.money) or 0))
+    local bundle = math.max(1, math.floor(tonumber(config.coinBundle) or 50))
+    local price = math.max(1, math.floor(tonumber(config.coinBundlePrice) or 1000))
+    local packs = math.min(math.floor(coins / bundle),
+      math.floor(math.max(0, moneyCap(game) - money) / price))
+    local maximum = packs * bundle
+    if maximum <= 0 then return {} end
+
+    local offers, seen = {}, {}
+    local function add(amount, label)
+      offers[#offers + 1] = {
+        amount = amount,
+        payout = math.floor(amount / bundle) * price,
+        label = label or (tostring(amount) .. " COINS"),
+      }
+      seen[amount] = true
+    end
+    for _, amount in ipairs({ 50, 250, 500, 1000 }) do
+      if amount <= maximum and amount % bundle == 0 then add(amount) end
+    end
+    if not seen[maximum] then add(maximum, "MAX " .. maximum) end
+    return offers
+  end
+
+  function Service.cashOutCoins(game, amount)
+    amount = math.floor(tonumber(amount) or 0)
+    local bundle = math.max(1, math.floor(tonumber(config.coinBundle) or 50))
+    local price = math.max(1, math.floor(tonumber(config.coinBundlePrice) or 1000))
+    if not (game.save.inventory and game.save.inventory.COIN_CASE) then
+      return false, "You don't have a\nCOIN CASE!"
+    end
+    if amount <= 0 or amount % bundle ~= 0 then
+      return false, ("Cash-outs use\n%d-coin bundles."):format(bundle)
+    end
+    local current = math.floor(Service.coins(game))
+    if current < amount then return false, "You don't have\nthat many coins." end
+    local money = math.max(0, math.floor(tonumber(game.save.money) or 0))
+    local payout = math.floor(amount / bundle) * price
+    if payout > math.max(0, moneyCap(game) - money) then
+      return false, "That payout won't\nfit in your wallet."
+    end
+    game.save.coins = current - amount
+    game.save.money = money + payout
+    return true, ("Cashed out %d\ncoins for ¥%d!"):format(amount, payout), payout
+  end
+
   local function shinyDVs()
     return { hp = 0, attack = 10, defense = 10, speed = 10, special = 10 }
   end
@@ -95,7 +149,37 @@ return function(mod, Catalog, Pawn, config)
     if dex then
       dex.seen[prize.species], dex.owned[prize.species] = true, true
     end
-    return true, inParty and "party" or ("BOX " .. tostring(boxNum))
+    return true, inParty and "party" or ("BOX " .. tostring(boxNum)), mon
+  end
+
+  function Service.askNickname(game, mon, onDone)
+    local stack = game and game.stack
+    if not (mon and stack and stack.push) then
+      if onDone then onDone() end
+      return false
+    end
+    local def = game.data.pokemon[mon.species]
+    local displayName = (def and def.name) or mon.species or "POKEMON"
+    local label = game.data.text and game.data.text._DoYouWantToNicknameText
+    local text = label and label:gsub("\t", "\n")
+      :gsub("{RAM:?[%w_]*}", displayName)
+      or ("Do you want to\ngive a nickname\nto %s?"):format(displayName)
+    stack:push(mod.ui.TextBox.new(game, text, nil, {
+      choice = function(yes)
+        if not yes then
+          if onDone then onDone() end
+          return
+        end
+        stack:push(mod.ui.NamingScreen.new(game, {
+          title = "NICKNAME?", maxLen = 10,
+          onDone = function(name)
+            if name and #name > 0 then mon.nickname = name end
+            if onDone then onDone() end
+          end,
+        }))
+      end,
+    }))
+    return true
   end
 
   function Service.buyPokemon(game, prize, shiny)
@@ -105,12 +189,12 @@ return function(mod, Catalog, Pawn, config)
     end
     local cost = prize.cost + (shiny and Catalog.SHINY_SURCHARGE or 0)
     if Service.coins(game) < cost then return false, "Sorry, you need\nmore coins." end
-    local ok, destination = Service.givePokemon(game, prize, shiny)
+    local ok, destination, mon = Service.givePokemon(game, prize, shiny)
     if not ok then return false, "Your party and PC\nboxes are full." end
     game.save.coins = Service.coins(game) - cost
     local name = game.data.pokemon[prize.species].name or prize.species
     return true, (shiny and "SHINY " or "") .. name
-      .. " was sent\nto your " .. destination .. "!"
+      .. " was sent\nto your " .. destination .. "!", mon
   end
 
   function Service.buyItem(game, prize)
@@ -215,9 +299,10 @@ return function(mod, Catalog, Pawn, config)
 
   function Service.giveCaseReward(game, reward)
     if reward.kind == "pokemon" then
-      local ok, destination = Service.givePokemon(game, reward, false)
+      local ok, destination, mon = Service.givePokemon(game, reward, false)
       if not ok then return false, "STORAGE FULL" end
-      return true, reward.label, destination
+      Service.askNickname(game, mon)
+      return true, reward.label, destination, mon
     end
     if not Bag.add(game.save, reward.id, reward.quantity or 1, game.data) then
       return false, "BAG FULL"

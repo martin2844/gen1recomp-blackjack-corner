@@ -1,5 +1,6 @@
 -- Gym Leader reward replacement for Gamble Mode. Badges remain vanilla;
--- every leader and regional challenger awards one persistent, themed case.
+-- leaders award themed cases while regional challengers share the same
+-- replay-safe queue without inheriting Gym pools or Gym Leader dialogue.
 local GymCases = {}
 
 GymCases.KEY = "gym_case_queue"
@@ -173,15 +174,23 @@ function GymCases.install(mod, opts)
     local id = requestedId or (tostring(reward.badge) .. ":" .. tostring(sequence))
     mod.save:set(GymCases.NEXT_KEY, sequence + 1)
     local entry = { id = id, badge = reward.badge, order = gym.order,
-      leader = gym.leader, tm = reward.item, source = reward.source }
+      leader = gym.leader, tm = reward.item, source = reward.source,
+      kind = reward.kind }
     rows[#rows + 1] = entry
     saveQueue(rows)
     return entry, true
   end
 
   local function enqueueChallenge(badge, sourceId)
-    return enqueue({ badge = badge, source = sourceId },
+    return enqueue({ badge = badge, source = sourceId, kind = "case_ace" },
       "challenger:" .. tostring(sourceId))
+  end
+
+  -- v0.7.0-v0.7.3 challenger claims predate the explicit kind field. The
+  -- stable ID keeps those pending cases on the ACE path after an upgrade.
+  local function isChallenge(entry)
+    return type(entry) == "table" and (entry.kind == "case_ace"
+      or tostring(entry.id or ""):match("^challenger:") ~= nil)
   end
 
   local function remove(entry)
@@ -192,10 +201,9 @@ function GymCases.install(mod, opts)
     saveQueue(rows)
   end
 
-  local function pool(game, entry)
-    local gym = entry and GymCases.GYMS[entry.badge]
+  local function materialize(game, rewards)
     local rows = {}
-    for _, reward in ipairs(gym and gym.rewards or {}) do
+    for _, reward in ipairs(rewards or {}) do
       if reward.kind == "item" and game.data.items[reward.id] then
         local row = copy(reward)
         row.label = row.label or game.data.items[row.id].name or row.id
@@ -207,6 +215,12 @@ function GymCases.install(mod, opts)
       end
     end
     return rows
+  end
+
+  local function pool(game, entry)
+    if isChallenge(entry) then return {} end
+    local gym = entry and GymCases.GYMS[entry.badge]
+    return materialize(game, gym and gym.rewards)
   end
 
   local function onChosen(entry, reward)
@@ -228,6 +242,7 @@ function GymCases.install(mod, opts)
   end
 
   local function rewardDialogue(entry, reward)
+    if isChallenge(entry) then return nil end
     local gym = entry and GymCases.GYMS[entry.badge]
     if not gym or not (opts.comments and opts.comments.forReward) then return nil end
     return opts.comments.forReward({ badge = entry.badge, leader = gym.leader }, reward)
@@ -282,11 +297,13 @@ function GymCases.install(mod, opts)
   mod.hooks:wrap("ui.start_menu.items", function(next, game, items)
     local out = next(game, items)
     if type(out) ~= "table" or not opts.active() or #queue() == 0 then return out end
+    local pending = queue()[1]
+    local title = isChallenge(pending) and "ACE CASE" or "GYM CASE"
     return mod.ui.insertBefore(out, "SAVE", {
-      label = "GYM CASE",
+      label = title,
       onSelect = function()
-        mod.ui.push(game, opts.screenId, { caseData = queue()[1], autoOpen = true,
-          oneShot = true, title = "GYM CASE" })
+        mod.ui.push(game, opts.screenId, { caseData = pending, autoOpen = true,
+          oneShot = true, title = title })
       end,
     })
   end)
@@ -294,8 +311,10 @@ function GymCases.install(mod, opts)
   return {
     queue = queue,
     pool = pool,
+    materialize = materialize,
     definitions = GymCases.GYMS,
     enqueueChallenge = enqueueChallenge,
+    isChallenge = isChallenge,
     leaderDialogue = leaderDialogue,
     rewardDialogue = rewardDialogue,
     onChosen = onChosen,

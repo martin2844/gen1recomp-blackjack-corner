@@ -300,7 +300,7 @@ function Gamble.install(mod, opts)
   local function complete(game, playerStarter, rivalStarter)
     if game.save.flags.EVENT_GOT_STARTER then return false, "ALREADY CHOSEN" end
     local fallback = Rules.FALLBACK_MOVES[playerStarter]
-    local ok = Service.givePokemon(game,
+    local ok, _, mon = Service.givePokemon(game,
       { species = playerStarter, level = 5, label = playerStarter,
         moves = fallback and { fallback } or nil }, false)
     if not ok then return false, "NO STORAGE" end
@@ -313,6 +313,7 @@ function Gamble.install(mod, opts)
     mod.save:set("roulette_rival_starter", rivalStarter)
     local ctx = { save = game.save, game = game, overworld = game.overworld }
     for _, name in ipairs(BALL_NAMES) do pcall(Commands.hide_object, ctx, "OAKS_LAB", name) end
+    Service.askNickname(game, mon)
     return true, (game.data.pokemon[playerStarter].name or playerStarter)
   end
 

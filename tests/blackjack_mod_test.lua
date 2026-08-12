@@ -217,7 +217,8 @@ T.eq(run.data.constants.coinCap, 1000000,
 
 local api = run.loader.exports.blackjack_corner
 T.check(api and api.rules and api.holdem_rules and api.holdem_view and api.catalog and api.view
-    and api.buyCoins and api.coinOffers and api.pawn and api.pawnPokemon
+    and api.buyCoins and api.coinOffers and api.cashOutCoins
+    and api.cashOutOffers and api.pawn and api.pawnPokemon
     and api.pawnQuote
     and api.redeemPokemon and api.pawnLedger and api.crash_rules
     and api.flappy_rules and api.case_rules and api.giveCaseReward
@@ -1114,13 +1115,61 @@ do
   Game.save.defeatedTrainers[api.case_challengers.saveId(location)] = true
   MapScripts.get(location.map).onVictory(Game, {})
   T.eq(#api.gym_cases.queue(), 1,
-    "beating a regional challenger queues exactly one themed case")
+    "beating a regional challenger queues exactly one case")
+  local challengerCase = api.gym_cases.queue()[1]
+  T.eq(challengerCase.kind, "case_ace",
+    "CASE ACE wins are tagged separately from Gym Leader rewards")
+  T.eq(api.gym_cases.rewardDialogue(challengerCase, {
+      kind = "pokemon", species = "GEODUDE", label = "GEODUDE",
+      tier = "pokemon",
+    }), nil,
+    "CASE ACE prizes never inherit the matching Gym Leader's reaction")
+  local temporaryItems = {}
+  for _, reward in ipairs(api.case_challengers.rewards) do
+    if reward.kind == "item" and not run.data.items[reward.id] then
+      temporaryItems[reward.id] = true
+      run.data.items[reward.id] = { id = reward.id, name = reward.id }
+    end
+  end
+  local acePool = api.case_challengers.pool({ data = run.data }, challengerCase)
+  T.eq(#acePool, #api.case_challengers.rewards,
+    "CASE ACE cases expose their complete independent reward pool")
+  local aceKinds, aceSpecies = {}, {}
+  local totalWeight = 0
+  for _, reward in ipairs(acePool) do
+    aceKinds[reward.kind], totalWeight = true, totalWeight + reward.weight
+    if reward.species then aceSpecies[reward.species] = true end
+  end
+  T.check(aceKinds.pokemon and aceKinds.item
+      and aceSpecies.ABRA and aceSpecies.GROWLITHE and aceSpecies.MAGNEMITE,
+    "the ACE pool mixes Pokemon and items across unrelated types")
+  local firstRoll = api.case_rules.choose(acePool, function() return 1 end)
+  local lastRoll = api.case_rules.choose(acePool, function() return totalWeight end)
+  T.check((firstRoll.id or firstRoll.species) ~= (lastRoll.id or lastRoll.species),
+    "different ACE rolls can select different rewards")
+  local aceReaction = api.case_challengers.rewardDialogue(challengerCase, firstRoll)
+  T.check(aceReaction and aceReaction:find("CASE ACE", 1, true)
+      and not aceReaction:find("BROCK", 1, true),
+    "the CASE ACE reacts in its own voice instead of borrowing the Gym Leader")
+  for id in pairs(temporaryItems) do run.data.items[id] = nil end
   local rewardText = Game.stack:top()
   T.check(rewardText and rewardText.pages,
     "the challenger presents the case reward in the overworld")
   rewardText.onDone()
-  T.eq(Game.stack:top().screenId, "BlackjackCornerGymCase",
-    "acknowledging the challenger reward opens its themed reel")
+  local aceScreen = Game.stack:top()
+  T.eq(aceScreen.screenId, "BlackjackCornerGymCase",
+    "acknowledging the challenger reward opens its independent reel")
+  T.eq(aceScreen.title, "ACE CASE",
+    "the challenger reel is labeled separately from a Gym Case")
+  aceScreen:update(0)
+  local aceWinnerKey = aceScreen.winner.id or aceScreen.winner.species
+  local validAceWinner = false
+  for _, reward in ipairs(acePool) do
+    validAceWinner = validAceWinner
+      or (reward.id or reward.species) == aceWinnerKey
+  end
+  T.check(validAceWinner,
+    "the live CASE ACE screen chooses from the independent mixed pool")
   MapScripts.get(location.map).onVictory(Game, {})
   T.eq(#api.gym_cases.queue(), 1,
     "replayed victory hooks cannot duplicate a challenger case")
@@ -1336,6 +1385,17 @@ local function gameWith(coins, money)
   }
 end
 
+local noInput = { wasPressed = function() return false end }
+
+local function withStack(game)
+  game.input = noInput
+  game.stack = { items = {} }
+  function game.stack:push(screen) self.items[#self.items + 1] = screen end
+  function game.stack:pop() return table.remove(self.items) end
+  function game.stack:top() return self.items[#self.items] end
+  return game
+end
+
 local function clearPawnLedger()
   local ledger = api.pawnLedger()
   for index = #ledger, 1, -1 do table.remove(ledger, index) end
@@ -1346,19 +1406,12 @@ local function fixtureMon(species, level)
     function() return 8 end)
 end
 
-local noInput = { wasPressed = function() return false end }
-
 do
   local options = run.loader.modOptions.blackjack_corner or {}
   run.loader.modOptions.blackjack_corner = options
   local function stackGame()
-    local game = gameWith(10000)
-    game.input = noInput
+    local game = withStack(gameWith(10000))
     game.save.inventory.COIN_CASE = 1
-    game.stack = { items = {} }
-    function game.stack:push(screen) self.items[#self.items + 1] = screen end
-    function game.stack:pop() return table.remove(self.items) end
-    function game.stack:top() return self.items[#self.items] end
     return game
   end
 
@@ -1379,6 +1432,75 @@ do
     "enabling shiny upgrades restores NORMAL, SHINY, and CANCEL actions")
   T.eq(game.stack:top().items[2].label:sub(1, 5), "SHINY",
     "the paid shiny prize action is restored")
+
+  game = stackGame()
+  game.save.money = 5000
+  local cityClerk
+  for _, contribution in ipairs(
+      run.loader.content.map_scripts:chain("VIRIDIAN_SCHOOL_HOUSE")) do
+    cityClerk = cityClerk or (contribution.talk
+      and contribution.talk.TEXT_CITY_CASINO_CLERK)
+  end
+  T.check(type(cityClerk) == "function",
+    "regional casinos expose their shared clerk interaction")
+  local function clerkFor(mapId, textId)
+    for _, contribution in ipairs(run.loader.content.map_scripts:chain(mapId)) do
+      if contribution.talk and contribution.talk[textId] then
+        return contribution.talk[textId]
+      end
+    end
+  end
+  T.eq(clerkFor("PALLET_CASINO", "TEXT_PALLET_CASINO_CLERK"), cityClerk,
+    "Pallet shares the regional early-redemption counter")
+  T.eq(clerkFor("GAME_CORNER", "TEXT_GAMECORNER_CLERK1"), cityClerk,
+    "Celadon's coin desk shares redemption while its full Prize Room remains")
+  cityClerk(game, nil, nil)
+  local counter = game.stack:top()
+  T.eq(counter.items[1].label, "BUY COINS",
+    "every city casino clerk still sells coins")
+  T.eq(counter.items[2].label, "CASH OUT",
+    "every city casino clerk converts coins back into money")
+  T.eq(counter.items[3].label, "REDEEM POKEMON",
+    "every city casino clerk offers early Pokemon redemption")
+
+  local cashGame = stackGame()
+  cashGame.save.coins, cashGame.save.money = 100, 0
+  cityClerk(cashGame, nil, nil)
+  local cashCounter = cashGame.stack:pop()
+  cashCounter.items[2].onSelect()
+  local cashIntro = cashGame.stack:pop()
+  T.check(cashIntro and type(cashIntro.onDone) == "function",
+    "the clerk explains the cash-out rate before listing bundles")
+  cashIntro.onDone()
+  local cashList = cashGame.stack:top()
+  T.eq(cashList.title, "CASH OUT",
+    "the wired clerk action opens the cash-out list")
+  cashList.onChoose(cashList.items[1])
+  T.eq(cashGame.save.coins, 50,
+    "the clerk UI deducts the selected cash-out bundle")
+  T.eq(cashGame.save.money, 1000,
+    "the clerk UI credits the matching ordinary-money payout")
+
+  game.stack:pop()
+  counter.items[3].onSelect()
+  local localPrizes = game.stack:top()
+  T.check(#localPrizes.items > 0 and #localPrizes.items < #prizes.items,
+    "regional counters use a useful but limited Pokemon prize selection")
+
+  local redeemGame = stackGame()
+  redeemGame.save.inventory.COIN_CASE = 1
+  local redeemList = run.data.screens.BlackjackCornerPokemonPrizes.new(redeemGame, {})
+  redeemGame.stack:push(redeemList)
+  redeemList.onChoose(redeemList.items[1])
+  local choice = redeemGame.stack:pop()
+  choice.items[1].onSelect()
+  local received = redeemGame.stack:top()
+  T.check(received and type(received.onDone) == "function",
+    "a redeemed Pokemon result continues into the nickname handoff")
+  redeemGame.stack:pop()
+  received.onDone()
+  T.check(redeemGame.stack:top() and redeemGame.stack:top().choice,
+    "redeemed Pokemon offer the native-style nickname question")
 
   local loungeTalk
   for _, contribution in ipairs(
@@ -1465,6 +1587,57 @@ do
   T.check(not ok, "the larger exchange still requires a Coin Case")
   T.eq(game.save.money, 10000, "a rejected exchange takes no money")
   T.eq(game.save.coins, 0, "a rejected exchange gives no coins")
+end
+
+do
+  local game = gameWith(1300, 0)
+  game.save.inventory.COIN_CASE = 1
+  local offers = api.cashOutOffers(game)
+  T.eq(#offers, 5, "cash-out offers useful bundles plus the exact maximum")
+  T.eq(offers[1].amount, 50, "cash-out preserves the original 50-coin bundle")
+  T.eq(offers[4].amount, 1000, "cash-out offers a bulk thousand-coin shortcut")
+  T.eq(offers[5].amount, 1300, "cash-out MAX uses every complete bundle")
+  T.eq(offers[5].payout, 26000, "cash-out MAX uses the symmetric exchange rate")
+  local ok, _, payout = api.cashOutCoins(game, 500)
+  T.check(ok, "casino coins can be cashed out for ordinary money")
+  T.eq(payout, 10000, "five hundred coins pay ten thousand money")
+  T.eq(game.save.coins, 800, "cash-out deducts the selected casino coins")
+  T.eq(game.save.money, 10000, "cash-out credits the full ordinary-money payout")
+end
+
+do
+  local game = gameWith(100, 998999)
+  game.save.inventory.COIN_CASE = 1
+  local offers = api.cashOutOffers(game)
+  T.eq(#offers, 1, "wallet capacity trims cash-out to one complete bundle")
+  T.eq(offers[1].amount, 50, "the capacity-limited offer spends only fifty coins")
+  local ok = api.cashOutCoins(game, offers[1].amount)
+  T.check(ok, "cash-out can reach the native money cap exactly")
+  T.eq(game.save.money, 999999, "cash-out never crosses the native money cap")
+  T.eq(game.save.coins, 50, "capacity-limited cash-out leaves unused coins intact")
+  T.eq(#api.cashOutOffers(game), 0, "a full wallet has no misleading cash-out offer")
+end
+
+do
+  local game = gameWith(100, 999000)
+  game.save.inventory.COIN_CASE = 1
+  T.eq(#api.cashOutOffers(game), 0,
+    "cash-out refuses wallet space smaller than one full payout")
+  local ok = api.cashOutCoins(game, 50)
+  T.check(not ok, "cash-out refuses a payout that would overflow the wallet")
+  T.eq(game.save.money, 999000, "overflow refusal leaves ordinary money unchanged")
+  T.eq(game.save.coins, 100, "overflow refusal leaves casino coins unchanged")
+
+  ok = api.cashOutCoins(game, 25)
+  T.check(not ok, "cash-out refuses partial exchange bundles")
+  T.eq(game.save.coins, 100, "partial-bundle refusal remains atomic")
+
+  game.save.inventory.COIN_CASE = nil
+  game.save.money = 0
+  ok = api.cashOutCoins(game, 50)
+  T.check(not ok, "cash-out still requires a Coin Case")
+  T.eq(game.save.money, 0, "missing-Coin-Case refusal gives no money")
+  T.eq(game.save.coins, 100, "missing-Coin-Case refusal takes no coins")
 end
 
 do
@@ -1848,8 +2021,7 @@ do
 end
 
 do
-  local game = gameWith(100, 3000)
-  game.input = noInput
+  local game = withStack(gameWith(100, 3000))
   local screen = run.data.screens.BlackjackCornerStarterRoulette.new(game, {})
   screen:start()
   T.eq(screen.phase, "spinning", "the starter roulette enters its animated spin")
@@ -1865,6 +2037,8 @@ do
   screen:accept()
   T.eq(screen.phase, "result", "accepting the final roll settles successfully")
   T.eq(#game.save.party, 1, "the rolled starter reaches the player's party")
+  T.check(game.stack:top() and game.stack:top().choice,
+    "roulette starters offer the native-style nickname question")
   T.check(game.save.flags.EVENT_GOT_STARTER,
     "settling the roulette unlocks Oak's Lab exit flow")
   screen:draw()
@@ -1904,7 +2078,7 @@ do
   screen:draw()
   T.check(true, "the case-opening result renders without an engine error")
 
-  local pokemonGame = gameWith(0)
+  local pokemonGame = withStack(gameWith(0))
   pokemonGame.save.inventory.COIN_CASE = 1
   local ok, message, destination = api.giveCaseReward(pokemonGame, {
     kind = "pokemon", species = "FIXMON_A", level = 20, label = "FIXMON A",
@@ -1913,6 +2087,26 @@ do
   T.eq(#pokemonGame.save.party, 1, "a case Pokemon reaches an open party slot")
   T.eq(message, "FIXMON A", "the case result names the Pokemon reward")
   T.eq(destination, "party", "the delivery result identifies the party destination")
+  local nicknamePrompt = pokemonGame.stack:top()
+  T.check(nicknamePrompt and nicknamePrompt.choice,
+    "case Pokemon offer the native-style nickname question")
+  nicknamePrompt.choice(true)
+  local naming = pokemonGame.stack:top()
+  naming.onDone("JACKPOT")
+  T.eq(pokemonGame.save.party[1].nickname, "JACKPOT",
+    "the shared prize nickname handoff writes the chosen name")
+
+  local boxGame = withStack(gameWith(0))
+  for _ = 1, 6 do boxGame.save.party[#boxGame.save.party + 1] = fixtureMon() end
+  ok, _, destination = api.giveCaseReward(boxGame, {
+    kind = "pokemon", species = "FIXMON_A", level = 20, label = "BOX TEST",
+  })
+  T.check(ok and destination == "BOX 1",
+    "case Pokemon can enter the nickname flow after PC delivery")
+  boxGame.stack:top().choice(true)
+  boxGame.stack:top().onDone("BOXJACK")
+  T.eq(boxGame.save.boxes[1][1].nickname, "BOXJACK",
+    "a nickname edits the exact Pokemon deposited in the PC")
 
   local surfGame = gameWith(0)
   surfGame.save.inventory.COIN_CASE = 1

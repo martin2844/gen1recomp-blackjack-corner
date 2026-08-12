@@ -1,6 +1,21 @@
 return function(mod, Service, Catalog, Pawn, config)
   local UI = {}
 
+  local function balanceBox(game)
+    local Font = mod.ui.Font
+    return { draw = function()
+      Font.drawBox(11, 0, 9, 7)
+      love.graphics.setColor(0, 0, 0, 1)
+      Font.draw("MONEY", 96, 16)
+      local money = ("¥%d"):format(tonumber(game.save.money) or 0)
+      Font.draw(money, 152 - Font.width(money), 24)
+      Font.draw("COIN", 96, 32)
+      local count = tostring(Service.coins(game))
+      Font.draw(count, 152 - Font.width(count), 40)
+      love.graphics.setColor(1, 1, 1, 1)
+    end }
+  end
+
   function UI.text(game, message, onDone)
     game.stack:push(mod.ui.TextBox.new(game, message, onDone))
   end
@@ -20,19 +35,8 @@ return function(mod, Service, Catalog, Pawn, config)
     if showMessage == false then launch() else UI.text(game, message, launch) end
   end
 
-  function UI.coinClerk(game, _, _, done)
-    local Font = mod.ui.Font
-    local coinBox = { draw = function()
-      Font.drawBox(11, 0, 9, 7)
-      love.graphics.setColor(0, 0, 0, 1)
-      Font.draw("MONEY", 96, 16)
-      local money = ("¥%d"):format(tonumber(game.save.money) or 0)
-      Font.draw(money, 152 - Font.width(money), 24)
-      Font.draw("COIN", 96, 32)
-      local count = tostring(Service.coins(game))
-      Font.draw(count, 152 - Font.width(count), 40)
-      love.graphics.setColor(1, 1, 1, 1)
-    end }
+  local function buyCoins(game, done)
+    local coinBox = balanceBox(game)
     game.stack:push(coinBox)
     local function finish()
       UI.close(game, coinBox)
@@ -70,6 +74,82 @@ return function(mod, Service, Catalog, Pawn, config)
       })
       game.stack:push(list)
     end)
+  end
+
+  local function cashOutCoins(game, done)
+    local coinBox = balanceBox(game)
+    game.stack:push(coinBox)
+    local function finish()
+      UI.close(game, coinBox)
+      if done then done() end
+    end
+    if not (game.save.inventory and game.save.inventory.COIN_CASE) then
+      UI.text(game, "You don't have a\nCOIN CASE!", finish)
+      return
+    end
+    local offers = Service.cashOutOffers(game)
+    if #offers == 0 then
+      local message = Service.coins(game) < config.coinBundle
+        and ("You need at least\n%d coins."):format(config.coinBundle)
+        or "Your wallet can't\nhold another ¥1000."
+      UI.text(game, message, finish)
+      return
+    end
+    UI.text(game, "50 coins cash out\nfor ¥1000.\fHow many would\nyou like?", function()
+      local rows = {}
+      for _, offer in ipairs(offers) do
+        rows[#rows + 1] = { label = offer.label, right = "¥" .. offer.payout,
+          value = offer }
+      end
+      local list
+      list = mod.ui.ListMenu.new(game, "CASH OUT", rows, {
+        wrap = true,
+        footer = ("MONEY ¥%d\nCOIN %d"):format(
+          tonumber(game.save.money) or 0, Service.coins(game)),
+        onChoose = function(item)
+          list:close()
+          local _, message = Service.cashOutCoins(game, item.value.amount)
+          UI.text(game, message, finish)
+        end,
+        onCancel = finish,
+      })
+      game.stack:push(list)
+    end)
+  end
+
+  local function localPokemonPrizes()
+    local GameVersion = require("src.core.GameVersion")
+    local prizes = {}
+    for _, prize in ipairs(Catalog.pokemon(GameVersion.get())) do
+      if prize.cost <= 800 or prize.species == "DRATINI" then
+        prizes[#prizes + 1] = prize
+      end
+    end
+    return prizes
+  end
+
+  function UI.coinClerk(game, _, _, done)
+    if not (game.save.inventory and game.save.inventory.COIN_CASE) then
+      UI.text(game, "You don't have a\nCOIN CASE!", done)
+      return
+    end
+    local openMenu
+    local function openPrizes()
+      game.stack:push(UI.pokemonMenu(game, {
+        title = "LOCAL PRIZES",
+        prizes = localPokemonPrizes(),
+        onClose = openMenu,
+      }))
+    end
+    function openMenu()
+      game.stack:push(mod.ui.Menu.new(game, {
+        { label = "BUY COINS", onSelect = function() buyCoins(game, openMenu) end },
+        { label = "CASH OUT", onSelect = function() cashOutCoins(game, openMenu) end },
+        { label = "REDEEM POKEMON", onSelect = openPrizes },
+        { label = "LEAVE", onSelect = done },
+      }, { tx = 1, ty = 2, maxVisible = 4, onCancel = done }))
+    end
+    openMenu()
   end
 
   function UI.pawnBroker(game, _, _, done)
@@ -167,36 +247,41 @@ return function(mod, Service, Catalog, Pawn, config)
     UI.text(game, "Need coins?\nI take POKEMON.\fBuy them back for\n30% more.", openMenu)
   end
 
-  local function finishPrize(game, list, ok, message, done)
+  local function finishPrize(game, list, ok, message, done, mon)
     if ok then UI.close(game, list) end
-    UI.text(game, message, ok and done or nil)
+    local function afterMessage()
+      if mon then Service.askNickname(game, mon, done)
+      elseif done then done() end
+    end
+    UI.text(game, message, ok and afterMessage or nil)
   end
 
   function UI.pokemonMenu(game, opts)
     local GameVersion = require("src.core.GameVersion")
     local rows = {}
-    for _, prize in ipairs(Catalog.pokemon(GameVersion.get())) do
+    for _, prize in ipairs((opts and opts.prizes)
+        or Catalog.pokemon(GameVersion.get())) do
       local def = game.data.pokemon[prize.species]
       if def then rows[#rows + 1] = { label = def.name or prize.species,
         right = tostring(prize.cost), value = prize } end
     end
     local list
-    list = mod.ui.ListMenu.new(game, "POKEMON PRIZES", rows, {
+    list = mod.ui.ListMenu.new(game, (opts and opts.title) or "POKEMON PRIZES", rows, {
       pageJump = true, footer = ("COINS %d"):format(Service.coins(game)),
       onChoose = function(item)
         local prize = item.value
         local choices = {
           { label = "NORMAL " .. prize.cost, onSelect = function()
-              local ok, msg = Service.buyPokemon(game, prize, false)
-              finishPrize(game, list, ok, msg, opts and opts.onClose)
+              local ok, msg, mon = Service.buyPokemon(game, prize, false)
+              finishPrize(game, list, ok, msg, opts and opts.onClose, mon)
             end },
         }
         if not config.shinyUpgrades or config.shinyUpgrades() then
           choices[#choices + 1] = {
             label = "SHINY " .. (prize.cost + Catalog.SHINY_SURCHARGE),
             onSelect = function()
-              local ok, msg = Service.buyPokemon(game, prize, true)
-              finishPrize(game, list, ok, msg, opts and opts.onClose)
+              local ok, msg, mon = Service.buyPokemon(game, prize, true)
+              finishPrize(game, list, ok, msg, opts and opts.onClose, mon)
             end,
           }
         end

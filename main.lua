@@ -106,6 +106,7 @@ return function(mod)
     coinCap = 1000000,
     coinBundle = 50,
     coinBundlePrice = 1000,
+    moneyCap = 999999,
     masterBallKey = "master_ball_redeemed",
     pawnLedgerKey = "pawned_pokemon",
     shinyUpgrades = settings.shinyUpgrades,
@@ -252,12 +253,25 @@ return function(mod)
     active = Gamble.active, screenId = ids.gymCase,
     comments = GymCaseComments,
   })
+  local Challengers
   local GymCase = loadLocal(mod, paths.case .. "screen.lua")(context({
     rules = GymCases.rules(CaseRules), view = CaseView, cost = 0,
     title = "GYM CASE", autoOpen = true, oneShot = true,
-    counterKey = "gym_cases_opened", rewardPool = Gym.pool,
+    counterKey = "gym_cases_opened",
+    rewardPool = function(game, entry)
+      if Gym.isChallenge(entry) and Challengers then
+        return Challengers.pool(game, entry)
+      end
+      return Gym.pool(game, entry)
+    end,
     giveReward = Service.giveCaseReward, onChosen = Gym.onChosen,
-    onDelivered = Gym.onDelivered, resultDialogue = Gym.rewardDialogue,
+    onDelivered = Gym.onDelivered,
+    resultDialogue = function(entry, reward)
+      if Gym.isChallenge(entry) and Challengers then
+        return Challengers.rewardDialogue(entry, reward)
+      end
+      return Gym.rewardDialogue(entry, reward)
+    end,
   }))
 
   for screen, class in pairs({
@@ -391,13 +405,12 @@ return function(mod)
     ids = ids, text = UI.text, coinClerk = UI.coinClerk,
     open = open, openLuxury = openLuxury,
   })
-  local Challengers = CaseChallengers.register(mod, {
+  Challengers = CaseChallengers.register(mod, {
     active = Gamble.active, gym = Gym, text = UI.text,
     openCase = function(game, entry, location)
-      local definition = Gym.definitions[entry.badge]
-      UI.text(game, location.won .. "\fA themed CASE waits.\nGive it one spin.", function()
+      UI.text(game, location.won, function()
         mod.ui.push(game, ids.gymCase, { caseData = entry, autoOpen = true,
-          oneShot = true, title = (definition and definition.theme or "GYM") .. " CASE" })
+          oneShot = true, title = "ACE CASE" })
       end)
     end,
   })
@@ -923,6 +936,8 @@ return function(mod)
   mod.exports.catalog = Catalog
   mod.exports.buyPokemon, mod.exports.buyItem = Service.buyPokemon, Service.buyItem
   mod.exports.buyCoins, mod.exports.coinOffers = Service.buyCoins, Service.coinOffers
+  mod.exports.cashOutCoins, mod.exports.cashOutOffers =
+    Service.cashOutCoins, Service.cashOutOffers
   mod.exports.pawn, mod.exports.pawnLedger = Pawn, Service.pawnLedger
   mod.exports.pawnPokemon, mod.exports.pawnQuote, mod.exports.redeemPokemon =
     Service.pawnPokemon, Service.pawnQuote, Service.redeemPokemon

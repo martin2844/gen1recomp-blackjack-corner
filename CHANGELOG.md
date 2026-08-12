@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Changed
+
+- CASE ACE trainers now award clearly labeled ACE CASES from one broad,
+  badge-agnostic pool of Pokemon, supplies, rare TMs, and a tiny Master Ball
+  chance instead of copying the nearest Gym Leader's themed reel.
+- Every CASE ACE now has distinct victory and post-prize dialogue. Gym Leader
+  reactions remain exclusive to actual Gym Cases.
+- Every casino coin clerk now also opens a limited local Pokemon prize counter,
+  making coin redemption available from Pallet onward without replacing
+  Celadon's complete catalogue.
+- Every casino coin clerk now cashes out complete 50-coin bundles for ¥1,000
+  each. Bulk and capacity-aware MAX options preserve the original exchange rate
+  in both directions without crossing the native ¥999,999 wallet limit.
+- Starter Roulette Pokemon, case Pokemon, and counter-redemption Pokemon now
+  use the native nickname prompt after successful party or PC delivery.
+
 ## [0.7.3] - 2026-08-12
 
 ### Added

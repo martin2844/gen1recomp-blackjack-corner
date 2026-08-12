@@ -5,62 +5,100 @@ Challengers.TRAINERS = {
   male = "OPP_CASE_ACE_M",
   female = "OPP_CASE_ACE_F",
 }
+
+local function mon(species, tier, weight)
+  return { kind = "pokemon", species = species, level = 1,
+    tier = tier or "pokemon", weight = weight or 100 }
+end
+
+local function item(id, tier, weight, quantity)
+  return { kind = "item", id = id, quantity = quantity or 1,
+    tier = tier or "rare", weight = weight or 100 }
+end
+
+-- CASE ACE reels are deliberately broad and badge-agnostic. Gym Leaders keep
+-- their authored elemental pools; every challenger draws from this same mixed
+-- bag of Pokemon, supplies, TMs, and one very unlikely jackpot.
+Challengers.REWARDS = {
+  mon("ABRA", "pokemon", 180), mon("POLIWAG", "pokemon", 180),
+  mon("GROWLITHE", "pokemon", 180), mon("MAGNEMITE", "pokemon", 180),
+  mon("SCYTHER", "rare", 90), mon("LAPRAS", "rare", 75),
+  mon("DRAGONAIR", "epic", 45), mon("KANGASKHAN", "epic", 45),
+  item("RARE_CANDY", "common", 300), item("PP_UP", "common", 240),
+  item("MAX_REVIVE", "rare", 150, 2), item("TM_BODY_SLAM", "rare", 125),
+  item("TM_ICE_BEAM", "epic", 60), item("TM_THUNDERBOLT", "epic", 60),
+  item("TM_PSYCHIC_M", "epic", 60), item("MASTER_BALL", "gold", 2),
+}
+
+local TIER_LINES = {
+  common = "ROUGH PULL.", pokemon = "POKEMON PULL.",
+  rare = "RARE PULL!", epic = "EPIC PULL!", gold = "JACKPOT!",
+}
+
 Challengers.locations = {
   {
     key = "PEWTER", map = "PEWTER_CITY", x = 9, y = 30,
     trainer = Challengers.TRAINERS.male,
     badge = "BOULDERBADGE", party = 1, sprite = "SPRITE_COOLTRAINER_M",
     intro = "BROCK teaches form.\fI test what happens\nafter form breaks.",
-    won = "Solid technique.\fTake the ROCK CASE.\nYou earned the spin.",
+    won = "You hit harder than\nyour BADGE says.\fTake an ACE CASE.\nNo theme. Pure luck.",
+    reaction = "No type advantage.\nJust a clean pull.",
   },
   {
     key = "CERULEAN", map = "CERULEAN_CITY", x = 11, y = 13,
     trainer = Challengers.TRAINERS.female,
     badge = "CASCADEBADGE", party = 2, sprite = "SPRITE_COOLTRAINER_F",
     intro = "MISTY tests your\nbalance.\fI drag battles into\ndeeper water.",
-    won = "You kept your head.\fThis WATER CASE is\nyours.",
+    won = "You kept your head.\fYour ACE CASE is\nanything but calm.",
+    reaction = "The reel went deep.\nTry not to drown.",
   },
   {
     key = "VERMILION", map = "VERMILION_CITY", x = 25, y = 20,
     trainer = Challengers.TRAINERS.male,
     badge = "THUNDERBADGE", party = 3, sprite = "SPRITE_SAILOR",
     intro = "SURGE fights loud.\fI fight after the\nthunder fades.",
-    won = "Current confirmed.\fClaim this ELECTRIC\nCASE.",
+    won = "Current confirmed.\fACE CASE authorized.\nExpect no pattern.",
+    reaction = "Pure variance.\nStill counts, rookie.",
   },
   {
     key = "CELADON", map = "CELADON_CITY", x = 26, y = 20,
     trainer = Challengers.TRAINERS.female,
     badge = "RAINBOWBADGE", party = 4, sprite = "SPRITE_BEAUTY",
     intro = "ERIKA is graceful.\fI prefer battles\nwith thorns.",
-    won = "You survived the\nthorns.\fSpin this GARDEN\nCASE.",
+    won = "You survived the\nthorns.\fTake an ACE CASE.\nTaste is not assured.",
+    reaction = "No theme, no rules.\nIt rather suits you.",
   },
   {
     key = "FUCHSIA", map = "FUCHSIA_CITY", x = 24, y = 14,
     trainer = Challengers.TRAINERS.male,
     badge = "SOULBADGE", party = 5, sprite = "SPRITE_COOLTRAINER_M",
     intro = "KOGA hides the hit.\fMine lands where you\ncan see it.",
-    won = "Discipline beats\npoison.\fTake the VENOM CASE.",
+    won = "Discipline beats\npoison.\fClaim your ACE CASE.\nChance leaves no trail.",
+    reaction = "Chance left no trace.\nKeep the evidence.",
   },
   {
     key = "SAFFRON", map = "SAFFRON_CITY", x = 11, y = 13,
     trainer = Challengers.TRAINERS.female,
     badge = "MARSHBADGE", party = 6, sprite = "SPRITE_COOLTRAINER_F",
     intro = "SABRINA saw you win.\fLet's see whether she\nsaw this battle.",
-    won = "The future changed.\fYour PSYCHIC CASE\nremains.",
+    won = "The future changed.\fYour ACE CASE was\nnot in the vision.",
+    reaction = "I did not see that.\nNeither did she.",
   },
   {
     key = "CINNABAR", map = "CINNABAR_ISLAND", x = 4, y = 10,
     trainer = Challengers.TRAINERS.male,
     badge = "VOLCANOBADGE", party = 7, sprite = "SPRITE_SUPER_NERD",
     intro = "BLAINE tests facts.\fMy hypothesis is\nthat you lose.",
-    won = "Hypothesis rejected.\fTake the VOLCANO\nCASE, colleague.",
+    won = "Hypothesis rejected.\fRun the ACE CASE.\nControl group: none.",
+    reaction = "Random result.\nHypothesis ruined.",
   },
   {
     key = "VIRIDIAN", map = "VIRIDIAN_CITY", x = 23, y = 16,
     trainer = Challengers.TRAINERS.male,
     badge = "EARTHBADGE", party = 8, sprite = "SPRITE_GAMBLER",
     intro = "GIOVANNI was the\ncity's final wall.\fI am what waits past\nthe wall.",
-    won = "KANTO has nothing\nleft to prove.\fSpin the EARTH CASE.",
+    won = "KANTO has nothing\nleft to prove.\fOne ACE CASE.\nThe house chooses.",
+    reaction = "The house blinked.\nTake the opening.",
   },
 }
 
@@ -123,6 +161,23 @@ local function locationForMap(mapId)
   for _, location in ipairs(Challengers.locations) do
     if location.map == mapId then return location end
   end
+end
+
+local function locationForKey(key)
+  for _, location in ipairs(Challengers.locations) do
+    if location.key == key then return location end
+  end
+end
+
+local function rewardDialogue(entry, reward)
+  local location = entry and locationForKey(entry.source)
+  if not location or type(reward) ~= "table" then return nil end
+  local label = tostring(reward.label or reward.id or reward.species or "PRIZE")
+    :gsub("_", " ")
+  if #label > 17 then label = label:sub(1, 17) end
+  local tier = TIER_LINES[reward.tier] or TIER_LINES.rare
+  return "CASE ACE:\n" .. tier .. "\f" .. label .. "?\f"
+    .. location.reaction
 end
 
 function Challengers.register(mod, opts)
@@ -202,6 +257,16 @@ function Challengers.register(mod, opts)
     end
   end
 
+  local function pool(game, entry)
+    local rows = opts.gym.materialize(game, Challengers.REWARDS)
+    local level = math.min(52, 12 + math.max(1,
+      math.floor(tonumber(entry and entry.order) or 1)) * 5)
+    for _, reward in ipairs(rows) do
+      if reward.kind == "pokemon" then reward.level = level end
+    end
+    return rows
+  end
+
   mod.events:on("intro.oak_speech.answered", function(ev)
     if ev.saveKey == "gamble_mode" and ev.speech and ev.speech.game then
       sync(ev.speech.game)
@@ -229,7 +294,10 @@ function Challengers.register(mod, opts)
   return {
     locations = Challengers.locations,
     parties = Challengers.parties,
+    rewards = Challengers.REWARDS,
     trainers = Challengers.TRAINERS,
+    pool = pool,
+    rewardDialogue = rewardDialogue,
     sync = sync,
     saveId = saveId,
   }

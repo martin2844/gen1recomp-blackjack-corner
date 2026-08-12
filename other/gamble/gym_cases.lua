@@ -1,51 +1,144 @@
 -- Gym Leader reward replacement for Gamble Mode. Badges remain vanilla;
--- the leader's TM becomes one persistent, animated case claim.
+-- every leader and regional challenger awards one persistent, themed case.
 local GymCases = {}
 
 GymCases.KEY = "gym_case_queue"
-GymCases.CURRENT_TM_WEIGHT = 100
-GymCases.EARLIER_TM_WEIGHT = 50
-GymCases.GYMS = {
-  BOULDERBADGE = { order = 1, leader = "BROCK", dialogue =
-    "That was a solid\nvictory.\fEvery battle is a\nlesson, {PLAYER}.\fYou earned a\nGYM CASE.\fGive it a spin and\nlearn what luck\nhas in store.\fGood luck!" },
-  CASCADEBADGE = { order = 2, leader = "MISTY", dialogue =
-    "You really made\na splash!\fI like a trainer\nwho surprises me.\fYou earned a\nGYM CASE.\fGive it a spin.\nLet's see if luck\nlikes you too!\fGood luck!" },
-  THUNDERBADGE = { order = 3, leader = "SURGE", dialogue =
-    "Outstanding work,\nsoldier!\fYou earned a\nGYM CASE.\fStep up and spin\nfor your prize.\fThat's an order!\nGood luck!" },
-  RAINBOWBADGE = { order = 4, leader = "ERIKA", dialogue =
-    "What a lovely\nbattle.\fYou earned a\nGYM CASE.\fGive it a gentle\nspin.\fMay good fortune\nbloom for you." },
-  SOULBADGE = { order = 5, leader = "KOGA", dialogue =
-    "Your skill pierced\nevery illusion.\fYou earned a\nGYM CASE.\fSpin without fear.\nFortune favors\ndiscipline.\fGood luck." },
-  MARSHBADGE = { order = 6, leader = "SABRINA", dialogue =
-    "I did foresee\nyour victory...\fBut even I cannot\nread pure chance.\fThis GYM CASE is\nyours.\fSpin it, and reveal\nyour fate.\fGood luck." },
-  VOLCANOBADGE = { order = 7, leader = "BLAINE", dialogue =
-    "Hah! A blazing\nvictory!\fYou earned a\nGYM CASE.\fFinal question:\nwhat prize is\ninside?\fSpin it and find\nout! Good luck!" },
-  EARTHBADGE = { order = 8, leader = "GIOVANNI", dialogue =
-    "You have earned\nthis victory.\fI do not hand out\ncommon trinkets.\fTake this GYM CASE\nand spin it.\fLet chance decide\nwhat power you\nleave with." },
-}
+GymCases.NEXT_KEY = "gym_case_next_id"
 
-local POKEMON = {
-  { species = "NIDORAN_M", level = 10, from = 1, weight = 190 },
-  { species = "NIDORAN_F", level = 10, from = 1, weight = 190 },
-  { species = "PIKACHU", level = 12, from = 1, weight = 170 },
-  { species = "ABRA", level = 14, from = 2, weight = 150 },
-  { species = "EEVEE", level = 18, from = 3, weight = 120 },
-  { species = "BULBASAUR", level = 20, from = 4, weight = 90 },
-  { species = "CHARMANDER", level = 20, from = 4, weight = 90 },
-  { species = "SQUIRTLE", level = 20, from = 4, weight = 90 },
-  { species = "OMANYTE", level = 25, from = 5, weight = 65 },
-  { species = "KABUTO", level = 25, from = 5, weight = 65 },
-  { species = "DRATINI", level = 25, from = 6, weight = 45 },
-  { species = "AERODACTYL", level = 35, from = 7, weight = 25 },
+local function mon(species, level, tier, weight, label)
+  return { kind = "pokemon", species = species, level = level,
+    tier = tier or "pokemon", weight = weight or 100, label = label }
+end
+
+local function item(id, tier, weight, quantity, label)
+  return { kind = "item", id = id, quantity = quantity or 1,
+    tier = tier or "rare", weight = weight or 100, label = label }
+end
+
+-- Pools are deliberately local to each badge. No species or item is repeated
+-- within a pool, and the reel builder below prevents adjacent duplicate cards.
+GymCases.GYMS = {
+  BOULDERBADGE = {
+    order = 1, leader = "BROCK", theme = "ROCK",
+    dialogue = "That was a solid\nvictory.\fEvery battle is a\nlesson, {PLAYER}.\fYou earned a\nROCK CASE.\fGive it a spin and\nlearn what luck\nhas in store.\fGood luck!",
+    rewards = {
+      mon("GEODUDE", 14), mon("ONIX", 14), mon("RHYHORN", 15),
+      mon("OMANYTE", 15, "rare", 55), item("TM_BIDE", "gold", 120),
+      item("TM_ROCK_SLIDE"), item("TM_DIG"), item("MOON_STONE", "epic", 50),
+      item("X_DEFEND", "common", 150), item("SUPER_POTION", "common", 150),
+    },
+  },
+  CASCADEBADGE = {
+    order = 2, leader = "MISTY", theme = "WATER",
+    dialogue = "You really made\na splash!\fI like a trainer\nwho surprises me.\fYou earned a\nWATER CASE.\fGive it a spin.\nLet's see if luck\nlikes you too!\fGood luck!",
+    rewards = {
+      mon("PSYDUCK", 21), mon("POLIWAG", 21), mon("STARYU", 22),
+      mon("HORSEA", 22), mon("LAPRAS", 23, "epic", 35),
+      item("TM_BUBBLEBEAM", "gold", 120), item("TM_WATER_GUN"),
+      item("TM_ICE_BEAM", "epic", 50), item("WATER_STONE", "rare", 80),
+      item("SUPER_POTION", "common", 150),
+    },
+  },
+  THUNDERBADGE = {
+    order = 3, leader = "SURGE", theme = "ELECTRIC",
+    dialogue = "Outstanding work,\nsoldier!\fYou earned an\nELECTRIC CASE.\fStep up and spin\nfor your prize.\fThat's an order!\nGood luck!",
+    rewards = {
+      mon("PIKACHU", 25), mon("MAGNEMITE", 25), mon("VOLTORB", 25),
+      mon("ELECTABUZZ", 26, "rare", 60), mon("JOLTEON", 27, "epic", 35),
+      item("TM_THUNDERBOLT", "gold", 120), item("TM_THUNDER", "epic", 55),
+      item("TM_THUNDER_WAVE"), item("THUNDER_STONE", "rare", 80),
+      item("X_SPEED", "common", 150),
+    },
+  },
+  RAINBOWBADGE = {
+    order = 4, leader = "ERIKA", theme = "GRASS",
+    dialogue = "What a lovely\nbattle.\fYou earned a\nGARDEN CASE.\fGive it a gentle\nspin.\fMay good fortune\nbloom for you.",
+    rewards = {
+      mon("ODDISH", 31), mon("BELLSPROUT", 31), mon("EXEGGCUTE", 32),
+      mon("TANGELA", 33, "rare", 60), mon("PARAS", 31),
+      item("TM_MEGA_DRAIN", "gold", 120), item("TM_SOLARBEAM", "epic", 55),
+      item("TM_DOUBLE_TEAM"), item("LEAF_STONE", "rare", 80),
+      item("FULL_HEAL", "common", 150),
+    },
+  },
+  SOULBADGE = {
+    order = 5, leader = "KOGA", theme = "VENOM",
+    dialogue = "Your skill pierced\nevery illusion.\fYou earned a\nVENOM CASE.\fSpin without fear.\nFortune favors\ndiscipline.\fGood luck.",
+    rewards = {
+      mon("KOFFING", 40), mon("GRIMER", 40), mon("VENONAT", 41),
+      mon("SCYTHER", 42, "epic", 45), mon("PINSIR", 42, "epic", 45),
+      item("TM_TOXIC", "gold", 120), item("TM_RAGE"), item("TM_REST"),
+      item("FULL_HEAL", "common", 150), item("MAX_REVIVE", "rare", 70),
+    },
+  },
+  MARSHBADGE = {
+    order = 6, leader = "SABRINA", theme = "PSYCHIC",
+    dialogue = "I did foresee\nyour victory...\fBut even I cannot\nread pure chance.\fThis PSYCHIC CASE\nis yours.\fSpin it, and reveal\nyour fate.\fGood luck.",
+    rewards = {
+      mon("ABRA", 42), mon("DROWZEE", 42), mon("MR_MIME", 43, "rare", 60),
+      mon("JYNX", 43, "rare", 60), mon("SLOWPOKE", 42),
+      item("TM_PSYWAVE", "gold", 120), item("TM_PSYCHIC_M", "epic", 55),
+      item("TM_TELEPORT"), item("PP_UP", "rare", 80),
+      item("MAX_REVIVE", "rare", 70),
+    },
+  },
+  VOLCANOBADGE = {
+    order = 7, leader = "BLAINE", theme = "FIRE",
+    dialogue = "Hah! A blazing\nvictory!\fYou earned a\nVOLCANO CASE.\fFinal question:\nwhat prize is\ninside?\fSpin it and find\nout! Good luck!",
+    rewards = {
+      mon("GROWLITHE", 47), mon("PONYTA", 47), mon("MAGMAR", 48, "rare", 60),
+      mon("VULPIX", 47), mon("CHARMANDER", 45, "epic", 40),
+      item("TM_FIRE_BLAST", "gold", 120), item("FIRE_STONE", "rare", 80),
+      item("TM_REFLECT"), item("TM_SUBSTITUTE", "epic", 55),
+      item("RARE_CANDY", "rare", 70),
+    },
+  },
+  EARTHBADGE = {
+    order = 8, leader = "GIOVANNI", theme = "EARTH",
+    dialogue = "You have earned\nthis victory.\fI do not hand out\ncommon trinkets.\fTake this EARTH\nCASE and spin it.\fLet chance decide\nwhat power you\nleave with.",
+    rewards = {
+      mon("DUGTRIO", 52), mon("PERSIAN", 52), mon("KANGASKHAN", 53, "rare", 60),
+      mon("RHYDON", 54, "epic", 45), mon("TAUROS", 53, "epic", 45),
+      item("TM_EARTHQUAKE", "gold", 120), item("TM_FISSURE", "epic", 55),
+      item("TM_DIG"), item("TM_TRI_ATTACK", "rare", 80),
+      item("MASTER_BALL", "gold", 4),
+    },
+  },
 }
 
 local function copy(value)
   local out = {}
-  for key, item in pairs(value or {}) do out[key] = item end
+  for key, entry in pairs(value or {}) do out[key] = entry end
   return out
 end
 
+local function rewardKey(reward)
+  return tostring(reward.kind) .. ":" .. tostring(reward.id or reward.species)
+end
+
 function GymCases.rules(CaseRules)
+  local function strip(pool, winner, random)
+    local rows, previous = {}, nil
+    for index = 1, CaseRules.STRIP_LENGTH do
+      local chosen
+      if index == CaseRules.WINNER_INDEX then
+        chosen = winner
+      else
+        local eligible = {}
+        for _, reward in ipairs(pool) do
+          local key = rewardKey(reward)
+          if key ~= previous
+              and not (index == CaseRules.WINNER_INDEX - 1
+                and key == rewardKey(winner)) then
+            eligible[#eligible + 1] = reward
+          end
+        end
+        chosen = CaseRules.choose(#eligible > 0 and eligible or pool, random)
+      end
+      rows[index], previous = chosen, rewardKey(chosen)
+    end
+    return rows
+  end
   return {
     COST = 0,
     SPIN_DURATION = CaseRules.SPIN_DURATION,
@@ -54,7 +147,7 @@ function GymCases.rules(CaseRules)
     CARD_STEP = CaseRules.CARD_STEP,
     REEL_STOP_OFFSET = CaseRules.REEL_STOP_OFFSET,
     choose = CaseRules.choose,
-    strip = CaseRules.strip,
+    strip = strip,
   }
 end
 
@@ -66,14 +159,29 @@ function GymCases.install(mod, opts)
 
   local function saveQueue(value) mod.save:set(GymCases.KEY, value) end
 
-  local function enqueue(reward)
+  local function enqueue(reward, requestedId)
+    local gym = reward and GymCases.GYMS[reward.badge]
+    if not gym then return nil, false end
     local rows = queue()
-    local gym = GymCases.GYMS[reward.badge]
-    local entry = { id = tostring(reward.badge) .. ":" .. tostring(#rows + 1),
-      badge = reward.badge, order = gym.order, leader = gym.leader, tm = reward.item }
+    if requestedId then
+      for _, candidate in ipairs(rows) do
+        if candidate.id == requestedId then return candidate, false end
+      end
+    end
+    local sequence = math.max(1, math.floor(tonumber(
+      mod.save:get(GymCases.NEXT_KEY, 1)) or 1))
+    local id = requestedId or (tostring(reward.badge) .. ":" .. tostring(sequence))
+    mod.save:set(GymCases.NEXT_KEY, sequence + 1)
+    local entry = { id = id, badge = reward.badge, order = gym.order,
+      leader = gym.leader, tm = reward.item, source = reward.source }
     rows[#rows + 1] = entry
     saveQueue(rows)
-    return entry
+    return entry, true
+  end
+
+  local function enqueueChallenge(badge, sourceId)
+    return enqueue({ badge = badge, source = sourceId },
+      "challenger:" .. tostring(sourceId))
   end
 
   local function remove(entry)
@@ -85,23 +193,16 @@ function GymCases.install(mod, opts)
   end
 
   local function pool(game, entry)
+    local gym = entry and GymCases.GYMS[entry.badge]
     local rows = {}
-    local victories = require("data.scripts.victories")
-    for _, reward in pairs(victories) do
-      local gym = reward.badge and GymCases.GYMS[reward.badge]
-      if gym and gym.order <= entry.order and game.data.items[reward.item] then
-        rows[#rows + 1] = { kind = "item", id = reward.item, quantity = 1,
-          label = game.data.items[reward.item].name or reward.item,
-          tier = reward.item == entry.tm and "gold" or "rare",
-          weight = reward.item == entry.tm and GymCases.CURRENT_TM_WEIGHT
-            or GymCases.EARLIER_TM_WEIGHT }
-      end
-    end
-    for _, prize in ipairs(POKEMON) do
-      if prize.from <= entry.order and game.data.pokemon[prize.species] then
-        local row = copy(prize)
-        row.kind, row.tier = "pokemon", prize.from >= 6 and "epic" or "pokemon"
-        row.label = game.data.pokemon[prize.species].name or prize.species
+    for _, reward in ipairs(gym and gym.rewards or {}) do
+      if reward.kind == "item" and game.data.items[reward.id] then
+        local row = copy(reward)
+        row.label = row.label or game.data.items[row.id].name or row.id
+        rows[#rows + 1] = row
+      elseif reward.kind == "pokemon" and game.data.pokemon[reward.species] then
+        local row = copy(reward)
+        row.label = row.label or game.data.pokemon[row.species].name or row.species
         rows[#rows + 1] = row
       end
     end
@@ -160,13 +261,10 @@ function GymCases.install(mod, opts)
     end
     local entry = enqueue(reward)
     if reward.gotFlag then game.save.flags[reward.gotFlag] = true end
-    local item, gotFlag, dialogue = reward.item, reward.gotFlag, reward.dialogue
-    -- Let vanilla apply the badge, flags, trainer deactivation, and map hook,
-    -- but own the presentation here. Pushing the case before vanilla used to
-    -- put vanilla's TextBox above the opaque case screen.
+    local originalItem, gotFlag, dialogue = reward.item, reward.gotFlag, reward.dialogue
     reward.item, reward.gotFlag, reward.dialogue = nil, nil, {}
     local ok, result = pcall(state.vanilla, ow, trainerClass, partyIndex)
-    reward.item, reward.gotFlag, reward.dialogue = item, gotFlag, dialogue
+    reward.item, reward.gotFlag, reward.dialogue = originalItem, gotFlag, dialogue
     if not ok then error(result, 0) end
     game.stack:push(mod.ui.TextBox.new(game, victoryDialogue(game, reward), function()
       mod.ui.push(game, opts.screenId, { caseData = entry, autoOpen = true,
@@ -190,6 +288,8 @@ function GymCases.install(mod, opts)
   return {
     queue = queue,
     pool = pool,
+    definitions = GymCases.GYMS,
+    enqueueChallenge = enqueueChallenge,
     leaderDialogue = leaderDialogue,
     onChosen = onChosen,
     onDelivered = remove,

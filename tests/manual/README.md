@@ -41,6 +41,11 @@ Run the full case list in
 [`V0.6_IN_GAME_TESTING.md`](V0.6_IN_GAME_TESTING.md) before marking the release
 checklist complete.
 
+The unreleased regional expansion has its own supervised matrix in
+[`CASINO_NETWORK_IN_GAME_TESTING.md`](CASINO_NETWORK_IN_GAME_TESTING.md). It
+covers Randomizer coexistence in Oak's Lab, every city branch and sign, the
+eight themed Gym reels, and the post-badge CASE ACE battles and rewards.
+
 The internal Arena milestone driver, `drivers/v07_arena_audit.lua`, executes
 the deterministic Red/Blue gate and captures every required visual checkpoint. The
 complete human-readable matrix and launch commands live in

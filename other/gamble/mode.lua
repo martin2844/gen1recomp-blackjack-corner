@@ -46,23 +46,44 @@ function Gamble.install(mod, opts)
       "SPRITE_STARTER_ROULETTE_03" }
     local matches = {}
     for _, object in ipairs(lab and lab.objects or {}) do
-      for _, name in ipairs(BALL_NAMES) do
-        if object.name == name then
-          matches[#matches + 1] = object
+      local isGift = object._blackjackCornerOriginalSprite ~= nil
+      for index, name in ipairs(BALL_NAMES) do
+        if object.name == name or object.text == BALL_TEXTS[index] then
+          isGift = true
           break
         end
       end
+      -- Some randomizers replace both the object name and its text binding.
+      -- On the stock Red/Blue Lab, only gift stands occupy this part of row 3;
+      -- native geometry is the final compatibility seam on the first pass.
+      if not isGift then
+        local x, y = tonumber(object.x), tonumber(object.y)
+        if y == 3 and x and x >= 6 and x <= 8 and not object.trainerClass then
+          isGift = true
+        end
+      end
+      if isGift then matches[#matches + 1] = object end
+    end
+    table.sort(matches, function(left, right)
+      local lx, rx = tonumber(left.x) or 0, tonumber(right.x) or 0
+      if lx ~= rx then return lx < rx end
+      return (tonumber(left.index) or 0) < (tonumber(right.index) or 0)
+    end)
+    local function apply(object, sprite)
+      -- Another mod may legitimately replace the gift-ball art after the
+      -- first pass. Remember its latest non-roulette sprite so disabling
+      -- Gamble Mode restores that mod's art instead of vanilla's.
+      if not tostring(object.sprite or ""):find("SPRITE_STARTER_ROULETTE_", 1, true) then
+        object._blackjackCornerOriginalSprite = object.sprite
+      end
+      object.sprite = sprite
     end
     if #matches == 1 then
       -- Yellow has one gift ball, so use the center cabinet piece.
-      matches[1]._blackjackCornerOriginalSprite =
-        matches[1]._blackjackCornerOriginalSprite or matches[1].sprite
-      matches[1].sprite = pieces[2]
+      apply(matches[1], pieces[2])
     else
       for index, object in ipairs(matches) do
-        object._blackjackCornerOriginalSprite =
-          object._blackjackCornerOriginalSprite or object.sprite
-        object.sprite = pieces[math.min(index, #pieces)]
+        apply(object, pieces[math.min(index, #pieces)])
       end
     end
   end
@@ -139,6 +160,7 @@ function Gamble.install(mod, opts)
   for _, textId in ipairs(BALL_TEXTS) do
     talk[textId] = function(game, ow, npc, done)
       if not active() then return runBase(textId, game, ow, npc, done) end
+      applyLabSprites(game)
       local flags = game.save.flags or {}
       if flags.EVENT_GOT_STARTER then
         opts.text(game, "The roulette is\nlocked for good.", done)
@@ -252,8 +274,7 @@ function Gamble.install(mod, opts)
     return out
   end)
 
-  mod.events:on("game.ready", function(ev)
-    local game = ev and ev.game
+  local function reconcileLab(game)
     if not game then return end
     if active() then
       applyLabSprites(game)
@@ -262,9 +283,22 @@ function Gamble.install(mod, opts)
       restoreLabSprites(game)
       restoreOakDialogue(game)
     end
-  end)
+  end
 
-  return { active = active, complete = complete }
+  -- Run after ordinary mod listeners. Randomizers commonly rewrite the Lab
+  -- gift objects at boot; Gamble Mode owns their final presentation while it
+  -- is enabled, but restores the randomizer's chosen art when disabled.
+  mod.events:on("game.ready", function(ev)
+    local game = ev and ev.game
+    reconcileLab(game)
+  end, -10000)
+  mod.events:on("map.exited", function(ev)
+    if ev and ev.toMapId == "OAKS_LAB" then
+      reconcileLab(require("src.core.Game"))
+    end
+  end, -10000)
+
+  return { active = active, complete = complete, reconcileLab = reconcileLab }
 end
 
 return Gamble

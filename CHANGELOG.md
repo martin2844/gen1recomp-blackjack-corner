@@ -2,7 +2,30 @@
 
 ## Unreleased
 
+### Added
+
+- Added compact casino branches to Viridian, Pewter, Cerulean, Vermilion,
+  Lavender, Fuchsia, Saffron, and Cinnabar, completing a gambling floor in
+  every Kanto city alongside the larger Pallet and Celadon casinos.
+- Added city-specific exterior signs, host/patron dialogue, blackjack,
+  Hold'em, bulk coin service, and one local arcade terminal to every branch.
+- Added eight optional post-Gym CASE ACE trainers with above-leader teams and
+  exactly-once themed case rewards.
+
+### Changed
+
+- Rebuilt all eight Gym Case pools around their leaders' elemental and
+  personality themes. Every pool now contains ten distinct prizes, inherited
+  filler is gone, and adjacent reel slots cannot repeat the same reward.
+- Cinnabar's branch preserves the Lab trade-room NPCs and script label; the
+  other regional branches replace only tutorial or flavor houses with no item
+  or progression reward.
+
 ### Fixed
+
+- Starter/randomizer mods can no longer replace Gamble Mode's roulette table
+  on Lab entry. Gamble Mode owns the final enabled presentation and restores
+  the other mod's latest sprite when disabled.
 
 - Future-schema ending choices and metadata now survive an older build's
   load/write cycle without being allowlisted away or reconciled by schema-nine

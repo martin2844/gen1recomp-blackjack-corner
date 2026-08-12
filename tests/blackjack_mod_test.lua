@@ -7,9 +7,11 @@ local SlotMachine = require("src.ui.SlotMachine")
 local Runtime = require("src.mods.Runtime")
 local HeadlessFs = assert(loadfile(
   "mods/blackjack_corner/tests/support/headless_fs.lua"))()
+local CasinoCatalog = assert(loadfile(
+  "mods/blackjack_corner/tests/support/casino_catalog.lua"))()
 local CoinCase = assert(loadfile("mods/blackjack_corner/other/coin_case.lua"))()
 
-local data = T.fixtures.fresh()
+local data = CasinoCatalog.seed(T.fixtures.fresh())
 local lobby = {}
 for key, value in pairs(data.tilesets[T.fixtures.ids.tileset]) do lobby[key] = value end
 lobby.id = "LOBBY"
@@ -88,6 +90,64 @@ data.maps.CELADON_CITY = {
       text = "TEXT_CELADONCITY_ROCKET1", x = 32, y = 29 },
   },
 }
+local regionalFixtures = {
+  { "VIRIDIAN_CITY", "VIRIDIAN_SCHOOL_HOUSE", 3, 21, 15 },
+  { "PEWTER_CITY", "PEWTER_SPEECH_HOUSE", 6, 7, 29 },
+  { "CERULEAN_CITY", "CERULEAN_BADGE_HOUSE", 9, 9, 11, 10 },
+  { "VERMILION_CITY", "VERMILION_PIDGEY_HOUSE", 5, 23, 19 },
+  { "LAVENDER_TOWN", "LAVENDER_CUBONE_HOUSE", 5, 3, 13 },
+  { "FUCHSIA_CITY", "FUCHSIA_MEETING_ROOM", 7, 22, 13 },
+  { "SAFFRON_CITY", "SAFFRON_PIDGEY_HOUSE", 4, 13, 11 },
+  { "CINNABAR_ISLAND", "CINNABAR_LAB_TRADE_ROOM", 3, 6, 9 },
+}
+local regionalSignTexts = {
+  VIRIDIAN_CITY = "TEXT_VIRIDIANCITY_SIGN",
+  PEWTER_CITY = "TEXT_PEWTERCITY_SIGN",
+  CERULEAN_CITY = "TEXT_CERULEANCITY_SIGN",
+  VERMILION_CITY = "TEXT_VERMILIONCITY_SIGN",
+  LAVENDER_TOWN = "TEXT_LAVENDERTOWN_SIGN",
+  FUCHSIA_CITY = "TEXT_FUCHSIACITY_SIGN1",
+  SAFFRON_CITY = "TEXT_SAFFRONCITY_SIGN",
+  CINNABAR_ISLAND = "TEXT_CINNABARISLAND_SIGN",
+}
+for fixtureIndex, fixture in ipairs(regionalFixtures) do
+  local exteriorId, interiorId, warpIndex, wx, wy, alternate = unpack(fixture)
+  local exteriorBlocks = {}
+  for index = 1, 360 do exteriorBlocks[index] = 1 end
+  local warps = {}
+  for index = 1, math.max(warpIndex, alternate or 0) do
+    warps[index] = { x = index, y = 1, destMap = "FIXTURE_MAP", destWarp = 1 }
+  end
+  warps[warpIndex] = { x = wx, y = wy, destMap = interiorId, destWarp = 1 }
+  if alternate then
+    warps[alternate] = { x = wx, y = wy - 2, destMap = interiorId, destWarp = 1 }
+  end
+  data.maps[exteriorId] = {
+    id = exteriorId, label = exteriorId, index = 200 + fixtureIndex,
+    tileset = "OVERWORLD", width = 20, height = 18,
+    blocks = exteriorBlocks, borderBlock = 1, connections = {},
+    signs = { { x = 1, y = 2, text = regionalSignTexts[exteriorId] } },
+    warps = warps, objects = {},
+  }
+  local interiorObjects = {}
+  if interiorId == "CINNABAR_LAB_TRADE_ROOM" then
+    interiorObjects[1] = { index = 1, name = "CINNABARLABTRADEROOM_SUPER_NERD",
+      movement = "STAY", range = "DOWN", sprite = "SPRITE_FIXTURE",
+      text = "TEXT_CINNABARLABTRADEROOM_SUPER_NERD", x = 3, y = 2 }
+  end
+  local regionalHouseBlocks = {}
+  for index = 1, 16 do regionalHouseBlocks[index] = 15 end
+  data.maps[interiorId] = {
+    id = interiorId,
+    label = interiorId == "CINNABAR_LAB_TRADE_ROOM"
+      and "CinnabarLabTradeRoom" or interiorId,
+    index = 220 + fixtureIndex, tileset = "LOBBY", width = 4, height = 4,
+    blocks = regionalHouseBlocks, borderBlock = 15, connections = {}, signs = {},
+    warps = { { x = 2, y = 7, destMap = "LAST_MAP", destWarp = warpIndex },
+      { x = 3, y = 7, destMap = "LAST_MAP", destWarp = warpIndex } },
+    objects = interiorObjects,
+  }
+end
 local houseBlocks = {}
 for i = 1, 16 do houseBlocks[i] = 15 end
 data.maps.REDS_HOUSE_1F = {
@@ -117,9 +177,12 @@ data.maps.OAKS_LAB = {
   tileset = "LOBBY", width = 5, height = 5,
   blocks = {}, borderBlock = 15, connections = {}, signs = {}, warps = {},
   objects = {
-    { index = 1, name = "OAKSLAB_CHARMANDER_POKE_BALL", sprite = "SPRITE_POKE_BALL" },
-    { index = 2, name = "OAKSLAB_SQUIRTLE_POKE_BALL", sprite = "SPRITE_POKE_BALL" },
-    { index = 3, name = "OAKSLAB_BULBASAUR_POKE_BALL", sprite = "SPRITE_POKE_BALL" },
+    { index = 1, name = "OAKSLAB_CHARMANDER_POKE_BALL", sprite = "SPRITE_POKE_BALL",
+      text = "TEXT_OAKSLAB_CHARMANDER_POKE_BALL", x = 6, y = 3 },
+    { index = 2, name = "OAKSLAB_SQUIRTLE_POKE_BALL", sprite = "SPRITE_POKE_BALL",
+      text = "TEXT_OAKSLAB_SQUIRTLE_POKE_BALL", x = 7, y = 3 },
+    { index = 3, name = "OAKSLAB_BULBASAUR_POKE_BALL", sprite = "SPRITE_POKE_BALL",
+      text = "TEXT_OAKSLAB_BULBASAUR_POKE_BALL", x = 8, y = 3 },
   },
 }
 
@@ -152,6 +215,66 @@ T.check(api.roulette_view.RESULT_BUTTON_Y
   "the starter result button stays fully inside the visible frame")
 
 do
+  T.eq(#api.city_casinos.locations, 8,
+    "eight regional branches join the existing Pallet and Celadon casinos")
+  for _, location in ipairs(api.city_casinos.locations) do
+    local interior = run.data.maps[location.interior]
+    T.eq(interior.width, 6, location.city .. " casino has the compact native layout")
+    T.eq(interior.height, 5, location.city .. " casino has enough vertical room")
+    T.eq(#interior.blocks, 30, location.city .. " casino block grid is complete")
+    local hasBlackjack, hasHoldem, hasSpecial = false, false, false
+    local indices = {}
+    for _, object in ipairs(interior.objects or {}) do
+      T.check(not indices[object.index], location.city .. " casino object indices are unique")
+      indices[object.index] = true
+      hasBlackjack = hasBlackjack or object.text == "TEXT_CITY_CASINO_BLACKJACK"
+      hasHoldem = hasHoldem or object.text == "TEXT_CITY_CASINO_HOLDEM"
+      hasSpecial = hasSpecial or object.text == "TEXT_CITY_CASINO_SPECIAL"
+    end
+    T.check(hasBlackjack and hasHoldem and hasSpecial,
+      location.city .. " offers both card tables and a local game")
+    local signed, original = 0, false
+    for _, sign in ipairs(run.data.maps[location.exterior].signs or {}) do
+      if sign.text == "TEXT_REGIONAL_CASINO_SIGN" then signed = signed + 1 end
+      original = original or sign.text == location.sign.text
+    end
+    T.eq(signed, 1, location.city .. " repurposes one visible city placard")
+    T.check(not original, location.city .. " does not leave a duplicate city sign")
+  end
+  local cinnabar = run.data.maps.CINNABAR_LAB_TRADE_ROOM
+  local keptScientist = false
+  for _, object in ipairs(cinnabar.objects) do
+    keptScientist = keptScientist
+      or object.name == "CINNABARLABTRADEROOM_SUPER_NERD"
+  end
+  T.check(keptScientist and cinnabar.label == "CinnabarLabTradeRoom",
+    "Cinnabar's casino branch preserves its native Lab interaction surface")
+
+  local leaderCaps = { 14, 21, 24, 29, 43, 43, 47, 50 }
+  T.eq(#api.case_challengers.locations, 8,
+    "one optional case challenger is staged beyond every Gym")
+  for index, location in ipairs(api.case_challengers.locations) do
+    local party = api.case_challengers.parties[location.party]
+    local minimum = 100
+    for _, pokemon in ipairs(party) do minimum = math.min(minimum, pokemon.level) end
+    T.check(minimum > leaderCaps[index],
+      location.key .. " challenger is stronger than the nearest Gym Leader")
+    local found
+    for _, object in ipairs(run.data.maps[location.map].objects or {}) do
+      if object.name == location.objectName then found = object; break end
+    end
+    T.check(found and found.hidden and found.trainerClass == location.trainer,
+      location.key .. " challenger is staged as an optional Gamble Mode fight")
+    for _, branch in ipairs(api.city_casinos.locations) do
+      if location.map == branch.exterior then
+        T.check(location.x ~= branch.sign.x or location.y ~= branch.sign.y,
+          location.key .. " challenger does not occupy its casino sign")
+      end
+    end
+  end
+end
+
+do
   local steps = { { id = "oak_welcome", kind = "say" } }
   local built = Runtime.call("intro.oak_speech.build", function(rows) return rows end,
     steps, {})
@@ -167,6 +290,9 @@ do
   local originalOakChoice = run.data.text._OaksLabOakChooseMonText
   local originalOakRival = run.data.text._OaksLabOakBePatientText
   local introGame = { data = run.data, save = { inventory = {}, coins = 0 } }
+  local randomized = run.data.maps.OAKS_LAB.objects[1]
+  randomized.name, randomized.text, randomized.sprite =
+    "RANDOMIZER_GIFT_1", "TEXT_RANDOMIZER_GIFT_1", "SPRITE_RANDOMIZER_TABLE"
   Runtime.emit("intro.oak_speech.answered", {
     saveKey = "gamble_mode", value = true, speech = { game = introGame },
   })
@@ -184,12 +310,25 @@ do
     T.eq(object.sprite, ("SPRITE_STARTER_ROULETTE_%02d"):format(index),
       "Oak's three gift balls become one roulette cabinet")
   end
+  local stopRandomizer = run.loader.events:on("game.ready", function()
+    randomized.name = "RANDOMIZER_GIFT_1"
+    randomized.text = "TEXT_RANDOMIZER_GIFT_1"
+    randomized.sprite = "SPRITE_RANDOMIZER_TABLE"
+  end, 0, "starter_randomizer_fixture")
+  Runtime.emit("game.ready", { game = introGame })
+  stopRandomizer()
+  T.eq(randomized.sprite, "SPRITE_STARTER_ROULETTE_01",
+    "Gamble Mode's late hook reclaims a randomizer-rewritten starter table")
   Runtime.emit("intro.oak_speech.answered", {
     saveKey = "gamble_mode", value = false, speech = { game = introGame },
   })
-  for _, object in ipairs(run.data.maps.OAKS_LAB.objects) do
+  T.eq(randomized.sprite, "SPRITE_RANDOMIZER_TABLE",
+    "disabling Gamble Mode restores the randomizer's latest table art")
+  for index, object in ipairs(run.data.maps.OAKS_LAB.objects) do
+    if index ~= 1 then
     T.eq(object.sprite, "SPRITE_POKE_BALL",
       "declining Gamble Mode restores Oak's ordinary gift-ball art")
+    end
   end
   T.eq(run.data.text._OaksLabOakChooseMonText, originalOakChoice,
     "declining Gamble Mode restores Oak's ordinary starter speech")
@@ -282,6 +421,12 @@ do
   leaderSpeech.onDone()
   T.eq(Game.stack.pushed[1].screenId, "BlackjackCornerGymCase",
     "finishing the leader's speech opens the Gym Case")
+  local forcedGymReward = {
+    kind = "item", id = "TM_BUBBLEBEAM", quantity = 1,
+    label = "TM BUBBLEBEAM", tier = "gold", weight = 120,
+  }
+  api.gym_cases.onChosen(api.gym_cases.queue()[1], forcedGymReward)
+  Game.stack.pushed[1].caseData.reward = forcedGymReward
   for index = 1, 19 do Game.save.inventory["GYM_FILLER_" .. index] = 1 end
   local gymCase = Game.stack.pushed[1]
   gymCase:update(0)
@@ -343,9 +488,9 @@ do
       expected.leader .. " gives the Gym Case pitch in character")
     T.check(not speech:find("TM", 1, true),
       expected.leader .. " no longer explains a direct TM reward")
-    T.check(speech:find("GYM CASE", 1, true)
+    T.check(speech:find("CASE", 1, true)
         and speech:lower():find("spin", 1, true),
-      expected.leader .. " clearly tells the player to spin a Gym Case")
+      expected.leader .. " clearly tells the player to spin a themed case")
   end
 end
 
@@ -689,44 +834,90 @@ do
 end
 
 do
-  local oldBide, oldBubble = run.data.items.TM_BIDE, run.data.items.TM_BUBBLEBEAM
-  local oldNidoranM, oldNidoranF = run.data.pokemon.NIDORAN_M,
-    run.data.pokemon.NIDORAN_F
-  local oldPikachu = run.data.pokemon.PIKACHU
-  run.data.items.TM_BIDE = { name = "TM BIDE" }
-  run.data.items.TM_BUBBLEBEAM = { name = "TM BUBBLEBEAM" }
-  run.data.pokemon.NIDORAN_M = { name = "NIDORAN M" }
-  run.data.pokemon.NIDORAN_F = { name = "NIDORAN F" }
-  run.data.pokemon.PIKACHU = { name = "PIKACHU" }
-  local brockRows = api.gym_cases.pool({ data = run.data },
-    { order = 1, tm = "TM_BIDE" })
-  local brockTotal, brockBide = 0, nil
-  for _, row in ipairs(brockRows) do
-    brockTotal = brockTotal + row.weight
-    if row.id == "TM_BIDE" then brockBide = row end
+  local oldItems = {}
+  for badge, definition in pairs(api.gym_cases.definitions) do
+    local identities = {}
+    for _, reward in ipairs(definition.rewards) do
+      local key = reward.kind .. ":" .. tostring(reward.id or reward.species)
+      T.check(not identities[key], definition.leader .. " has no duplicate case slot")
+      identities[key] = true
+      if reward.kind == "item" and not run.data.items[reward.id] then
+        oldItems[reward.id] = false
+        run.data.items[reward.id] = { id = reward.id, name = reward.id }
+      end
+    end
+    local rows = api.gym_cases.pool({ data = run.data }, { badge = badge })
+    T.eq(#rows, 10, definition.leader .. " exposes all ten themed prizes")
+    if badge == "BOULDERBADGE" then
+      local species = {}
+      for _, row in ipairs(rows) do
+        if row.species then species[row.species] = true end
+      end
+      T.check(species.GEODUDE and species.ONIX and species.RHYHORN,
+        "Brock's pool is visibly Rock themed")
+      T.check(not species.NIDORAN_M and not species.NIDORAN_F,
+        "Gym Cases no longer contain filler Nidorans")
+    end
   end
-  T.check(brockBide and brockBide.weight / brockTotal <= 0.16,
-    "Bide stays below sixteen percent of Brock's Gym Case pool")
-  local rows = api.gym_cases.pool({ data = run.data },
-    { order = 2, tm = "TM_BUBBLEBEAM" })
-  local byId, bySpecies = {}, {}
-  for _, row in ipairs(rows) do
-    if row.kind == "item" then byId[row.id] = row else bySpecies[row.species] = row end
+  local rules = assert(loadfile("mods/blackjack_corner/other/gamble/gym_cases.lua"))()
+    .rules(api.case_rules)
+  local misty = api.gym_cases.pool({ data = run.data }, { badge = "CASCADEBADGE" })
+  local strip = rules.strip(misty, misty[1], function() return 1 end)
+  for index = 2, #strip do
+    local function key(row) return row.kind .. ":" .. tostring(row.id or row.species) end
+    T.check(key(strip[index]) ~= key(strip[index - 1]),
+      "the themed reel never shows the same prize in adjacent slots")
   end
-  T.eq(byId.TM_BUBBLEBEAM.tier, "gold",
-    "the current leader's TM is the Gym Case headline reward")
-  T.eq(byId.TM_BUBBLEBEAM.weight, 100,
-    "the current leader's TM is featured without dominating the case")
-  T.eq(byId.TM_BIDE.weight, 50,
-    "an earlier Gym TM remains possible at a reduced weight")
-  T.check(bySpecies.NIDORAN_M and bySpecies.PIKACHU,
-    "early Gym Cases include their unlocked basic Pokemon")
-  T.eq(bySpecies.BULBASAUR, nil,
-    "later starter rewards remain locked at the second badge")
-  run.data.items.TM_BIDE, run.data.items.TM_BUBBLEBEAM = oldBide, oldBubble
-  run.data.pokemon.NIDORAN_M, run.data.pokemon.NIDORAN_F =
-    oldNidoranM, oldNidoranF
-  run.data.pokemon.PIKACHU = oldPikachu
+  for id, value in pairs(oldItems) do if value == false then run.data.items[id] = nil end end
+end
+
+do
+  local Game = require("src.core.Game")
+  local Data = require("src.core.Data")
+  local MapScripts = require("src.script.MapScripts")
+  local oldData, oldSave, oldStack = Game.data, Game.save, Game.stack
+  local oldMapScripts = Data.map_scripts
+  local location = api.case_challengers.locations[1]
+  Game.data = run.data
+  Data.map_scripts = run.data.map_scripts
+  Game.save = { coins = 100, flags = {}, inventory = { [location.badge] = 1 },
+    defeatedTrainers = {}, objectToggles = {}, party = {}, boxes = {},
+    currentBox = 1, player = { name = "RED" } }
+  Game.stack = { pushed = {}, push = function(self, screen)
+    self.pushed[#self.pushed + 1] = screen
+  end, pop = function(self) return table.remove(self.pushed) end,
+    top = function(self) return self.pushed[#self.pushed] end }
+  Runtime.emit("intro.oak_speech.answered", {
+    saveKey = "gamble_mode", value = true, speech = { game = Game },
+  })
+  api.case_challengers.sync(Game, location.map)
+  T.check(Game.save.objectToggles[location.map][location.objectName],
+    "a regional challenger appears after the matching badge")
+  Game.save.defeatedTrainers[api.case_challengers.saveId(location)] = true
+  MapScripts.get(location.map).onVictory(Game, {})
+  T.eq(#api.gym_cases.queue(), 1,
+    "beating a regional challenger queues exactly one themed case")
+  local rewardText = Game.stack:top()
+  T.check(rewardText and rewardText.pages,
+    "the challenger presents the case reward in the overworld")
+  rewardText.onDone()
+  T.eq(Game.stack:top().screenId, "BlackjackCornerGymCase",
+    "acknowledging the challenger reward opens its themed reel")
+  MapScripts.get(location.map).onVictory(Game, {})
+  T.eq(#api.gym_cases.queue(), 1,
+    "replayed victory hooks cannot duplicate a challenger case")
+  api.gym_cases.onDelivered(api.gym_cases.queue()[1])
+  Game.save.defeatedTrainers[api.case_challengers.saveId(location)] = nil
+  api.case_challengers.sync(Game, location.map)
+  T.check(Game.save.defeatedTrainers[api.case_challengers.saveId(location)],
+    "the stable CASE ACE award repairs a shifted runtime object index")
+  Runtime.emit("intro.oak_speech.answered", {
+    saveKey = "gamble_mode", value = false, speech = { game = Game },
+  })
+  T.check(not Game.save.objectToggles[location.map][location.objectName],
+    "regional challengers disappear when Gamble Mode is disabled")
+  Data.map_scripts = oldMapScripts
+  Game.data, Game.save, Game.stack = oldData, oldSave, oldStack
 end
 T.eq(run.data.maps.GAME_CORNER.blocks[82], 61,
   "a double-door replaces one lower Game Corner floor block")

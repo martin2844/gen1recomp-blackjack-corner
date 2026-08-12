@@ -58,6 +58,9 @@ return function(mod)
   local ArenaStoryFactory = loadLocal(mod, "other/gamble/arena_story.lua")
   local StoryWorld = loadLocal(mod, "other/gamble/story_world.lua")(WorldHelpers)
   local PalletCasino = loadLocal(mod, "other/pallet_casino.lua")(WorldHelpers)
+  local CityCasinos = loadLocal(mod, "other/city_casinos.lua")(WorldHelpers)
+  local CaseChallengers = loadLocal(mod,
+    "other/gamble/case_challengers.lua")(WorldHelpers)
   local Sound = require("src.core.Sound")
 
   local ids = {
@@ -319,6 +322,7 @@ return function(mod)
   HouseWorld.register(mod)
   ArenaWorld.register(mod, ids.lounge)
   StoryWorld.register(mod)
+  CityCasinos.register(mod)
 
   local function endingChoice()
     local story = ArenaStory.snapshot()
@@ -356,6 +360,20 @@ return function(mod)
     if not allowed then UI.text(game, frozen, done); return end
     open(game, message, screen, done)
   end
+  CityCasinos.registerScripts(mod, {
+    ids = ids, text = UI.text, coinClerk = UI.coinClerk,
+    open = open, openLuxury = openLuxury,
+  })
+  local Challengers = CaseChallengers.register(mod, {
+    active = Gamble.active, gym = Gym, text = UI.text,
+    openCase = function(game, entry, location)
+      local definition = Gym.definitions[entry.badge]
+      UI.text(game, location.won .. "\fA themed CASE waits.\nGive it one spin.", function()
+        mod.ui.push(game, ids.gymCase, { caseData = entry, autoOpen = true,
+          oneShot = true, title = (definition and definition.theme or "GYM") .. " CASE" })
+      end)
+    end,
+  })
   local function reactiveText(game, ordinary, regular, vip, cold,
       exposed, champion)
     local state = Progress.snapshot(game)
@@ -895,6 +913,8 @@ return function(mod)
   mod.exports.roulette_rules, mod.exports.roulette_view = RouletteRules, RouletteView
   mod.exports.gamble = Gamble
   mod.exports.gym_cases = Gym
+  mod.exports.city_casinos = CityCasinos
+  mod.exports.case_challengers = Challengers
   mod.exports.campaign_state = CampaignState
   mod.exports.reputation_rules = ReputationRules
   mod.exports.reputation = Progress

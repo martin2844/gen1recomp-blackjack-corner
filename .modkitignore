@@ -13,6 +13,7 @@ tests/arena_story_test.lua
 tests/shiny_fallback_test.lua
 tests/run_all.sh
 tests/support/headless_fs.lua
+tests/support/casino_catalog.lua
 tests/fixtures/crystal_animated_sprites_with_shiny_visuals/main.lua
 tests/fixtures/crystal_animated_sprites_with_shiny_visuals/manifest.json
 tests/fixtures/gen2_shiny_visuals/main.lua
@@ -28,6 +29,7 @@ tests/manual/MATRIX.md
 tests/manual/V0.6_IN_GAME_TESTING.md
 tests/manual/V0.7_IN_GAME_TESTING.md
 tests/manual/FINAL_STAGE_IN_GAME_TESTING.md
+tests/manual/CASINO_NETWORK_IN_GAME_TESTING.md
 tests/manual/releases/v0.5.0.md
 tests/manual/releases/v0.5.1.md
 tests/manual/releases/v0.5.2.md

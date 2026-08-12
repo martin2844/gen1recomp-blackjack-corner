@@ -6,9 +6,12 @@
 Blackjack Corner turns Pokemon Gen 1 into a living casino remix for the
 [Pokemon Gen 1 Recompilation Project](https://github.com/bryanthaboi/gen1recomp).
 Its optional Gamble Mode reaches from Oak's Lab to every Gym: the starter is
-random, the rival rolls separately, Gym TMs become mystery cases, and Pallet
-Town gains its own gloomy casino. Celadon's expanded floor remains the main
-destination, with blackjack, house-banked Texas Hold'em, Crash, Tube Flyer,
+random, the rival rolls separately, Gym TMs become themed mystery cases, and
+post-Gym case challengers appear across Kanto. Pallet Town gains its own gloomy
+casino, while compact regional branches put blackjack, Hold'em, and a local
+machine in Viridian, Pewter, Cerulean, Vermilion, Lavender, Fuchsia, Saffron,
+and Cinnabar. Celadon's expanded floor remains the main destination, with
+blackjack, house-banked Texas Hold'em, Crash, Tube Flyer,
 Prize Cases, animated horse racing, Plinko, Pokemon pawning, shinies, rare
 items, and a one-time Master Ball. Gamble Mode's final High Roller rank now
 opens a Rocket status terminal that verifies KINGPIN clearance, retracts, and
@@ -22,6 +25,26 @@ is available but remains experimental until its distinct one-ball Oak flow has
 its own native release gate. The mod contains no ROM or ROM-derived artwork;
 world and shiny graphics are generated locally from the player's imported game
 data.
+
+## Unreleased casino network expansion
+
+- Gamble Mode now reclaims Oak's starter-roulette cabinet after other starter
+  or randomizer mods rewrite the Lab gift table. Turning Gamble Mode off
+  restores the other mod's latest art instead of forcing vanilla sprites.
+- Every Kanto city now has a gambling floor: Pallet and Celadon retain their
+  large casinos, and eight compact native-tile branches add blackjack,
+  Hold'em, coin sales, a local machine, a named exterior sign, and dialogue
+  written for that city.
+- Cinnabar's branch shares the Lab trade room without removing its original
+  NPC interaction surface; the seven replaced houses contain flavor or
+  tutorial dialogue only and do not gate story progression or award items.
+- Each Gym Case now has a ten-slot badge theme with ten distinct identities:
+  Rock, Water, Electric, Grass, Venom, Psychic, Fire, and Earth Pokemon, TMs,
+  stones, and supplies. Nidoran filler and inherited earlier-Gym pools are
+  gone, and the reel never places an identical prize in adjacent slots.
+- Eight optional CASE ACE trainers appear after their matching badges. Their
+  complete teams sit above the nearby Gym Leader's level cap, remain retryable
+  after a loss, and award one replay-safe themed case after the first win.
 
 ## Version 0.6.0 final Gamble Mode chapter
 
@@ -60,14 +83,14 @@ keeps players upgrading from v0.5.0 out of the closed terminal.
 
 | Area | What the release adds |
 | --- | --- |
-| Adventure | Optional save-scoped Gamble Mode changes the starter, rival team, and all eight Gym Leader rewards |
+| Adventure | Optional save-scoped Gamble Mode changes the starter, rival team, all eight Gym Leader rewards, and adds eight post-Gym CASE ACE battles |
 | Pallet Town | A new early-game casino with blackjack, Hold'em, horse racing, Plinko, Prize Cases, coin sales, pawning, gamblers, and hidden coins |
 | Celadon | A dedicated 20x18 lounge with two tables, three front cabinets, and a rear Horse Racing and Plinko arcade |
 | Eight games | Blackjack, Hold'em, Crash, Tube Flyer, Prize Case, animated horse racing, Plinko, and the Underground Arena |
 | Services | Bulk coin purchases and a pawn broker that stores up to five exact party Pokemon for later redemption |
 | Rewards | Version-exclusive Pokemon, starters, fossils, shiny upgrades, rare TMs, Surfing Pikachu, Dragonite, Mew, and Master Balls |
 | Economy | A 1,000,000-coin Coin Case used consistently by the new games, original slots, and hidden coin pickups |
-| Atmosphere | Ten new gamblers and staff plus eight new one-time floor pickups across three casino interiors |
+| Atmosphere | A casino in every Kanto city, regional dialogue and signs, ten central-floor gamblers/staff, and hidden coin pickups |
 | Code quality | Small per-game modules under `games/`, supporting systems under `other/`, automated rule/integration coverage, and a Red/Blue native release gate |
 
 ## v0.5 Gamble campaign
@@ -302,21 +325,36 @@ are never silently converted.
 Each of the eight badges unlocks one persistent, zero-cost Gym Case. Its reel
 contains exactly one final reward:
 
-- The defeated leader's original TM remains a featured prize, but its weight
-  is capped so the case produces a varied mix of TMs and Pokemon. In Brock's
-  first case, Bide is roughly a 15% result instead of dominating the pool.
+- Every leader owns a ten-reward pool with no duplicate identities. Brock mixes
+  Rock Pokemon and Rock/Ground tools, Misty Water and Ice rewards, Surge
+  Electric rewards, Erika Grass rewards, Koga poison and discipline items,
+  Sabrina Psychic rewards, Blaine Fire rewards, and Giovanni elite Earth and
+  boss prizes.
 - The leader delivers their badge dialogue in the Gym before the case opens,
   then personally invites the player to spin with dialogue written for their
   personality; no TM explanation is shown over the case screen.
-- TMs from earlier defeated Gyms remain possible, expanding the pool as the
-  adventure continues.
-- Pokemon rewards begin with Nidoran, Pikachu, and Abra, then grow to Eevee,
-  all three starters, both fossils, Dratini, and Aerodactyl.
+- Nidoran filler and repeated progressive unlocks are removed. Every visible
+  slot belongs to the leader's theme, and adjacent reel cards cannot repeat.
 - The selected reward is saved as soon as the reel begins. If the Bag, party,
   and PC cannot accept it, **GYM CASE** appears in the Start menu so the exact
   same prize can be claimed later.
 - A Gym Case never charges coins and never replaces the leader's badge or
   post-battle progression.
+
+### Regional casinos and CASE ACE trainers
+
+Pallet and Celadon remain the flagship floors. Viridian, Pewter, Cerulean,
+Vermilion, Lavender, Fuchsia, Saffron, and Cinnabar now each advertise a
+compact branch in a story-neutral interior. Every branch offers blackjack,
+Texas Hold'em, bulk coin sales, and one regional arcade game, with local hosts
+and patrons commenting on schools, fossils, Misty, sailors, ghosts, the Safari
+Zone, Silph, or Cinnabar experiments.
+
+After each badge, a stronger CASE ACE appears in the surrounding city. These
+are optional fixed encounters—not random ambushes and never Gym replacements.
+Their weakest party member is above the nearby leader's strongest Pokemon;
+winning once creates a persistent themed case, while losses and interrupted
+delivery remain retryable without duplicating the reward.
 
 ### Pallet Town mini-casino
 

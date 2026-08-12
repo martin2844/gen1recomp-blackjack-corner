@@ -42,6 +42,23 @@ function World.casinoFloorBlocks()
   return blocks
 end
 
+-- Compact regional branch: the same native GAME CORNER floor language as the
+-- larger lounges, scaled to a six-by-five block room with a two-cell exit.
+function World.cityCasinoBlocks()
+  local rows = {
+    { 63, 64, 64, 64, 64, 63 },
+    { 32, 32, 32, 32, 32, 32 },
+    { 32, 32, 32, 32, 32, 32 },
+    { 32, 32, 32, 32, 32, 32 },
+    { 27, 27, 27, 40, 41, 27 },
+  }
+  local blocks = {}
+  for _, row in ipairs(rows) do
+    for _, block in ipairs(row) do blocks[#blocks + 1] = block end
+  end
+  return blocks
+end
+
 local function flattenRows(rows)
   local blocks = {}
   for _, row in ipairs(rows) do

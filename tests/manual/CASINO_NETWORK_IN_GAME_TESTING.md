@@ -1,0 +1,74 @@
+# Casino network in-game testing plan
+
+This gate covers the randomizer handoff, eight regional branches, themed Gym
+Cases, and post-Gym CASE ACE encounters. Run every row on Red and Blue with a
+fresh identity. Yellow remains experimental and should receive a separate
+one-ball starter pass before its support status changes.
+
+## Starter/randomizer compatibility
+
+- [ ] `COMPAT-01` Enable a starter randomizer, start a new Gamble Mode save,
+  and enter Oak's Lab. The three-piece roulette cabinet—not the randomizer's
+  replacement table—is visible and opens the Gamble Mode roulette.
+- [ ] `COMPAT-02` Complete the player and rival rolls. Both starters follow
+  Gamble Mode's saved results and the Lab rival battle remains reachable.
+- [ ] `COMPAT-03` Start another save with Gamble Mode disabled. The
+  randomizer's own table art and starter behavior remain intact.
+
+## Regional casino route
+
+Visit Pallet, Viridian, Pewter, Cerulean, Vermilion, Lavender, Celadon,
+Fuchsia, Saffron, and Cinnabar.
+
+- [ ] `CITY-01` Every city has a readable named casino sign and an unobstructed
+  entrance from the overworld.
+- [ ] `CITY-02` Every compact branch has readable local dialogue, blackjack,
+  Hold'em, coin sales, and its advertised local machine.
+- [ ] `CITY-03` Every table/machine can be approached, opened, cancelled, and
+  reopened; no cabinet, NPC, wall, or double-door cell traps the player.
+- [ ] `CITY-04` Exit both door cells in every branch and re-enter after a disk
+  save/restore. The correct city and doorway are preserved.
+- [ ] `CITY-05` In Cerulean, verify both original exterior doors return to the
+  correct casino exit. In Cinnabar, verify the original Lab scientist/trades
+  still work before and after using all casino services.
+- [ ] `CITY-06` Progress the ordinary story through every affected city.
+  Required Gyms, marts, Centers, routes, Oak flow, Safari Zone, Silph, Lab,
+  Mansion, and Fly destinations remain available.
+
+## Themed Gym Cases
+
+- [ ] `GYM-01` Beat all eight leaders in separate prepared saves. Their speech
+  names or evokes Rock, Water, Electric, Grass, Venom, Psychic, Fire, or Earth
+  and opens the case over the visible Gym scene.
+- [ ] `GYM-02` Audit at least three full reels per leader. Every card belongs
+  to that leader's theme, no Nidoran filler appears, and identical prizes never
+  occupy adjacent reel slots.
+- [ ] `GYM-03` Confirm each pool can surface Pokemon, TMs, and supporting
+  items; Giovanni's Master Ball remains extremely rare rather than guaranteed.
+- [ ] `GYM-04` Fill the relevant storage before delivery, save/reload, free
+  space, and retry from Start. The exact reward survives and is delivered once.
+
+## CASE ACE encounters
+
+- [ ] `ACE-01` Before each matching badge, confirm the city's CASE ACE is
+  absent and does not block the casino door, sign, NPCs, or route.
+- [ ] `ACE-02` Earn the badge and re-enter the city. The challenger appears,
+  uses local pre-battle dialogue, and every team member is above the nearby
+  leader's maximum level.
+- [ ] `ACE-03` Lose each fight once. Normal blackout/recovery works and the
+  trainer remains available without granting or queuing a case.
+- [ ] `ACE-04` Win each fight. The loss line appears on the battle screen, the
+  overworld reward dialogue follows, and one matching themed case opens.
+- [ ] `ACE-05` Save/reload before case delivery, deliver it, then revisit and
+  trigger an ordinary map victory hook. No second case, payout, or queue entry
+  is created.
+- [ ] `ACE-06` Disable Gamble Mode in a separate new save. No CASE ACE appears;
+  all city casinos remain usable as base-mod content.
+
+## Release evidence
+
+- [ ] Record host/mod SHAs and ROM SHA-1s.
+- [ ] Capture one exterior and one interior screenshot per regional branch.
+- [ ] Capture one themed reel and one CASE ACE reward flow per badge.
+- [ ] Run the full Lua suite, imported validation, lint, pack inspection, and
+  this supervised matrix before signing a release checklist.

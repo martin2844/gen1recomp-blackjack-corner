@@ -20,11 +20,29 @@ The final chapter follows evidence from that pit to Cinnabar, returns for a
 fixed Dragonite-versus-Mewtwo exhibition, and ends with an irreversible choice
 to expose Rocket or become the house champion.
 
-The v0.7.0 release is certified on Pokemon Red and Blue. Pokemon Yellow support
+The v0.7.1 release is certified on Pokemon Red and Blue. Pokemon Yellow support
 is available but remains experimental until its distinct one-ball Oak flow has
 its own native release gate. The mod contains no ROM or ROM-derived artwork;
 world and shiny graphics are generated locally from the player's imported game
 data.
+
+## Version 0.7.1 settings and onboarding
+
+- Blackjack Corner now has a permanent **MODS > Blackjack Corner > OPTIONS**
+  page. It controls the default Gamble Mode answer, repeat table introductions,
+  reveal speed, and paid shiny-upgrade offers.
+- The per-save Gamble Mode decision now appears on a clean screen before Oak's
+  first appearance. The global default only moves the YES/NO cursor; it never
+  skips confirmation or rewrites an existing campaign.
+- Relaxed, Normal, and Fast reveal speeds apply to deterministic presentation
+  in starter and prize reels, horse racing, Plinko, and the Underground Arena.
+  Crash and Tube Flyer keep their original real-time physics.
+- The core page stays available when a dedicated shiny renderer is installed;
+  without one, Blackjack Corner appends its four bundled shiny presentation
+  controls to the same scrolling page.
+- The settings and pre-Oak flow are native-tested on Red and Blue, including
+  process-restart persistence, Reset Defaults, Pokemon Randomizer v0.46.4,
+  external shiny-provider composition, table guards, and prize choices.
 
 ## Version 0.7.0 casino network expansion
 
@@ -152,7 +170,7 @@ The implementation and internal milestone train are mapped in
 [docs/GAMBLE_MODE_ROADMAP.md](docs/GAMBLE_MODE_ROADMAP.md). Human UI/E2E signoff
 uses the supervised drivers and matrix in [`tests/manual`](tests/manual); the
 public release record is
-[tests/manual/releases/v0.7.0.md](tests/manual/releases/v0.7.0.md), with the
+[tests/manual/releases/v0.7.1.md](tests/manual/releases/v0.7.1.md), with the
 detailed Arena phase gate retained in
 [tests/manual/V0.7_IN_GAME_TESTING.md](tests/manual/V0.7_IN_GAME_TESTING.md).
 
@@ -295,7 +313,7 @@ detailed Arena phase gate retained in
 
 ## Install
 
-1. Download `blackjack_corner-0.7.0.zip` from the
+1. Download `blackjack_corner-0.7.1.zip` from the
    [latest release](https://github.com/martin2844/gen1recomp-blackjack-corner/releases/latest).
    Use the named mod ZIP, not GitHub's automatic source-code archives.
 2. Open Gen1Recomp and choose **MODS > Import mod .zip**.

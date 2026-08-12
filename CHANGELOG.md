@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [0.7.1] - 2026-08-12
+
 ### Added
 
 - Added a permanent **MODS > Blackjack Corner > OPTIONS** page with Gamble

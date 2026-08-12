@@ -21,11 +21,26 @@ The final chapter follows evidence from that pit to Cinnabar, returns for a
 fixed Dragonite-versus-Mewtwo exhibition, and ends with an irreversible choice
 to expose Rocket or become the house champion.
 
-The v0.7.3 release is certified on Pokemon Red and Blue. Pokemon Yellow support
+The v0.7.4 release is certified on Pokemon Red and Blue. Pokemon Yellow support
 is available but remains experimental until its distinct one-ball Oak flow has
 its own native release gate. The mod contains no ROM or ROM-derived artwork;
 world and shiny graphics are generated locally from the player's imported game
 data.
+
+## Version 0.7.4 casino economy and reward polish
+
+- Every CASE ACE now speaks in its own voice and awards a clearly labeled ACE
+  CASE from an independent, badge-agnostic mix of Pokemon, supplies, rare TMs,
+  and a very small Master Ball jackpot chance. Gym pools and Gym Leader
+  reactions remain exclusive to actual Gym Cases.
+- Every Pallet, Celadon, and regional casino clerk now offers a limited Pokemon
+  redemption counter, so prizes can be claimed throughout the adventure while
+  Celadon's Prize Room keeps the complete catalogue.
+- Starter Roulette, case, and counter-redemption Pokemon now open the native
+  nickname flow after successful party or PC delivery.
+- Coin clerks now exchange currency in both directions. Complete 50-coin
+  bundles cash out for ¥1,000 with bulk and MAX options, atomic validation,
+  and protection against the native ¥999,999 money cap.
 
 ## Version 0.7.3 prize-aware Gym Leaders
 
@@ -202,7 +217,7 @@ The implementation and internal milestone train are mapped in
 [docs/GAMBLE_MODE_ROADMAP.md](docs/GAMBLE_MODE_ROADMAP.md). Human UI/E2E signoff
 uses the supervised drivers and matrix in [`tests/manual`](tests/manual); the
 public release record is
-[tests/manual/releases/v0.7.3.md](tests/manual/releases/v0.7.3.md), with the
+[tests/manual/releases/v0.7.4.md](tests/manual/releases/v0.7.4.md), with the
 detailed Arena phase gate retained in
 [tests/manual/V0.7_IN_GAME_TESTING.md](tests/manual/V0.7_IN_GAME_TESTING.md).
 
@@ -345,7 +360,7 @@ detailed Arena phase gate retained in
 
 ## Install
 
-1. Download `blackjack_corner-0.7.3.zip` from the
+1. Download `blackjack_corner-0.7.4.zip` from the
    [latest release](https://github.com/martin2844/gen1recomp-blackjack-corner/releases/latest).
    Use the named mod ZIP, not GitHub's automatic source-code archives.
 2. Open Gen1Recomp and choose **MODS > Import mod .zip**.

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [0.7.4] - 2026-08-12
+
 ### Changed
 
 - CASE ACE trainers now award clearly labeled ACE CASES from one broad,

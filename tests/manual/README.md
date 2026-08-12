@@ -70,7 +70,7 @@ ending-reactive world dialogue. Rows that still require supervised navigation
 are explicitly left unsigned in the matrix rather than inferred from an API or
 teleport.
 The current cumulative public results are recorded in
-[`releases/v0.7.3.md`](releases/v0.7.3.md); earlier public and internal
+[`releases/v0.7.4.md`](releases/v0.7.4.md); earlier public and internal
 milestone records remain available for detailed evidence.
 
 Before signing off a release:

@@ -54,12 +54,23 @@ outside the repository so it cannot enter the release ZIP.
 
 - Tester/date: Codex native LÖVE2D driver plus screenshot review, 2026-08-12.
 - Host SHA: `6f75a64c461070b07af1f89ad97fcf2473694eb8`.
+- Mod SHA: `acdfcd54acb6b55fecae14dc9ff9c5f4cf25b6c3`.
 - ROM SHA-1s: Red `ea9bcae617fdf159b045185467ae58b2e4a48b9a`;
   Blue `d7037c83e1ae5b39bde3c30787637ba1d4c48ce2`.
 - `settings_audit.lua` completed its seed/restart cycle on both ROMs. Red
-  verified the YES default and Arena narrative guard; Blue verified the NO
-  default. Both exercised the complete fallback page, Reset Defaults, table
-  introductions, prize choices, and the ordered reveal clocks.
+  verified the YES default, Coin Case, 100-coin grant, and private starter
+  roulette; Blue verified the NO default, restored Lab objects, native Misty
+  badge/TM reward, and empty Gym Case queue. Both exercised the complete
+  fallback page, Reset Defaults, table introductions, all three Arena story
+  intros, and a real ordinary Pokemon purchase/delivery.
+- Starter Roulette, paid Prize Case, Horse Racing, Plinko, and Battle Arena
+  each ran to a real result under Relaxed, Normal, and Fast. Frame counts were
+  strictly ordered while every seeded result and payout remained identical.
+  Real Crash and Tube Flyer state snapshots remained byte-for-value identical
+  across all three choices.
+- The complete verify phase passed twice on the same Red and Blue identities,
+  confirming that the two-phase driver restores its option preconditions and
+  is repeatable.
 - The compact external-provider page passed on both ROMs with Crystal Animated
   Sprites with Shiny Visuals 1.5.x. Its manifest range was adapted only in the
   disposable test harness because the pinned development host reports

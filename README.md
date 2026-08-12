@@ -42,7 +42,9 @@ data.
   controls to the same scrolling page.
 - The settings and pre-Oak flow are native-tested on Red and Blue, including
   process-restart persistence, Reset Defaults, Pokemon Randomizer v0.46.4,
-  external shiny-provider composition, table guards, and prize choices.
+  external shiny-provider composition, table guards, real ordinary prize
+  delivery, every Arena story intro, and deterministic production-screen
+  pacing with identical results and payouts at every speed.
 
 ## Version 0.7.0 casino network expansion
 

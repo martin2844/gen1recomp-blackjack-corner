@@ -28,8 +28,8 @@ function Fallback.optionRows()
 end
 
 function Fallback.disable()
-  local SummaryMenu = package.loaded["src.ui.SummaryMenu"]
-  if type(SummaryMenu) == "table" then
+  local ok, SummaryMenu = pcall(require, "src.ui.SummaryMenu")
+  if ok and type(SummaryMenu) == "table" then
     SummaryMenu._blackjackCornerShinyBridge = nil
   end
 end
@@ -57,11 +57,30 @@ function Fallback.install(mod)
     return options == nil or options.colors == "gbc" or options.colors == "redpp"
   end
 
-  local function derivedShinyPath(path)
+  local function normalizeSourcePath(path)
     if type(path) ~= "string" then return nil end
-    local rel = path:sub(1, #sourcePrefix) == sourcePrefix
-      and path:sub(#sourcePrefix + 1) or nil
+    if path:sub(1, #sourcePrefix) == sourcePrefix then
+      return path:sub(#sourcePrefix + 1)
+    end
+    local fromDerived = path:match("^save/mod%-derived/[^/]+/(.+)$")
+    if fromDerived then return fromDerived end
+    if path:find("/generated/") then
+      return path:match("^.+/generated/(.+)$")
+    end
+    return nil
+  end
+
+  local function derivedShinyPath(path)
+    local rel = normalizeSourcePath(path)
     if not rel then return nil end
+    if rel:sub(1, 6) == "shiny/" then
+      local shinyPath = "save/mod-derived/" .. mod.id .. "/" .. rel
+      if derived[shinyPath] == nil then
+        local ok, info = pcall(love.filesystem.getInfo, shinyPath)
+        derived[shinyPath] = ok and info ~= nil or false
+      end
+      return derived[shinyPath] and shinyPath or nil
+    end
     local candidate = "save/mod-derived/" .. mod.id .. "/shiny/" .. rel
     if derived[candidate] == nil then
       local ok, info = pcall(love.filesystem.getInfo, candidate)

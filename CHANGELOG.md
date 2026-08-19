@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## [0.7.5] - 2026-08-19
+
+### Fixed
+
+- Updated the shiny fallback to match gen1recomp’s newer sandbox model by
+  safely disconnecting the SummaryMenu bridge and resolving new shiny sprite
+  source path variants before selecting derived assets.
+
 ## [0.7.4] - 2026-08-12
 
 ### Changed
